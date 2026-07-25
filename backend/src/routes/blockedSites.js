@@ -1,7 +1,7 @@
 const express = require('express');
 const router  = express.Router();
 const ctrl    = require('../controllers/blockedSitesController');
-const { adminAuth } = require('../middleware/auth');
+const adminAuth = require('../middleware/adminAuth');
 
 router.get('/',       adminAuth, ctrl.getBlockedSites);
 router.post('/',      adminAuth, ctrl.createBlockedSite);
