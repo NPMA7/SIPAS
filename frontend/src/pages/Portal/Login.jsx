@@ -62,15 +62,27 @@ export default function PortalLogin() {
 
         setTimeout(() => {
           let targetDst = params.dst;
+
+          // Jika dst utama tidak ada, coba ambil dari parameter linkLogin jika ada
+          if (!targetDst && params.linkLogin) {
+            try {
+              const linkUrl = new URL(params.linkLogin);
+              targetDst = linkUrl.searchParams.get('dst') || '';
+            } catch (_) {}
+          }
+
           const rawDst = decodeURIComponent(targetDst || '');
 
+          // Jika targetDst kosong, berupa placeholder $(dst), IP router, atau URL test yang loop ke portal login,
+          // maka arahkan ke google.com sebagai halaman tujuan utama.
           if (
             !targetDst ||
             rawDst.includes('$(dst)') ||
             rawDst.includes('192.168.10.1') ||
-            rawDst.includes('google.com')
+            rawDst.includes('hotspot.net') ||
+            rawDst.includes('connecttest.txt')
           ) {
-            targetDst = 'http://www.msftconnecttest.com/connecttest.txt';
+            targetDst = 'https://www.google.com';
           }
 
           // Karena Backend sudah mengotorisasi user langsung ke /ip/hotspot/active via RouterOS API,
