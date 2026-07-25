@@ -37,7 +37,6 @@ WebHotspot/
 │   │   │   └── csvImport.js              # Parser & Validator Berkas CSV
 │   │   ├── index.js                      # Entry Point & Express Server Bootstrap
 │   │   ├── monitor_users.js              # Script Background Monitor Status Client
-│   │   ├── setup_destroy_script.js       # Script Pemasang Autocleanup pada Mikrotik
 │   │   ├── test_login.js                 # Script Test Login API Mikrotik
 │   │   └── test_query.js                 # Script Test Query Database PostgreSQL
 │   ├── Dockerfile                        # Konfigurasi Docker Image Backend Node.js
@@ -152,10 +151,6 @@ Bootstrap server Express, mendaftarkan semua routes, mengaktifkan cors, body par
 #### `src/monitor_users.js`
 
 Script daemon yang secara berkala memeriksa database PostgreSQL untuk memastikan keakuratan status keaktifan user.
-
-#### `src/setup_destroy_script.js`
-
-Script helper sekali jalan (one-time execution) yang menyuntikkan script pembersih sesi otomatis (`destroy-inactive-sessions`) dan scheduler-nya ke dalam sistem RouterOS Mikrotik via API.
 
 ---
 

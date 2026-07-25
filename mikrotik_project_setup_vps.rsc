@@ -1,6 +1,5 @@
 # =============================================================================
-#     MIKROTIK WEBHOTSPOT INTEGRATION SCRIPT FOR VPS (PRODUCTION)
-#     File: mikrotik_project_setup_vps.rsc
+#     MIKROTIK WEBHOTSPOT INTEGRATION SCRIPT FOR VPS 
 # =============================================================================
 # Script ini sudah disesuaikan untuk deployment VPS dengan IP Public: 103.67.244.193
 # dan Subnet VPN L2TP: 192.168.42.0/24
@@ -42,22 +41,16 @@ add chain=forward action=accept connection-state=established,related
 add chain=input action=drop connection-state=invalid
 add chain=forward action=drop connection-state=invalid
 add chain=input action=accept protocol=icmp
-add chain=input action=accept src-address=192.168.88.0/24 comment="Akses LAN Admin Lokal"
+add chain=input action=accept src-address=192.168.88.0/24 comment="Akses LAN Admin Lokal (ether2)"
 add chain=input action=accept src-address=192.168.42.0/24 comment="Akses VPN Server VPS"
 add chain=input action=accept in-interface=bridge-hotspot protocol=udp dst-port=53
 add chain=input action=accept in-interface=bridge-hotspot protocol=tcp dst-port=53
 add chain=input action=accept in-interface=bridge-hotspot protocol=udp dst-port=67
 add chain=input action=drop in-interface=ether1
 
+# --- LANGKAH 7: Optional ---
 # /ip firewall filter 
 # add chain=forward protocol=udp dst-port=443 action=drop comment="Block QUIC UDP 443" place-before=0
-
-# --- LANGKAH 7: Script Penghancur Sesi & Lease Diskonek Instan (Wireless) ---
-/system script
-add name=destroy-inactive-sessions source=":foreach activeSession in=[/ip hotspot active find] do={\r\n    :local mac [/ip hotspot active get \$activeSession mac-address];\r\n    :local username [/ip hotspot active get \$activeSession user];\r\n    :if (\$mac != \"\") do={\r\n        :if ([:len [/interface wireless registration-table find mac-address=\$mac]] = 0) do={\r\n            /ip hotspot active remove \$activeSession;\r\n            /ip dhcp-server lease remove [find mac-address=\$mac dynamic=yes];\r\n            /ip hotspot host remove [find mac-address=\$mac];\r\n            :local userFind [/ip hotspot user find name=\$username];\r\n            :if ([:len \$userFind] > 0) do={\r\n                :local comment [/ip hotspot user get \$userFind comment];\r\n                :if (\$comment~\"temp-\") do={\r\n                    /ip hotspot user remove \$userFind;\r\n                    /queue simple remove [find name=(\"hotspot-\" . \$username)];\r\n                }\r\n            }\r\n            :log info (\"Instantly destroyed active session, lease, host, and local user for disconnected MAC: \" . \$mac);\r\n        }\r\n    }\r\n}\r\n:foreach hostEntry in=[/ip hotspot host find where authorized=no bypassed=no] do={\r\n    :local mac [/ip hotspot host get \$hostEntry mac-address];\r\n    :if (\$mac != \"\") do={\r\n        :if ([:len [/interface wireless registration-table find mac-address=\$mac]] = 0) do={\r\n            /ip hotspot host remove \$hostEntry;\r\n            /ip dhcp-server lease remove [find mac-address=\$mac dynamic=yes];\r\n            :log info (\"Instantly destroyed unauthorized host and lease for disconnected MAC: \" . \$mac);\r\n        }\r\n    }\r\n}"
-
-/system scheduler
-add name=run-destroy-inactive-sessions interval=2s on-event=destroy-inactive-sessions
 
 # --- LANGKAH 8: Backup Final ---
 /system backup save name=hotspot-vps-setup-backup

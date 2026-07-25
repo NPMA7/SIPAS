@@ -17,7 +17,7 @@ add bridge=bridge-hotspot interface=wlan1
 # --- LANGKAH 2: WLAN Interface (SSID) ---
 
 /interface wireless
-set [find name=wlan1] mode=ap-bridge ssid=HotSpot-WiFi disabled=no
+set [find name=wlan1] mode=ap-bridge ssid=HotSpot-WiFi band=2ghz-onlyn channel-width=20/40mhz-eC distance=indoors frequency=auto wireless-protocol=802.11 disabled=no
 
 # --- LANGKAH 3: IP Address Interface ---
 
