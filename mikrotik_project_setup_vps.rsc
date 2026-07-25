@@ -48,10 +48,17 @@ add chain=input action=accept in-interface=bridge-hotspot protocol=tcp dst-port=
 add chain=input action=accept in-interface=bridge-hotspot protocol=udp dst-port=67
 add chain=input action=drop in-interface=ether1
 
-# --- LANGKAH 6.1: NAT DNS Redirect untuk Laptop & Perangkat dengan Custom DNS (NCSI Redirect) ---
+# --- LANGKAH 6.1: NAT DNS Redirect & Fast HTTPS RST untuk Pop-Up Otomatis (LAN & Wi-Fi) ---
 /ip firewall nat
 add chain=dstnat in-interface=bridge-hotspot protocol=udp dst-port=53 action=redirect comment="Redirect client DNS (UDP 53) to local router for laptop captive portal detection"
 add chain=dstnat in-interface=bridge-hotspot protocol=tcp dst-port=53 action=redirect comment="Redirect client DNS (TCP 53) to local router for laptop captive portal detection"
+
+/ip firewall filter
+add chain=hs-unauth protocol=tcp dst-port=443 action=reject reject-with=tcp-reset comment="Instant TCP RST for HTTPS to trigger automatic captive portal browser popup on LAN & Wi-Fi" place-before=0
+
+# --- LANGKAH 6.2: IP DNS Static ---
+/ip dns static
+add name=hotspot.net address=192.168.10.1
 
 # --- LANGKAH 7: Optional ---
 # /ip firewall filter 
