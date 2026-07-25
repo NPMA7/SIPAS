@@ -7,6 +7,7 @@ import Routers from './pages/Routers';
 import Hotspot from './pages/Hotspot';
 import DhcpLeases from './pages/DhcpLeases';
 import Queues from './pages/Queues';
+import BlockedSites from './pages/BlockedSites';
 import PortalLogin from './pages/Portal/Login';
 import './index.css';
 
@@ -19,6 +20,7 @@ export default function App() {
         <Route path="/admin" element={<Layout />}>
           <Route index element={<Dashboard />} />
           <Route path="users" element={<Users />} />
+          <Route path="blocked-sites" element={<BlockedSites />} />
           <Route path="routers" element={<Routers />} />
           <Route path="hotspot" element={<Hotspot />} />
           <Route path="queues" element={<Queues />} />

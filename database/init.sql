@@ -104,9 +104,30 @@ CREATE TRIGGER update_routers_updated_at
     BEFORE UPDATE ON routers
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_hotspot_users_updated_at
-    BEFORE UPDATE ON hotspot_users
+-- ============================================================
+-- TABLE: blocked_sites
+-- Menyimpan daftar situs terblokir yang dikelola dinamis
+-- ============================================================
+CREATE TABLE IF NOT EXISTS blocked_sites (
+    id SERIAL PRIMARY KEY,
+    key VARCHAR(50) UNIQUE NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    domains TEXT NOT NULL,
+    l7_regex TEXT,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TRIGGER update_blocked_sites_updated_at
+    BEFORE UPDATE ON blocked_sites
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- SEED DATA: Default Blocked Sites
+INSERT INTO blocked_sites (key, name, domains, l7_regex) VALUES
+('npma', 'NPMA Website', 'npma.my.id, www.npma.my.id', '^.*(npma.my.id).*$'),
+('youtube', 'YouTube & CDN', 'youtube.com, googlevideo.com, ytimg.com', '^.*(youtube|googlevideo).*$')
+ON CONFLICT (key) DO NOTHING;
 
 -- ============================================================
 -- SEED DATA: Admin user default

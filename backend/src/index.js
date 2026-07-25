@@ -55,6 +55,7 @@ app.use('/api/dashboard', require('./routes/dashboard'));
 app.use('/api/dhcp',      require('./routes/dhcp'));
 app.use('/api/queues',    require('./routes/queues'));
 app.use('/api/hotspot-router', require('./routes/hotspotRouter'));
+app.use('/api/blocked-sites',  require('./routes/blockedSites'));
 
 // ── Health Check ─────────────────────────────────────────────
 app.get('/api/health', (req, res) => {

@@ -6,9 +6,10 @@ import { Badge, Loader, EmptyState } from '../components/ui/index';
 
 const BW_PRESETS = ['1M/512K', '2M/1M', '5M/2M', '10M/10M', '20M/20M', '50M/50M', '100M/100M'];
 
-function UserCard({ user, routers, onEdit, onDelete, onBwChange }) {
+function UserCard({ user, routers, blockedSites = [], onEdit, onDelete, onBwChange }) {
   const initial = user.username?.[0]?.toUpperCase() || '?';
   const blocks = (user.website_block || '').split(',').filter(Boolean);
+  const siteMap = Object.fromEntries(blockedSites.map(s => [s.key, s]));
 
   return (
     <div className="user-card">
@@ -19,8 +20,11 @@ function UserCard({ user, routers, onEdit, onDelete, onBwChange }) {
       </div>
       <div className="user-card-meta">
         <Badge variant="primary">{user.bandwidth_limit || '—'}</Badge>
-        {blocks.includes('npma') && <Badge variant="warning">NPMA</Badge>}
-        {blocks.includes('youtube') && <Badge variant="danger">YT</Badge>}
+        {blocks.map(bKey => (
+          <Badge key={bKey} variant="danger">
+            {siteMap[bKey]?.name || bKey.toUpperCase()}
+          </Badge>
+        ))}
         {user.router_name
           ? <Badge variant="info">{user.router_name}</Badge>
           : <Badge variant="neutral">Semua Router</Badge>
@@ -65,6 +69,7 @@ export default function Users() {
   const ctx = useContext(ToastContext);
   const [users, setUsers] = useState([]);
   const [routers, setRouters] = useState([]);
+  const [blockedSites, setBlockedSites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -81,6 +86,7 @@ export default function Users() {
 
   useEffect(() => {
     apiFetch('/routers').then(d => { if (d?.success) setRouters(d.data); });
+    apiFetch('/blocked-sites').then(d => { if (d?.success) setBlockedSites(d.data); });
   }, []);
 
   useEffect(() => { loadUsers(); }, [page, routerFilter]);
@@ -273,6 +279,7 @@ export default function Users() {
                 key={u.id}
                 user={u}
                 routers={routers}
+                blockedSites={blockedSites}
                 onEdit={openEdit}
                 onDelete={setConfirmDel}
               />
@@ -366,15 +373,21 @@ export default function Users() {
           </div>
           <div className="form-group">
             <label className="form-label">🔒 Blokir Akses Situs</label>
-            <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
-              <label className="form-check">
-                <input type="checkbox" checked={blocks.includes('npma')} onChange={e => setBlock('npma', e.target.checked)} />
-                npma.my.id
-              </label>
-              <label className="form-check">
-                <input type="checkbox" checked={blocks.includes('youtube')} onChange={e => setBlock('youtube', e.target.checked)} />
-                youtube.com
-              </label>
+            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+              {blockedSites.length === 0 ? (
+                <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>Belum ada situs terdaftar.</span>
+              ) : (
+                blockedSites.map(site => (
+                  <label key={site.key} className="form-check">
+                    <input
+                      type="checkbox"
+                      checked={blocks.includes(site.key)}
+                      onChange={e => setBlock(site.key, e.target.checked)}
+                    />
+                    {site.name} ({site.key})
+                  </label>
+                ))
+              )}
             </div>
           </div>
           <div className="form-group">

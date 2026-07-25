@@ -39,6 +39,39 @@ try {
   console.error("Failed to apply Receiver prototype patch:", err.message);
 }
 
+const { query } = require("../config/db");
+
+const getBlockConfigs = async () => {
+  const configs = {};
+
+  try {
+    const res = await query("SELECT * FROM blocked_sites WHERE is_active = true");
+    if (res && res.rows && res.rows.length > 0) {
+      for (const row of res.rows) {
+        const key = row.key.toLowerCase().trim();
+        const domains = (row.domains || "")
+          .split(",")
+          .map((d) => d.trim().toLowerCase())
+          .filter(Boolean);
+
+        const regexp = row.l7_regex || domains.map(d => d.replace(/\./g, '\\.')).join('|') || key;
+
+        configs[key] = {
+          userList: `hotspot-blocked-${key}`,
+          domainList: `${key}-blocked`,
+          domains: domains.length > 0 ? domains : [key],
+          l7Name: `${key}-block`,
+          regexp: regexp,
+        };
+      }
+    }
+  } catch (err) {
+    console.error("[mikrotikService] getBlockConfigs error:", err.message);
+  }
+
+  return configs;
+};
+
 // ─── Connection Manager ──────────────────────────────────────────────────────
 
 /**
@@ -884,25 +917,8 @@ const setupPortalUser = async (
       .split(",")
       .map((s) => s.trim().toLowerCase())
       .filter(Boolean);
-
-    const blockConfigs = {
-      npma: {
-        userList: "hotspot-blocked-npma",
-        domainList: "npma-blocked",
-        domains: ["npma.my.id"],
-        l7Name: "npma-block",
-        regexp: "npma\\.my\\.id",
-      },
-      youtube: {
-        userList: "hotspot-blocked-youtube",
-        domainList: "youtube-blocked",
-        domains: ["youtube.com", "www.youtube.com", "googlevideo.com", "ytimg.com", "youtu.be"],
-        l7Name: "youtube-block",
-        regexp: "youtube|googlevideo|ytimg|youtu.be",
-      },
-    };
-
-    if (ip) {
+    const blockConfigs = await getBlockConfigs();
+if (ip) {
       // Ambil data yang diperlukan sekaligus
       const allAddressLists = await conn.write("/ip/firewall/address-list/print");
       const allFilters = await conn.write("/ip/firewall/filter/print");
