@@ -12,6 +12,22 @@ const EMPTY_FORM = {
   is_active: true,
 };
 
+function generateL7Regex(domainsStr) {
+  if (!domainsStr || !domainsStr.trim()) return '';
+  const keywords = domainsStr
+    .split(',')
+    .map(d => {
+      const clean = d.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '');
+      const parts = clean.split('.');
+      return parts[0]; // cth: detik.com -> detik
+    })
+    .filter(Boolean);
+
+  if (keywords.length === 0) return '';
+  const uniqueKeywords = [...new Set(keywords)].join('|');
+  return `^.*(${uniqueKeywords}).*$`;
+}
+
 export default function BlockedSites() {
   const ctx = useContext(ToastContext);
   const [sites, setSites] = useState([]);
@@ -40,6 +56,29 @@ export default function BlockedSites() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleDomainsChange(val) {
+    const autoRegex = generateL7Regex(val);
+    setForm(f => {
+      let newKey = f.key;
+      let newName = f.name;
+      if (!editSite && val.trim()) {
+        const firstDomain = val.split(',')[0].trim().toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '');
+        const keyword = firstDomain.split('.')[0];
+        if (keyword && (!f.key || f.key === f.domains.split(',')[0]?.trim()?.toLowerCase()?.replace(/^https?:\/\//, '')?.replace(/^www\./, '')?.split('.')[0])) {
+          newKey = keyword;
+          newName = keyword;
+        }
+      }
+      return {
+        ...f,
+        domains: val,
+        key: newKey,
+        name: newName,
+        l7_regex: autoRegex,
+      };
+    });
   }
 
   function openAdd() {
@@ -235,7 +274,7 @@ export default function BlockedSites() {
             <input
               className="input"
               value={form.domains}
-              onChange={e => setForm(f => ({ ...f, domains: e.target.value }))}
+              onChange={e => handleDomainsChange(e.target.value)}
               placeholder="facebook.com, instagram.com, fbcdn.net"
               required
             />

@@ -8,7 +8,10 @@ const BW_PRESETS = ['1M/512K', '2M/1M', '5M/2M', '10M/10M', '20M/20M', '50M/50M'
 
 function UserCard({ user, routers, blockedSites = [], onEdit, onDelete, onBwChange }) {
   const initial = user.username?.[0]?.toUpperCase() || '?';
-  const blocks = (user.website_block || '').split(',').filter(Boolean);
+  const blocks = (user.website_block || '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(s => Boolean(s) && !['true', 'false', '0', '1'].includes(s.toLowerCase()));
   const siteMap = Object.fromEntries(blockedSites.map(s => [s.key, s]));
 
   return (
@@ -137,7 +140,10 @@ export default function Users() {
   }
 
   function setBlock(key, checked) {
-    const current = form.website_block.split(',').filter(Boolean);
+    const current = (form.website_block || '')
+      .split(',')
+      .map(s => s.trim())
+      .filter(s => Boolean(s) && !['true', 'false', '0', '1'].includes(s.toLowerCase()));
     const next = checked ? [...new Set([...current, key])] : current.filter(k => k !== key);
     setForm(f => ({ ...f, website_block: next.join(',') }));
   }
