@@ -38,12 +38,12 @@ add interface=ether1 disabled=no
 add name=pool-hotspot ranges=192.168.10.2-192.168.10.254
 
 /ip dhcp-server
-add name=dhcp-hotspot interface=bridge-hotspot address-pool=pool-hotspot lease-time=00:10:00 disabled=no
+add name=dhcp-hotspot interface=bridge-hotspot address-pool=pool-hotspot lease-time=00:02:00 disabled=no
 
 /ip dhcp-server network
 add address=192.168.10.0/24 gateway=192.168.10.1 dns-server=192.168.10.1
 
-# --- LANGKAH 6: NAT Masquerade (Internet Sharing) ---
+# --- LANGKAH 6: NAT Masquerade (Internet Sharing) & DNS Redirect ---
 
 /ip firewall nat
 add chain=srcnat out-interface=ether1 action=masquerade

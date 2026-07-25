@@ -21,7 +21,7 @@ set default idle-timeout=00:02:00 keepalive-timeout=00:02:00 shared-users=1
 
 # --- LANGKAH 3: Hotspot Server Profile ---
 /ip hotspot profile
-add name=hsprof-captive hotspot-address=192.168.10.1 dns-name=hotspot.net login-by=http-pap html-directory=hotspot http-cookie-lifetime=3d split-user-domain=no use-radius=no
+add name=hsprof-captive hotspot-address=192.168.10.1 dns-name=hotspot.net login-by=http-chap,http-pap html-directory=hotspot http-cookie-lifetime=3d split-user-domain=no use-radius=no
 
 # --- LANGKAH 4: Hotspot Server pada bridge-hotspot ---
 /ip hotspot
@@ -48,6 +48,11 @@ add chain=input action=accept in-interface=bridge-hotspot protocol=tcp dst-port=
 add chain=input action=accept in-interface=bridge-hotspot protocol=udp dst-port=67
 add chain=input action=drop in-interface=ether1
 
+# --- LANGKAH 6.1: NAT DNS Redirect untuk Laptop & Perangkat dengan Custom DNS (NCSI Redirect) ---
+/ip firewall nat
+add chain=dstnat in-interface=bridge-hotspot protocol=udp dst-port=53 action=redirect comment="Redirect client DNS (UDP 53) to local router for laptop captive portal detection"
+add chain=dstnat in-interface=bridge-hotspot protocol=tcp dst-port=53 action=redirect comment="Redirect client DNS (TCP 53) to local router for laptop captive portal detection"
+
 # --- LANGKAH 7: Optional ---
 # /ip firewall filter 
 # add chain=forward protocol=udp dst-port=443 action=drop comment="Block QUIC UDP 443" place-before=0
@@ -55,3 +60,4 @@ add chain=input action=drop in-interface=ether1
 # --- LANGKAH 8: Backup Final ---
 /system backup save name=hotspot-vps-setup-backup
 :log info "Konfigurasi Hotspot untuk VPS berhasil dipasang!"
+

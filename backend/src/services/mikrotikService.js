@@ -755,36 +755,36 @@ const testConnection = async (routerConfig) => {
  * Dengan menghapus koneksi aktif, perangkat dipaksa membuat koneksi baru yang langsung terblokir.
  */
 const clearConnectionsForIp = async (conn, ip) => {
+  if (!ip) return;
   try {
-    // Ambil semua koneksi lalu filter secara lokal di NodeJS untuk menghindari error !empty crash di Mikrotik RouterOS
-    const allConnections = await conn.write("/ip/firewall/connection/print");
-
-    const toRemove = new Set();
-    if (allConnections) {
-      allConnections.forEach((c) => {
-        const src = c["src-address"] || "";
-        const dst = c["dst-address"] || "";
-        if (src.includes(ip) || dst.includes(ip)) {
-          if (c[".id"]) toRemove.add(c[".id"]);
+    await Promise.race([
+      (async () => {
+        const allConnections = await conn.write("/ip/firewall/connection/print");
+        const toRemove = new Set();
+        if (allConnections && Array.isArray(allConnections)) {
+          allConnections.forEach((c) => {
+            const src = c["src-address"] || "";
+            const dst = c["dst-address"] || "";
+            if ((src.includes(ip) || dst.includes(ip)) && c[".id"]) {
+              toRemove.add(c[".id"]);
+            }
+          });
         }
-      });
-    }
 
-    if (toRemove.size > 0) {
-      for (const id of toRemove) {
-        try {
-          await conn.write("/ip/firewall/connection/remove", [`=.id=${id}`]);
-        } catch (_) {
-          // Abaikan jika koneksi sudah tertutup sendiri
+        if (toRemove.size > 0) {
+          for (const id of toRemove) {
+            try {
+              await conn.write("/ip/firewall/connection/remove", [`=.id=${id}`]);
+            } catch (_) {}
+          }
         }
-      }
-    }
+      })(),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Clear connections timeout (2s)")), 2000),
+      ),
+    ]);
   } catch (err) {
-    console.warn(
-      "[Mikrotik] Gagal membersihkan koneksi untuk IP:",
-      ip,
-      err.message,
-    );
+    console.warn("[Mikrotik] Clear connections notice:", err.message);
   }
 };
 
@@ -907,21 +907,6 @@ const setupPortalUser = async (
       const allAddressLists = await conn.write("/ip/firewall/address-list/print");
       const allFilters = await conn.write("/ip/firewall/filter/print");
 
-      // Bersihkan rule-rule sisa/berantakan yang tidak perlu (satu kali jika ada)
-      try {
-        const allNatRules = await conn.write("/ip/firewall/nat/print");
-        for (const rule of allNatRules) {
-          const isDnsRedirect =
-            rule.chain === "dstnat" &&
-            rule.action === "redirect" &&
-            rule["dst-port"] === "53" &&
-            rule.comment &&
-            (rule.comment.includes("Redirect client DNS") || rule.comment.includes("Redirect DNS to local"));
-          if (isDnsRedirect) {
-            try { await conn.write("/ip/firewall/nat/remove", [`=.id=${rule[".id"]}`]); } catch (_) {}
-          }
-        }
-      } catch (_) {}
 
       // Bersihkan filter rule lama yang pakai doh-servers
       for (const rule of allFilters) {

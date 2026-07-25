@@ -134,6 +134,42 @@ const createUser = async (req, res) => {
     }
 };
 
+// Helper function untuk sync realtime ke router secara asinkron (background)
+const syncUserToActiveRouters = async (user) => {
+    try {
+        let routersToSync = [];
+        if (user.router_id) {
+            const rResult = await query('SELECT * FROM routers WHERE id = $1', [user.router_id]);
+            routersToSync = rResult.rows;
+        } else {
+            const rResult = await query('SELECT * FROM routers WHERE is_active = TRUE');
+            routersToSync = rResult.rows;
+        }
+
+        for (const routerConfig of routersToSync) {
+            try {
+                const sessions = await mikrotik.getActiveHotspotUsers(routerConfig);
+                const userSession = sessions.find(s => s.user && s.user.toLowerCase() === user.username.toLowerCase());
+                if (userSession) {
+                    await mikrotik.setupPortalUser(
+                        routerConfig,
+                        user.username,
+                        user.password,
+                        userSession.address,
+                        userSession.mac,
+                        user.bandwidth_limit,
+                        user.website_block
+                    );
+                }
+            } catch (rErr) {
+                console.warn(`[UserController] Realtime sync warning for router ${routerConfig.name || routerConfig.id}:`, rErr.message);
+            }
+        }
+    } catch (err) {
+        console.warn('[UserController] syncUserToActiveRouters error:', err.message);
+    }
+};
+
 // ─── PUT /api/users/:id ──────────────────────────────────────────────────────
 const updateUser = async (req, res) => {
     const { full_name, email, phone, password, bandwidth_limit, website_block, router_id, is_active, notes } = req.body;
@@ -144,7 +180,7 @@ const updateUser = async (req, res) => {
             return res.status(404).json({ success: false, message: 'User tidak ditemukan.' });
         }
 
-                const user = existing.rows[0];
+        const user = existing.rows[0];
         const bw = bandwidth_limit || user.bandwidth_limit;
 
         // Normalisasi router_id. Jika kosong atau null, simpan sebagai null (untuk Semua Router)
@@ -171,30 +207,10 @@ const updateUser = async (req, res) => {
 
         const updatedUser = result.rows[0];
 
-        // Sinkronisasi status blokir dan bandwidth ke Mikrotik secara realtime jika user sedang online
-        if (updatedUser.router_id) {
-            const rResult = await query('SELECT * FROM routers WHERE id = $1', [updatedUser.router_id]);
-            if (rResult.rows.length > 0) {
-                try {
-                    const sessions = await mikrotik.getActiveHotspotUsers(rResult.rows[0]);
-                    const userSession = sessions.find(s => s.user === updatedUser.username);
-                    if (userSession) {
-                        // Terapkan profile portal
-                        await mikrotik.setupPortalUser(
-                            rResult.rows[0],
-                            updatedUser.username,
-                            updatedUser.password,
-                            userSession.address,
-                            userSession.mac,
-                            updatedUser.bandwidth_limit,
-                            updatedUser.website_block
-                        );
-                    }
-                } catch (mkErr) {
-                    console.warn('[UserController] Realtime Mikrotik sync failed during update:', mkErr.message);
-                }
-            }
-        }
+        // Sinkronisasi status blokir dan bandwidth ke Mikrotik secara realtime di background (non-blocking untuk UI)
+        syncUserToActiveRouters(updatedUser).catch(err => {
+            console.warn('[UserController] Background sync error during update:', err.message);
+        });
 
         res.json({ success: true, message: 'User berhasil diupdate.', data: updatedUser });
     } catch (err) {
@@ -286,29 +302,16 @@ const updateBandwidth = async (req, res) => {
         }
 
         const user = result.rows[0];
-        let mikrotikResult = null;
 
-        // Update di Mikrotik jika user punya router
-        if (user.router_id) {
-            const rResult = await query('SELECT * FROM routers WHERE id = $1', [user.router_id]);
-            if (rResult.rows.length > 0) {
-                try {
-                    mikrotikResult = await mikrotik.updateBandwidthLimit(
-                        rResult.rows[0],
-                        user.username,
-                        bandwidth_limit.toUpperCase()
-                    );
-                } catch (mkErr) {
-                    console.warn('[UserController] Mikrotik bandwidth update warning:', mkErr.message);
-                    mikrotikResult = { updated: false, message: mkErr.message };
-                }
-            }
-        }
+        // Sync di background
+        syncUserToActiveRouters(user).catch(err => {
+            console.warn('[UserController] Background bandwidth sync error:', err.message);
+        });
 
         res.json({
             success: true,
             message: 'Bandwidth berhasil diupdate.',
-            data: { user, mikrotik: mikrotikResult }
+            data: { user }
         });
     } catch (err) {
         console.error('[UserController] updateBandwidth:', err.message);
@@ -335,38 +338,16 @@ const toggleWebsiteBlock = async (req, res) => {
 
         const user = result.rows[0];
 
-        // Terapkan ke Mikrotik jika user sedang online (ada active session)
-        let mikrotikNote = 'User mungkin sedang offline, perubahan akan berlaku saat login berikutnya.';
-        if (user.router_id) {
-            const rResult = await query('SELECT * FROM routers WHERE id = $1', [user.router_id]);
-            if (rResult.rows.length > 0) {
-                try {
-                    // Cek apakah user sedang aktif
-                    const sessions = await mikrotik.getActiveHotspotUsers(rResult.rows[0]);
-                    const userSession = sessions.find(s => s.user === user.username);
-                    if (userSession) {
-                        await mikrotik.setupPortalUser(
-                            rResult.rows[0],
-                            user.username,
-                            user.password,
-                            userSession.address,
-                            userSession.mac,
-                            user.bandwidth_limit,
-                            user.website_block
-                        );
-                        mikrotikNote = `Perubahan langsung diterapkan ke Mikrotik untuk IP ${userSession.address}.`;
-                    }
-                } catch (mkErr) {
-                    console.warn('[UserController] Mikrotik block toggle warning:', mkErr.message);
-                }
-            }
-        }
+        // Terapkan ke Mikrotik di background secara asinkron
+        syncUserToActiveRouters(user).catch(err => {
+            console.warn('[UserController] Background block sync error:', err.message);
+        });
 
         res.json({
             success: true,
             message: `Blokir situs diubah ke: ${website_block || 'Tidak ada'}.`,
             data: user,
-            note: mikrotikNote,
+            note: 'Perubahan diterapkan otomatis ke router.',
         });
     } catch (err) {
         console.error('[UserController] toggleWebsiteBlock:', err.message);
