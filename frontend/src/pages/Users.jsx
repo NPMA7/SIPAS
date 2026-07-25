@@ -92,7 +92,7 @@ export default function Users() {
       const d = await apiFetch(`/users?${params}`);
       if (d?.success) {
         setUsers(d.data || []);
-        setTotal(d.pagination?.total || 0);
+        setTotal(d.meta?.total ?? d.pagination?.total ?? (d.data?.length || 0));
       }
     } catch (err) {
       ctx?.addToast?.('danger', err.message || 'Gagal memuat pengguna.');
