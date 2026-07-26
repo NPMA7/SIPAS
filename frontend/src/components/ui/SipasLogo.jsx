@@ -11,12 +11,12 @@ export default function SipasLogo({ size = 36, className = '', style = {} }) {
       style={{
         width: size,
         height: size,
-        borderRadius: Math.round(size * 0.25),
+        borderRadius: Math.round(size * 0.22),
         objectFit: 'cover',
         flexShrink: 0,
         display: 'block',
-        boxShadow: '0 4px 14px rgba(0, 0, 0, 0.4)',
-        border: '1px solid rgba(255, 255, 255, 0.1)',
+        boxShadow: '0 3px 10px rgba(0, 0, 0, 0.3)',
+        border: '1px solid rgba(255, 255, 255, 0.12)',
         ...style,
       }}
     />
