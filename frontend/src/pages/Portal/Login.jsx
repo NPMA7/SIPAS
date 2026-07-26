@@ -86,10 +86,42 @@ export default function PortalLogin() {
             targetDst = 'https://www.google.com';
           }
 
-          // Karena Backend sudah mengotorisasi user langsung ke /ip/hotspot/active via RouterOS API,
-          // Internet sudah 100% aktif! Frontend cukup mengarahkan window ke targetDst.
+          // 100% Guarantee Internet Access:
+          // 1. Backend VPS sudah login-kan IP/MAC user via RouterOS API (/ip/hotspot/active)
+          // 2. Frontend mengirimkan Form Submit langsung ke Gateway MikroTik (linkLogin) sebagai garansi ganda!
+          if (params.linkLogin && params.linkLogin !== '') {
+            try {
+              const formEl = document.createElement('form');
+              formEl.method = 'POST';
+              formEl.action = params.linkLogin;
+
+              const userInp = document.createElement('input');
+              userInp.type = 'hidden';
+              userInp.name = 'username';
+              userInp.value = username;
+
+              const passInp = document.createElement('input');
+              passInp.type = 'hidden';
+              passInp.name = 'password';
+              passInp.value = password;
+
+              const dstInp = document.createElement('input');
+              dstInp.type = 'hidden';
+              dstInp.name = 'dst';
+              dstInp.value = targetDst;
+
+              formEl.appendChild(userInp);
+              formEl.appendChild(passInp);
+              formEl.appendChild(dstInp);
+
+              document.body.appendChild(formEl);
+              formEl.submit();
+              return;
+            } catch (_) {}
+          }
+
           window.location.href = targetDst;
-        }, 800);
+        }, 100);
       } else {
         setStatus('failed');
         setAlert({ type: 'error', msg: data.message || 'Login gagal. Periksa username dan password.' });
