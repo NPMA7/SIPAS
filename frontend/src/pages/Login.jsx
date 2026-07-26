@@ -46,7 +46,7 @@ export default function Login() {
 
       <div style={styles.card}>
         <div style={styles.iconWrap}>
-          <SipasLogo size={42} />
+          <SipasLogo size={64} />
         </div>
         <div style={styles.badge}>SIPAS ADMIN PANEL</div>
         <h1 style={styles.title}>SIPAS <span style={{ color: 'var(--primary-light)' }}>Portal</span></h1>
@@ -156,11 +156,6 @@ const styles = {
     textAlign: 'center',
   },
   iconWrap: {
-    width: 68, height: 68,
-    background: 'linear-gradient(135deg, rgba(99,102,241,0.2), rgba(6,182,212,0.15))',
-    border: '1px solid rgba(99,102,241,0.4)',
-    borderRadius: 18,
-    boxShadow: '0 8px 32px rgba(99,102,241,0.25), inset 0 0 12px rgba(99,102,241,0.15)',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     margin: '0 auto 16px',
   },

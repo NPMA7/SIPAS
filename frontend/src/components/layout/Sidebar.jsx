@@ -131,7 +131,7 @@ export default function Sidebar({ collapsed, mobileOpen, onToggle, onCloseMobile
       <div className="sidebar-brand" style={{ justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div className="brand-icon" title="SIPAS v1.0.0 by: npma">
-            <SipasLogo size={32} />
+            <SipasLogo size={38} />
           </div>
           <div className="brand-text">
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>

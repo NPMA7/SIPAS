@@ -111,7 +111,7 @@ export default function PortalLogin() {
       <div style={styles.wrapper}>
         <div style={styles.header}>
           <div style={styles.logo}>
-            <SipasLogo size={42} />
+            <SipasLogo size={64} />
           </div>
           <h1 style={styles.title}>Portal <span style={{ color: 'var(--primary-light)' }}>SIPAS</span></h1>
           <p style={styles.subTitle}>Sistem Integrasi Portal & Autentikasi Satu-Pintu</p>
@@ -247,11 +247,6 @@ const styles = {
   wrapper: { width: '100%', maxWidth: 430, position: 'relative', zIndex: 1 },
   header: { textAlign: 'center', marginBottom: 20 },
   logo: {
-    width: 68, height: 68,
-    background: 'linear-gradient(135deg, rgba(99,102,241,0.2), rgba(6,182,212,0.15))',
-    border: '1px solid rgba(99,102,241,0.4)',
-    borderRadius: 18,
-    boxShadow: '0 8px 32px rgba(99,102,241,0.25), inset 0 0 12px rgba(99,102,241,0.15)',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     margin: '0 auto 12px',
   },
