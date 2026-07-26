@@ -1,6 +1,6 @@
 # Panduan Setup & Instalasi 💻⚙️
 
-Dokumen ini menjelaskan alur instalasi **WebHotspot Manager** dari awal hingga sistem berjalan penuh, baik untuk skenario **Lokal (LAN)** maupun **Online (VPS)**.
+Dokumen ini menjelaskan alur instalasi **SIPAS** (*Sistem Integrasi Portal & Autentikasi Satu-Pintu*) dari awal hingga sistem berjalan penuh, baik untuk skenario **Lokal (LAN)** maupun **Online (VPS)**.
 
 ---
 

@@ -1,6 +1,6 @@
 # Panduan Struktur Direktori & File Proyek 📂📁
 
-Dokumen ini menjelaskan struktur folder secara komprehensif beserta fungsi detail dari **setiap berkas** di dalam proyek **WebHotspot Manager**.
+Dokumen ini menjelaskan struktur folder secara komprehensif beserta fungsi detail dari **setiap berkas** di dalam proyek **SIPAS** (*Sistem Integrasi Portal & Autentikasi Satu-Pintu*).
 
 ---
 

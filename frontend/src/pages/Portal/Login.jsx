@@ -114,8 +114,8 @@ export default function PortalLogin() {
               <path d="M1.213 8.98a12.006 12.006 0 0121.574 0 1 1 0 01-1.8.87 10.006 10.006 0 00-17.972 0 1 1 0 11-1.802-.87zM5.04 12.68a8 8 0 0113.92 0 1 1 0 01-1.74.98 6 6 0 00-10.44 0 1 1 0 11-1.74-.98zM12 20a2 2 0 100-4 2 2 0 000 4zm0-6a4 4 0 100 8 4 4 0 000-8z"/>
             </svg>
           </div>
-          <h1 style={styles.title}>Selamat <span style={{ color: 'var(--primary-light)' }}>Datang</span></h1>
-          <p style={styles.subTitle}>Masuk untuk mengakses internet hotspot</p>
+          <h1 style={styles.title}>Portal <span style={{ color: 'var(--primary-light)' }}>SIPAS</span></h1>
+          <p style={styles.subTitle}>Sistem Integrasi Portal & Autentikasi Satu-Pintu</p>
         </div>
 
         <div style={styles.card}>

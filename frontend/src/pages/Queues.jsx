@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useContext } from 'react';
 import { apiFetch } from '../api/client';
 import { ToastContext } from '../hooks/ToastContext';
-import { StatCard, Loader, EmptyState, Badge } from '../components/ui/index';
+import { Loader, EmptyState, Badge } from '../components/ui/index';
 import Modal from '../components/ui/Modal';
 
 function formatBytes(b) {
@@ -68,9 +68,9 @@ export default function Queues() {
     loadRouters();
   }, [loadRouters]);
 
-  const loadQueues = useCallback(async (rId) => {
+  const loadQueues = useCallback(async (rId, isSilent = false) => {
     if (!rId) return;
-    setLoading(true);
+    if (!isSilent) setLoading(true);
     try {
       const d = await apiFetch(`/queues/${rId}`);
       if (d?.success) {
@@ -87,8 +87,8 @@ export default function Queues() {
 
   useEffect(() => {
     if (routerId) {
-      loadQueues(routerId);
-      const timer = setInterval(() => loadQueues(routerId), 10000);
+      loadQueues(routerId, false);
+      const timer = setInterval(() => loadQueues(routerId, true), 10000);
       return () => clearInterval(timer);
     }
   }, [routerId, loadQueues]);
@@ -102,7 +102,7 @@ export default function Queues() {
       });
       if (res?.success) {
         ctx?.addToast?.('success', res.message || 'Aksi berhasil');
-        loadQueues(routerId);
+        loadQueues(routerId, true);
       } else {
         ctx?.addToast?.('danger', res?.message || 'Gagal mengeksekusi aksi');
       }
@@ -123,62 +123,52 @@ export default function Queues() {
     );
   });
 
-  const totalQueues = queues.length;
-  const activeQueues = queues.filter(q => !q.disabled).length;
-  const disabledQueues = queues.filter(q => q.disabled).length;
-
   return (
     <>
-      <div className="stats-grid" style={{ marginBottom: 20 }}>
-        <StatCard
-          title="Total Simple Queues"
-          value={totalQueues}
-          sub="Aturan limit bandwidth aktif"
-          icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="22" height="22"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>}
-          accent="var(--primary)"
-        />
-        <StatCard
-          title="Queue Aktif"
-          value={activeQueues}
-          sub="Sedang membatasi traffic"
-          icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="22" height="22"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>}
-          accent="var(--success)"
-        />
-        <StatCard
-          title="Queue Non-Aktif"
-          value={disabledQueues}
-          sub="Di-disable oleh admin"
-          icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="22" height="22"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>}
-          accent="var(--warning)"
-        />
-      </div>
-
       <div className="card">
-        <div className="card-header" style={{ flexWrap: 'wrap', gap: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Pilih Router:</span>
+        <div className="card-header">
+          <div className="card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+            Simple Queues
+            <Badge variant="primary">{filtered.length}</Badge>
+          </div>
+          <div className="card-actions">
             <select
               className="select"
-              style={{ minWidth: 220 }}
+              style={{ width: 'auto', minWidth: 180 }}
               value={routerId}
-              onChange={e => setRouterId(e.target.value)}
+              onChange={e => {
+                setRouterId(e.target.value);
+                setQueues([]);
+              }}
             >
               {routers.map(r => (
                 <option key={r.id} value={r.id}>{r.name} ({r.ip_address})</option>
               ))}
             </select>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginLeft: 'auto' }}>
-            <input
-              type="text"
-              className="search-input"
-              placeholder="Cari queue / IP..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-            />
-            <button className="btn btn-ghost btn-sm" onClick={() => loadQueues(routerId)} disabled={loading}>
-              {loading ? 'Refreshing...' : '🔄 Refresh'}
+            <div className="search-wrapper">
+              <svg className="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input
+                type="text"
+                className="search-input"
+                placeholder="Cari queue / IP..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
+            </div>
+            <button className="btn btn-secondary btn-sm" onClick={() => loadQueues(routerId, true)} disabled={loading}>
+              {loading ? (
+                <div className="loader-ring" style={{ width: 13, height: 13, borderWidth: 2 }} />
+              ) : (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                  <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/>
+                </svg>
+              )}
+              Refresh
             </button>
           </div>
         </div>
@@ -195,8 +185,6 @@ export default function Queues() {
                   <th>Nama Queue</th>
                   <th>Target IP / Subnet</th>
                   <th>Max Limit (UL / DL)</th>
-                  <th>Traffic Realtime (DL / UL)</th>
-                  <th>Total Traffic (DL / UL)</th>
                   <th>Status</th>
                   <th>Aksi</th>
                 </tr>
@@ -204,8 +192,6 @@ export default function Queues() {
               <tbody>
                 {filtered.map((q, i) => {
                   const limits = formatPairRate(q.max_limit);
-                  const rates = formatPairRate(q.rate);
-                  const bytes = formatPairBytes(q.bytes);
                   return (
                     <tr key={i} style={{ opacity: q.disabled ? 0.6 : 1 }}>
                       <td style={{ fontWeight: 600 }}>
@@ -221,14 +207,6 @@ export default function Queues() {
                       <td>
                         <span style={{ color: '#8b5cf6', fontWeight: 600, marginRight: 6 }}>↑ {limits.ul}</span>
                         <span style={{ color: '#10b981', fontWeight: 600 }}>↓ {limits.dl}</span>
-                      </td>
-                      <td>
-                        <span style={{ color: '#10b981', fontWeight: 600, marginRight: 8 }}>↓ {rates.dl}</span>
-                        <span style={{ color: '#8b5cf6', fontWeight: 600 }}>↑ {rates.ul}</span>
-                      </td>
-                      <td>
-                        <span style={{ color: 'var(--text-main)', fontSize: '0.85rem' }}>↓ {bytes.dl}</span>
-                        <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem', marginLeft: 6 }}>(↑ {bytes.ul})</span>
                       </td>
                       <td>
                         <Badge variant={q.disabled ? 'neutral' : 'success'}>

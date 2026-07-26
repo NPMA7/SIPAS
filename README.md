@@ -1,6 +1,6 @@
-# WebHotspot Manager 🌐🚀
+# SIPAS — Sistem Integrasi Portal & Autentikasi Satu-Pintu 🌐🚀
 
-Sistem manajemen terintegrasi untuk Mikrotik Hotspot dengan Captive Portal premium, manajemen bandwidth, dan pemblokiran situs lapis ganda secara real-time.
+**SIPAS** (*Sistem Integrasi Portal & Autentikasi Satu-Pintu*) adalah sistem manajemen terintegrasi untuk Mikrotik Hotspot dengan Captive Portal premium, manajemen bandwidth, dan pemblokiran situs lapis ganda secara real-time.
 
 Aplikasi ini memadukan kemudahan pengelolaan database berbasis web modern (React & Node.js) dengan eksekusi aturan jaringan RouterOS secara presisi menggunakan koneksi API yang efisien dan andal.
 

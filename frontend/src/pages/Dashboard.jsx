@@ -47,7 +47,8 @@ export default function Dashboard() {
   const [summary, setSummary] = useState(null);
   const [stats, setStats] = useState(null);
   const [sessions, setSessions] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [countdown, setCountdown] = useState(30);
 
   useEffect(() => { ctx?.setPageTitle?.('Dashboard'); }, [ctx]);
@@ -70,9 +71,13 @@ export default function Dashboard() {
     loadRoutersAndSummary();
   }, [loadRoutersAndSummary]);
 
-  const loadRouterData = useCallback(async () => {
+  const loadRouterData = useCallback(async (isSilent = false) => {
     if (!routerId) return;
-    setLoading(true);
+    if (isSilent) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
     try {
       const [statsRes, sessRes] = await Promise.all([
         apiFetch(`/dashboard/${routerId}/stats`),
@@ -82,11 +87,15 @@ export default function Dashboard() {
       if (sessRes?.success) setSessions(sessRes.data || []);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, [routerId]);
 
   useEffect(() => {
-    if (routerId) { loadRouterData(); setCountdown(30); }
+    if (routerId) { 
+      loadRouterData(false); 
+      setCountdown(30); 
+    }
   }, [routerId, loadRouterData]);
 
   useEffect(() => {
@@ -94,7 +103,7 @@ export default function Dashboard() {
       setCountdown(c => {
         if (c <= 1) { 
           loadRoutersAndSummary();
-          loadRouterData(); 
+          loadRouterData(true); 
           return 30; 
         }
         return c - 1;
@@ -150,7 +159,11 @@ export default function Dashboard() {
             <select
               className="select"
               value={routerId}
-              onChange={e => setRouterId(e.target.value)}
+              onChange={e => {
+                setRouterId(e.target.value);
+                setSessions([]);
+                setStats(null);
+              }}
             >
               {routers.map(r => (
                 <option key={r.id} value={r.id}>{r.name} ({r.ip_address})</option>
@@ -191,8 +204,17 @@ export default function Dashboard() {
             Sesi Aktif Sekarang
             <Badge variant="primary">{sessions.length}</Badge>
           </div>
-          <button className="btn btn-secondary btn-sm" onClick={() => { loadRoutersAndSummary(); if (routerId) loadRouterData(); }} disabled={loading}>
-            {loading ? <div className="loader-ring" style={{ width: 14, height: 14, borderWidth: 2 }} /> : (
+          <button 
+            className="btn btn-secondary btn-sm" 
+            onClick={() => { 
+              loadRoutersAndSummary(); 
+              if (routerId) loadRouterData(true); 
+            }} 
+            disabled={refreshing || loading}
+          >
+            {refreshing ? (
+              <div className="loader-ring" style={{ width: 14, height: 14, borderWidth: 2 }} />
+            ) : (
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
                 <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/>
               </svg>
@@ -201,7 +223,7 @@ export default function Dashboard() {
           </button>
         </div>
         <div className="table-wrapper">
-          {loading ? (
+          {loading && sessions.length === 0 && !stats ? (
             <Loader />
           ) : sessions.length === 0 ? (
             <EmptyState icon="📡" text="Tidak ada sesi aktif saat ini." />

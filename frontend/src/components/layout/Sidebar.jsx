@@ -135,8 +135,13 @@ export default function Sidebar({ collapsed, mobileOpen, onToggle, onCloseMobile
             </svg>
           </div>
           <div className="brand-text">
-            <span className="brand-name">HotSpot Pro</span>
-            <span className="brand-tag">v1.0</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span className="brand-name">SIPAS</span>
+              <span className="brand-tag">v1.0</span>
+            </div>
+            <span style={{ fontSize: '0.62rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+              by: npma
+            </span>
           </div>
         </div>
         {mobileOpen && (

@@ -1,6 +1,6 @@
 # Panduan Penggunaan & Tutorial Web Admin 📖💡
 
-Dokumen ini menjelaskan cara menggunakan fitur-fitur pada **WebHotspot Manager** untuk memantau jaringan, mengelola pengguna, membatasi kecepatan, serta melakukan pemblokiran situs secara real-time.
+Dokumen ini menjelaskan cara menggunakan fitur-fitur pada **SIPAS** (*Sistem Integrasi Portal & Autentikasi Satu-Pintu*) untuk memantau jaringan, mengelola pengguna, membatasi kecepatan, serta melakukan pemblokiran situs secara real-time.
 
 ---
 

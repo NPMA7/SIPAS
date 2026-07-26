@@ -1,6 +1,6 @@
 # Alur Logika Jaringan & Aplikasi (Logic Flow) 🔄🧠
 
-Dokumen ini menjelaskan alur kerja (workflow) bagaimana sistem **WebHotspot Manager** mengontrol jaringan Mikrotik Anda. Penjelasan di bawah ini dirancang dengan bahasa yang **mudah dipahami orang awam** (menggunakan analogi sehari-hari) sekaligus tetap mempertahankan **akurasi teknis** untuk kebutuhan developer.
+Dokumen ini menjelaskan alur kerja (workflow) bagaimana sistem **SIPAS** (*Sistem Integrasi Portal & Autentikasi Satu-Pintu*) mengontrol jaringan Mikrotik Anda. Penjelasan di bawah ini dirancang dengan bahasa yang **mudah dipahami orang awam** (menggunakan analogi sehari-hari) sekaligus tetap mempertahankan **akurasi teknis** untuk kebutuhan developer.
 
 ## 🌐 1. Alur Autentikasi Captive Portal (Proses Client Login Internet)
 
