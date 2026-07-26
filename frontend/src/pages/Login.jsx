@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import SipasLogo from '../components/ui/SipasLogo';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -45,9 +46,7 @@ export default function Login() {
 
       <div style={styles.card}>
         <div style={styles.iconWrap}>
-          <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28" style={{ color: 'white' }}>
-            <path d="M1.213 8.98a12.006 12.006 0 0121.574 0 1 1 0 01-1.8.87 10.006 10.006 0 00-17.972 0 1 1 0 11-1.802-.87zM5.04 12.68a8 8 0 0113.92 0 1 1 0 01-1.74.98 6 6 0 00-10.44 0 1 1 0 11-1.74-.98zM12 20a2 2 0 100-4 2 2 0 000 4z"/>
-          </svg>
+          <SipasLogo size={54} />
         </div>
         <div style={styles.badge}>SIPAS ADMIN PANEL</div>
         <h1 style={styles.title}>SIPAS <span style={{ color: 'var(--primary-light)' }}>Portal</span></h1>
@@ -158,8 +157,7 @@ const styles = {
   },
   iconWrap: {
     width: 60, height: 60,
-    background: 'linear-gradient(135deg, var(--primary), var(--accent))',
-    borderRadius: 16,
+    background: 'transparent',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     margin: '0 auto 16px',
   },

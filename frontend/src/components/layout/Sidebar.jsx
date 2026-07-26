@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
+import SipasLogo from '../ui/SipasLogo';
 
 const NAV = [
   {
@@ -129,15 +130,13 @@ export default function Sidebar({ collapsed, mobileOpen, onToggle, onCloseMobile
       {/* Brand */}
       <div className="sidebar-brand" style={{ justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div className="brand-icon">
-            <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
-              <path d="M1.213 8.98a12.006 12.006 0 0121.574 0 1 1 0 01-1.8.87 10.006 10.006 0 00-17.972 0 1 1 0 11-1.802-.87zM5.04 12.68a8 8 0 0113.92 0 1 1 0 01-1.74.98 6 6 0 00-10.44 0 1 1 0 11-1.74-.98zM12 20a2 2 0 100-4 2 2 0 000 4z"/>
-            </svg>
+          <div className="brand-icon" title="SIPAS v1.0.0 by: npma">
+            <SipasLogo size={32} />
           </div>
           <div className="brand-text">
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span className="brand-name">SIPAS</span>
-              <span className="brand-tag">v1.0</span>
+              <span className="brand-tag">v1.0.0</span>
             </div>
             <span style={{ fontSize: '0.62rem', color: 'var(--text-muted)', fontWeight: 500 }}>
               by: npma
@@ -171,20 +170,31 @@ export default function Sidebar({ collapsed, mobileOpen, onToggle, onCloseMobile
             <div className="nav-group-label">{group.group}</div>
             {group.items.map((item) =>
               item.external ? (
-                <a key={item.to} href={item.to} target="_blank" rel="noopener noreferrer" className="nav-item" onClick={onCloseMobile}>
+                <a 
+                  key={item.to} 
+                  href={item.to} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="nav-item" 
+                  title={item.label}
+                  onClick={onCloseMobile}
+                >
                   {item.icon}
                   <span className="nav-label">{item.label}</span>
+                  <span className="nav-tooltip">{item.label}</span>
                 </a>
               ) : (
                 <NavLink
                   key={item.to}
                   to={item.to}
                   end={item.end}
+                  title={item.label}
                   onClick={onCloseMobile}
                   className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
                 >
                   {item.icon}
                   <span className="nav-label">{item.label}</span>
+                  <span className="nav-tooltip">{item.label}</span>
                   {item.badgeKey && badges[item.badgeKey] ? (
                     <span className="nav-badge">{badges[item.badgeKey]}</span>
                   ) : null}
@@ -198,14 +208,14 @@ export default function Sidebar({ collapsed, mobileOpen, onToggle, onCloseMobile
 
       {/* Footer */}
       <div className="sidebar-footer">
-        <div className="sidebar-user">
+        <div className="sidebar-user" title={`${admin?.username || 'Admin'} (Super Admin)`}>
           <div className="user-avatar">{initial}</div>
           <div className="user-info">
             <div className="user-name">{admin?.username || 'Admin'}</div>
             <div className="user-role">Super Admin</div>
           </div>
         </div>
-        <button className="btn-logout" onClick={logout}>
+        <button className="btn-logout" onClick={logout} title="Keluar">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
             <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
             <polyline points="16 17 21 12 16 7"/>

@@ -106,6 +106,8 @@ img { display: block; max-width: 100%; }
 .brand-text { display: flex; flex-direction: column; overflow: hidden; }
 .brand-name { font-size: 0.875rem; font-weight: 700; white-space: nowrap; }
 .brand-tag  { font-size: 0.65rem; color: var(--text-muted); white-space: nowrap; }
+.sidebar.collapsed .brand-text { display: none !important; }
+.sidebar.collapsed .sidebar-brand { justify-content: center !important; }
 
 .sidebar-nav { flex: 1; padding: 12px 8px; overflow-y: auto; overflow-x: hidden; }
 .nav-group-label {
@@ -156,6 +158,39 @@ img { display: block; max-width: 100%; }
   transition: opacity var(--transition);
 }
 .sidebar.collapsed .nav-badge { opacity: 0; }
+
+.nav-tooltip {
+  display: none;
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%) translateX(6px);
+  background: var(--bg-card);
+  border: 1px solid var(--border-hover);
+  color: var(--text);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  z-index: 1000;
+}
+
+.sidebar.collapsed .nav-item {
+  overflow: visible;
+}
+
+.sidebar.collapsed .nav-item:hover .nav-tooltip {
+  display: block;
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(-50%) translateX(10px);
+}
 
 .sidebar-footer {
   padding: 12px 8px;
