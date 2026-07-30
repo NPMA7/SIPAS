@@ -27,9 +27,9 @@ function RouterCard({ router, onEdit, onDelete, onTest }) {
         <div className="router-card-name">{router.name}</div>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           {router.router_type === 'external' ? (
-            <Badge variant="warning">Vendor / Eksternal</Badge>
+            <Badge variant="warning">Eksternal</Badge>
           ) : (
-            <Badge variant="info">Internal Diskominfo</Badge>
+            <Badge variant="info">Internal</Badge>
           )}
           <Badge variant={router.is_active ? 'success' : 'neutral'}>
             {router.is_active ? 'Aktif' : 'Nonaktif'}
