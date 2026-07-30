@@ -1,11 +1,19 @@
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../../../.env') });
 const { Pool } = require('pg');
 
+
+const dbHost = (process.env.DB_HOST === 'postgres' && process.env.IS_DOCKER !== 'true')
+    ? 'localhost'
+    : (process.env.DB_HOST || 'localhost');
+
 const pool = new Pool({
-    host:     process.env.DB_HOST     || 'localhost',
+    host:     dbHost,
     port:     parseInt(process.env.DB_PORT) || 5432,
     database: process.env.DB_NAME     || 'hotspot_db',
     user:     process.env.DB_USER     || 'hotspot_user',
     password: process.env.DB_PASSWORD || '',
+
     max: 20,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 5000,
@@ -14,6 +22,23 @@ const pool = new Pool({
 pool.on('connect', () => {
     console.log('[DB] Connected to PostgreSQL');
 });
+
+// Auto-migration ringan untuk mendukung SSO Diskominfo
+(async () => {
+    try {
+        await pool.query(`
+            ALTER TABLE hotspot_users ADD COLUMN IF NOT EXISTS auth_provider VARCHAR(20) DEFAULT 'local';
+            ALTER TABLE hotspot_users ADD COLUMN IF NOT EXISTS nip VARCHAR(50);
+            ALTER TABLE hotspot_users ADD COLUMN IF NOT EXISTS jabatan VARCHAR(150);
+            ALTER TABLE hotspot_users ADD COLUMN IF NOT EXISTS instansi VARCHAR(150);
+
+        `);
+        console.log('[DB] Auto-migration SSO columns initialized successfully');
+    } catch (err) {
+        console.warn('[DB] Auto-migration warning:', err.message);
+    }
+})();
+
 
 pool.on('error', (err) => {
     console.error('[DB] Unexpected error:', err.message);

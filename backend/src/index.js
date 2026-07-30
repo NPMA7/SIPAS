@@ -1,4 +1,6 @@
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -56,6 +58,8 @@ app.use('/api/dhcp',      require('./routes/dhcp'));
 app.use('/api/queues',    require('./routes/queues'));
 app.use('/api/hotspot-router', require('./routes/hotspotRouter'));
 app.use('/api/blocked-sites',  require('./routes/blockedSites'));
+app.use('/api/sso-mock',       require('./routes/ssoMockRoute'));
+
 
 // ── Health Check ─────────────────────────────────────────────
 app.get('/api/health', (req, res) => {

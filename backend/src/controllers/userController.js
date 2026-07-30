@@ -18,7 +18,7 @@ const upload = multer({
 
 // ─── GET /api/users ──────────────────────────────────────────────────────────
 const getUsers = async (req, res) => {
-    const { page = 1, limit = 50, search = '', router_id, is_active } = req.query;
+    const { page = 1, limit = 50, search = '', router_id, is_active, auth_provider } = req.query;
     const offset = (parseInt(page) - 1) * parseInt(limit);
 
     let conditions = [];
@@ -26,7 +26,7 @@ const getUsers = async (req, res) => {
     let pi = 1;
 
     if (search) {
-        conditions.push(`(hu.username ILIKE $${pi} OR hu.full_name ILIKE $${pi})`);
+        conditions.push(`(hu.username ILIKE $${pi} OR hu.full_name ILIKE $${pi} OR hu.nip ILIKE $${pi})`);
         params.push(`%${search}%`);
         pi++;
     }
@@ -38,6 +38,11 @@ const getUsers = async (req, res) => {
     if (is_active !== undefined) {
         conditions.push(`hu.is_active = $${pi}`);
         params.push(is_active === 'true');
+        pi++;
+    }
+    if (auth_provider) {
+        conditions.push(`hu.auth_provider = $${pi}`);
+        params.push(auth_provider);
         pi++;
     }
 
@@ -52,21 +57,23 @@ const getUsers = async (req, res) => {
 
         const result = await query(
             `SELECT hu.id, hu.username, hu.password, hu.full_name, hu.email, hu.phone,
-                    hu.bandwidth_limit, hu.website_block, hu.is_active,
+                    hu.bandwidth_limit, hu.website_block, hu.is_active, hu.auth_provider, hu.nip,
+                    hu.jabatan, hu.instansi,
                     hu.router_id, r.name as router_name, r.ip_address as router_ip,
                     hu.notes, hu.created_at, hu.updated_at
              FROM hotspot_users hu
              LEFT JOIN routers r ON hu.router_id = r.id
              ${where}
-             ORDER BY hu.id ASC
+             ORDER BY hu.created_at DESC
              LIMIT $${pi} OFFSET $${pi + 1}`,
             [...params, parseInt(limit), offset]
         );
 
+
         res.json({
             success: true,
             data:  result.rows,
-            meta: {
+            pagination: {
                 total,
                 page:  parseInt(page),
                 limit: parseInt(limit),
@@ -100,9 +107,12 @@ const getUserById = async (req, res) => {
 
 // ─── POST /api/users ─────────────────────────────────────────────────────────
 const createUser = async (req, res) => {
-    const { username, password, full_name, email, phone, bandwidth_limit, website_block, router_id, notes } = req.body;
+    const { username, password, full_name, email, phone, bandwidth_limit, website_block, router_id, notes, auth_provider, nip, jabatan, instansi } = req.body;
 
-    if (!username || !password) {
+    const provider = auth_provider === 'sso' ? 'sso' : 'local';
+    const userPass = provider === 'sso' ? '[SSO_AUTH]' : password;
+
+    if (!username || (!userPass && provider === 'local')) {
         return res.status(400).json({ success: false, message: 'Username dan password wajib diisi.' });
     }
 
@@ -115,13 +125,15 @@ const createUser = async (req, res) => {
     try {
         const result = await query(
             `INSERT INTO hotspot_users
-             (username, password, full_name, email, phone, bandwidth_limit, website_block, router_id, notes)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+             (username, password, full_name, email, phone, bandwidth_limit, website_block, router_id, notes, auth_provider, nip, jabatan, instansi)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
              RETURNING *`,
             [
-                username.toLowerCase().trim(), password, full_name || null,
+                username.toLowerCase().trim(), userPass, full_name || null,
                 email || null, phone || null, bw.toUpperCase(),
-                website_block || '', router_id || null, notes || null
+                website_block || '', router_id || null, notes || null,
+                provider, nip || username.toLowerCase().trim(),
+                jabatan || '', instansi || ''
             ]
         );
         res.status(201).json({ success: true, message: 'User berhasil ditambahkan.', data: result.rows[0] });
@@ -172,7 +184,7 @@ const syncUserToActiveRouters = async (user) => {
 
 // ─── PUT /api/users/:id ──────────────────────────────────────────────────────
 const updateUser = async (req, res) => {
-    const { full_name, email, phone, password, bandwidth_limit, website_block, router_id, is_active, notes } = req.body;
+    const { full_name, email, phone, password, bandwidth_limit, website_block, router_id, is_active, notes, jabatan, instansi, nip } = req.body;
 
     try {
         const existing = await query('SELECT * FROM hotspot_users WHERE id = $1', [req.params.id]);
@@ -199,11 +211,15 @@ const updateUser = async (req, res) => {
                 website_block   = COALESCE($6, website_block),
                 router_id       = $7,
                 is_active       = COALESCE($8, is_active),
-                notes           = COALESCE($9, notes)
-             WHERE id = $10
+                notes           = COALESCE($9, notes),
+                jabatan         = COALESCE($10, jabatan),
+                instansi        = COALESCE($11, instansi),
+                nip             = COALESCE($12, nip)
+             WHERE id = $13
              RETURNING *`,
-            [full_name, email, phone, password, bw, website_block, rId, is_active, notes, req.params.id]
+            [full_name, email, phone, password, bw, website_block, rId, is_active, notes, jabatan, instansi, nip, req.params.id]
         );
+
 
         const updatedUser = result.rows[0];
 

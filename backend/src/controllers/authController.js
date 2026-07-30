@@ -1,5 +1,6 @@
 const { query }          = require('../config/db');
 const mikrotik           = require('../services/mikrotikService');
+const ssoService         = require('../services/ssoService');
 
 /**
  * Helper: Ambil konfigurasi router dari DB berdasarkan ID
@@ -14,12 +15,12 @@ const getRouterConfig = async (routerId) => {
 
 /**
  * POST /api/portal/login
- * Alur login captive portal:
- *  1. Validasi user ke DB
- *  2. Buat hotspot user sementara di Mikrotik
- *  3. Buat Simple Queue sesuai bandwidth limit
- *  4. Jika diblokir, tambahkan ke firewall address-list
- *  5. Kembalikan link untuk authenticate ke Mikrotik
+ * Alur login captive portal Hybrid (SSO Diskominfo + Master Data DB SIPAS):
+ *  1. Cari user di database PostgreSQL SIPAS.
+ *  2. Jika user tipe SSO atau tidak ditemukan di DB, lakukan autentikasi ke SSO Diskominfo.
+ *  3. Ambil profil bandwidth & website block dari DB SIPAS (atau auto-provision jika user baru).
+ *  4. Buat hotspot user sementara & Simple Queue di Mikrotik.
+ *  5. Kembalikan link untuk authenticate ke Mikrotik.
  */
 const portalLogin = async (req, res) => {
     const { username, password, ip, mac, router_id, link_login } = req.body;
@@ -28,27 +29,67 @@ const portalLogin = async (req, res) => {
         return res.status(400).json({ success: false, message: 'Username dan password wajib diisi.' });
     }
 
+    const cleanUsername = username.toLowerCase().trim();
+
     try {
-        // 1. Cari user di database
+        // 1. Cari user di database PostgreSQL SIPAS
         const userResult = await query(
             `SELECT hu.*, r.ip_address as router_ip, r.api_port, r.api_username, r.api_password,
                     r.name as router_name
              FROM hotspot_users hu
              LEFT JOIN routers r ON hu.router_id = r.id
              WHERE hu.username = $1 AND hu.is_active = TRUE`,
-            [username.toLowerCase().trim()]
+            [cleanUsername]
         );
 
-        if (userResult.rows.length === 0) {
-            return res.status(401).json({ success: false, message: 'Username atau password salah.' });
+        let user = userResult.rows.length > 0 ? userResult.rows[0] : null;
+        let isSSOAuth = false;
+
+        if (user) {
+            if (user.auth_provider === 'sso') {
+                isSSOAuth = true;
+            } else {
+                // User Lokal -> Validasi password DB
+                if (user.password !== password) {
+                    return res.status(401).json({ success: false, message: 'Username atau password salah.' });
+                }
+            }
+        } else {
+            // User tidak ada di DB lokal -> Coba verifikasi ke SSO Diskominfo
+            isSSOAuth = true;
         }
 
-        const user = userResult.rows[0];
+        // 2. Jika merupakan Autentikasi SSO Diskominfo
+        if (isSSOAuth) {
+            try {
+                const ssoRes = await ssoService.loginSSO(cleanUsername, password);
+                const ssoUser = ssoRes.data?.user || {};
 
-        // 2. Validasi password (plain text - sesuai kebutuhan hotspot)
-        if (user.password !== password) {
-            return res.status(401).json({ success: false, message: 'Username atau password salah.' });
+                if (user) {
+                    // Update metadata dari SSO ke DB lokal jika ada perubahan
+                    await query(
+                        `UPDATE hotspot_users SET full_name = $1, email = $2, nip = $3, jabatan = $4, instansi = $5, updated_at = NOW() WHERE id = $6`,
+                        [ssoUser.nama || user.full_name, ssoUser.email || user.email, ssoUser.nip || cleanUsername, ssoUser.jabatan || user.jabatan || '', ssoUser.instansi || user.instansi || '', user.id]
+                    );
+                } else {
+                    // Auto-provisioning user ASN baru ke Database PostgreSQL SIPAS (Default 20M/20M)
+                    const insertRes = await query(
+                        `INSERT INTO hotspot_users (username, password, full_name, email, nip, jabatan, instansi, auth_provider, bandwidth_limit, website_block)
+                         VALUES ($1, $2, $3, $4, $5, $6, $7, 'sso', '20M/20M', '')
+                         RETURNING *`,
+                        [cleanUsername, '[SSO_AUTH]', ssoUser.nama || cleanUsername, ssoUser.email || '', ssoUser.nip || cleanUsername, ssoUser.jabatan || '', ssoUser.instansi || '']
+                    );
+                    user = insertRes.rows[0];
+                }
+
+            } catch (ssoErr) {
+                return res.status(401).json({
+                    success: false,
+                    message: ssoErr.message || 'Username atau password SSO Diskominfo tidak valid.'
+                });
+            }
         }
+
 
         // 3. Tentukan router target
         let routerConfig = null;

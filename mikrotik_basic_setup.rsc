@@ -59,7 +59,7 @@ add name=hotspot.net address=10.10.0.1 comment="Domain Portal SIPAS"
 # --- LANGKAH 8: System Identity ---
 
 /system identity
-set name=HotSpot-Router
+set name=SIPAS-Router
 
 # --- LANGKAH 9: NTP Client (Sinkronisasi Waktu) ---
 

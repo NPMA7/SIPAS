@@ -14,12 +14,25 @@ function UserCard({ user, routers, blockedSites = [], onEdit, onDelete, onBwChan
     .filter(s => Boolean(s) && !['true', 'false', '0', '1'].includes(s.toLowerCase()));
   const siteMap = Object.fromEntries(blockedSites.map(s => [s.key, s]));
 
+  const subInfo = [
+    user.full_name,
+    user.jabatan,
+    user.instansi ? `(${user.instansi})` : null
+  ].filter(Boolean).join(' • ') || '—';
+
   return (
     <div className="user-card">
       <div className="user-card-avatar">{initial}</div>
       <div className="user-card-info">
-        <div className="user-card-name">{user.username}</div>
-        <div className="user-card-sub">{user.full_name || '—'}</div>
+        <div className="user-card-name" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          {user.username}
+          {user.auth_provider === 'sso' ? (
+            <Badge variant="info">SSO Diskominfo</Badge>
+          ) : (
+            <Badge variant="neutral">Lokal</Badge>
+          )}
+        </div>
+        <div className="user-card-sub">{subInfo}</div>
       </div>
       <div className="user-card-meta">
         <Badge variant="primary">{user.bandwidth_limit || '—'}</Badge>
@@ -64,9 +77,11 @@ function UserCard({ user, routers, blockedSites = [], onEdit, onDelete, onBwChan
 }
 
 const EMPTY_FORM = {
-  username: '', password: '', full_name: '', email: '',
+  username: '', password: '', full_name: '', email: '', jabatan: '', instansi: '',
   bandwidth_limit: '10M/10M', router_id: '', website_block: '', notes: '', is_active: true,
+  auth_provider: 'local',
 };
+
 
 export default function Users() {
   const ctx = useContext(ToastContext);
@@ -78,6 +93,7 @@ export default function Users() {
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState('');
   const [routerFilter, setRouterFilter] = useState('');
+  const [providerFilter, setProviderFilter] = useState('');
   const [modal, setModal] = useState(false);
   const [editUser, setEditUser] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -92,12 +108,18 @@ export default function Users() {
     apiFetch('/blocked-sites').then(d => { if (d?.success) setBlockedSites(d.data); });
   }, []);
 
-  useEffect(() => { loadUsers(); }, [page, routerFilter]);
+  useEffect(() => { loadUsers(); }, [page, routerFilter, providerFilter]);
 
   async function loadUsers(p = page) {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ page: p, limit: 20, search, ...(routerFilter ? { router_id: routerFilter } : {}) });
+      const params = new URLSearchParams({
+        page: p,
+        limit: 20,
+        search,
+        ...(routerFilter ? { router_id: routerFilter } : {}),
+        ...(providerFilter ? { auth_provider: providerFilter } : {})
+      });
       const d = await apiFetch(`/users?${params}`);
       if (d?.success) {
         setUsers(d.data || []);
@@ -130,12 +152,15 @@ export default function Users() {
       password: user.password || '',
       full_name: user.full_name || '',
       email: user.email || '',
+      jabatan: user.jabatan || '',
+      instansi: user.instansi || '',
       bandwidth_limit: user.bandwidth_limit || '10M/10M',
       router_id: user.router_id || '',
       website_block: user.website_block || '',
       notes: user.notes || '',
       is_active: user.is_active !== false,
     });
+
     setModal(true);
   }
 
@@ -242,6 +267,17 @@ export default function Users() {
             </div>
             <select
               className="select"
+              style={{ width: 'auto', minWidth: 150 }}
+              value={providerFilter}
+              onChange={e => { setProviderFilter(e.target.value); setPage(1); }}
+            >
+              <option value="">Semua Provider</option>
+              <option value="sso">SSO Diskominfo (ASN)</option>
+              <option value="local">User Lokal / Tamu</option>
+            </select>
+
+            <select
+              className="select"
               style={{ width: 'auto', minWidth: 130 }}
               value={routerFilter}
               onChange={e => { setRouterFilter(e.target.value); setPage(1); }}
@@ -327,14 +363,44 @@ export default function Users() {
         }
       >
         <form onSubmit={submitForm}>
+          {editUser?.auth_provider === 'sso' && (
+            <div style={{
+              padding: '10px 14px',
+              background: 'rgba(59, 130, 246, 0.1)',
+              border: '1px solid rgba(59, 130, 246, 0.3)',
+              borderRadius: 8,
+              marginBottom: 16,
+              fontSize: '0.85rem',
+              color: '#60a5fa',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8
+            }}>
+              <span>🔒</span>
+              <div>
+                <strong>User SSO Diskominfo (ASN)</strong>
+                <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>
+                  Password dikelola penuh oleh API SSO Pemkab Bandung. Anda mengelola limit bandwidth, router, dan situs terblokir di sini.
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="form-row">
             <div className="form-group">
-              <label className="form-label">Username *</label>
+              <label className="form-label">{editUser?.auth_provider === 'sso' ? 'Username / NIP *' : 'Username *'}</label>
               <input className="input" value={form.username} onChange={e => setForm(f => ({ ...f, username: e.target.value }))} placeholder="user123" required disabled={!!editUser} autoCapitalize="none" />
             </div>
             <div className="form-group">
-              <label className="form-label">Password *</label>
-              <input className="input" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} placeholder="password" required />
+              <label className="form-label">Password {editUser?.auth_provider === 'sso' ? '' : '*'}</label>
+              {editUser?.auth_provider === 'sso' ? (
+                <div>
+                  <input className="input" value="••••••••••••" disabled style={{ opacity: 0.6, cursor: 'not-allowed' }} />
+                  <div className="form-hint" style={{ color: 'var(--info)' }}>Dikelola oleh SSO Pemkab Bandung</div>
+                </div>
+              ) : (
+                <input className="input" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} placeholder="password" required={!editUser} />
+              )}
             </div>
           </div>
           <div className="form-row">
@@ -347,6 +413,17 @@ export default function Users() {
               <input className="input" type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="user@mail.com" />
             </div>
           </div>
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">Jabatan</label>
+              <input className="input" value={form.jabatan} onChange={e => setForm(f => ({ ...f, jabatan: e.target.value }))} placeholder="Pranata Komputer / Kabid" />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Instansi / OPD</label>
+              <input className="input" value={form.instansi} onChange={e => setForm(f => ({ ...f, instansi: e.target.value }))} placeholder="Diskominfo Kab. Bandung" />
+            </div>
+          </div>
+
           <div className="form-row">
             <div className="form-group">
               <label className="form-label">Bandwidth Limit</label>

@@ -49,7 +49,12 @@ CREATE TABLE IF NOT EXISTS hotspot_users (
     full_name VARCHAR(150),
     email VARCHAR(100),
     phone VARCHAR(30),
+    auth_provider VARCHAR(20) DEFAULT 'local',        -- 'local' atau 'sso'
+    nip VARCHAR(50),                                  -- NIP pegawai jika user SSO
+    jabatan VARCHAR(150),                             -- Jabatan ASN / Pegawai
+    instansi VARCHAR(150),                            -- OPD / Instansi
     bandwidth_limit VARCHAR(50) DEFAULT '10M/10M',   -- format: download/upload, e.g. 10M/10M
+
     website_block VARCHAR(255) DEFAULT '',            -- situs terblokir (comma-separated, e.g. 'npma,youtube')
     router_id INTEGER REFERENCES routers(id) ON DELETE SET NULL,
     is_active BOOLEAN DEFAULT TRUE,
@@ -57,6 +62,7 @@ CREATE TABLE IF NOT EXISTS hotspot_users (
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
 
 -- Index untuk performa query
 CREATE INDEX IF NOT EXISTS idx_hotspot_users_username ON hotspot_users(username);
