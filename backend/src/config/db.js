@@ -1,11 +1,8 @@
-const path = require('path');
-require('dotenv').config({ path: path.resolve(__dirname, '../../../.env') });
+require('dotenv').config();
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 const { Pool } = require('pg');
 
-
-const dbHost = (process.env.DB_HOST === 'postgres' && process.env.IS_DOCKER !== 'true')
-    ? 'localhost'
-    : (process.env.DB_HOST || 'localhost');
+const dbHost = process.env.DB_HOST || 'localhost';
 
 const pool = new Pool({
     host:     dbHost,
@@ -20,7 +17,7 @@ const pool = new Pool({
 });
 
 pool.on('connect', () => {
-    console.log('[DB] Connected to PostgreSQL');
+    console.log('[DB] Connected to PostgreSQL at', dbHost);
 });
 
 // Auto-migration ringan untuk mendukung SSO Diskominfo
