@@ -111,7 +111,10 @@ const portalLogin = async (req, res) => {
             }
 
             if (detectedRouterIp) {
-                const rResult = await query('SELECT * FROM routers WHERE ip_address = $1 AND is_active = TRUE', [detectedRouterIp]);
+                const rResult = await query(
+                    'SELECT * FROM routers WHERE (ip_address = $1 OR name ILIKE $1) AND is_active = TRUE',
+                    [detectedRouterIp]
+                );
                 if (rResult.rows.length > 0) {
                     routerConfig = rResult.rows[0];
                 }
@@ -131,6 +134,14 @@ const portalLogin = async (req, res) => {
             const rResult = await query('SELECT * FROM routers WHERE id = $1 AND is_active = TRUE', [user.router_id]);
             if (rResult.rows.length > 0) {
                 routerConfig = rResult.rows[0];
+            }
+        }
+
+        // Fallback ke router aktif pertama di DB (terutama jika user di-set ke 'Semua Router' / user.router_id null)
+        if (!routerConfig) {
+            const activeRouters = await query('SELECT * FROM routers WHERE is_active = TRUE ORDER BY id ASC');
+            if (activeRouters.rows.length > 0) {
+                routerConfig = activeRouters.rows[0];
             }
         }
 

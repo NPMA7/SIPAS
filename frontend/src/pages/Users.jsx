@@ -7,25 +7,30 @@ import { Badge, Loader, EmptyState } from '../components/ui/index';
 const BW_PRESETS = ['1M/512K', '2M/1M', '5M/2M', '10M/10M', '20M/20M', '50M/50M', '100M/100M'];
 
 function UserCard({ user, routers, blockedSites = [], onEdit, onDelete, onBwChange }) {
-  const initial = user.username?.[0]?.toUpperCase() || '?';
+  const primaryTitle = user.full_name || user.username;
+  const initial = primaryTitle?.[0]?.toUpperCase() || '?';
   const blocks = (user.website_block || '')
     .split(',')
     .map(s => s.trim())
     .filter(s => Boolean(s) && !['true', 'false', '0', '1'].includes(s.toLowerCase()));
   const siteMap = Object.fromEntries(blockedSites.map(s => [s.key, s]));
 
-  const subInfo = [
-    user.full_name,
-    user.jabatan,
-    user.instansi ? (user.instansi.toLowerCase().includes('gol') ? user.instansi : `Gol. ${user.instansi}`) : null
-  ].filter(Boolean).join(' • ') || '—';
+  const details = [];
+  if (user.full_name && user.full_name !== user.username) {
+    details.push(user.username);
+  }
+  if (user.jabatan) details.push(user.jabatan);
+  if (user.instansi) {
+    details.push(user.instansi.toLowerCase().includes('gol') ? user.instansi : `Gol. ${user.instansi}`);
+  }
+  const subInfo = details.length > 0 ? details.join(' • ') : (user.username !== primaryTitle ? user.username : '—');
 
   return (
     <div className="user-card">
       <div className="user-card-avatar">{initial}</div>
       <div className="user-card-info">
         <div className="user-card-name" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          {user.username}
+          {primaryTitle}
           {user.auth_provider === 'sso' ? (
             <Badge variant="info">SSO</Badge>
           ) : (
@@ -109,15 +114,15 @@ export default function Users() {
     apiFetch('/blocked-sites').then(d => { if (d?.success) setBlockedSites(d.data); });
   }, []);
 
-  useEffect(() => { loadUsers(); }, [page, routerFilter, providerFilter]);
+  useEffect(() => { loadUsers(page, search); }, [page, routerFilter, providerFilter]);
 
-  async function loadUsers(p = page) {
+  async function loadUsers(p = page, s = search) {
     setLoading(true);
     try {
       const params = new URLSearchParams({
         page: p,
         limit: 20,
-        search,
+        search: s,
         ...(routerFilter ? { router_id: routerFilter } : {}),
         ...(providerFilter ? { auth_provider: providerFilter } : {})
       });
@@ -136,7 +141,7 @@ export default function Users() {
   function onSearchChange(v) {
     setSearch(v);
     clearTimeout(searchTimer.current);
-    searchTimer.current = setTimeout(() => { setPage(1); loadUsers(1); }, 400);
+    searchTimer.current = setTimeout(() => { setPage(1); loadUsers(1, v); }, 300);
   }
 
   function openAdd() {
@@ -271,7 +276,7 @@ export default function Users() {
               </svg>
               <input
                 className="search-input"
-                placeholder="Cari username..."
+                placeholder="Cari nama, username, NIP, atau jabatan..."
                 value={search}
                 onChange={e => onSearchChange(e.target.value)}
               />

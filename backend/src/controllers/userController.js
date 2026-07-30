@@ -26,7 +26,7 @@ const getUsers = async (req, res) => {
     let pi = 1;
 
     if (search) {
-        conditions.push(`(hu.username ILIKE $${pi} OR hu.full_name ILIKE $${pi} OR hu.nip ILIKE $${pi})`);
+        conditions.push(`(hu.username ILIKE $${pi} OR hu.full_name ILIKE $${pi} OR hu.nip ILIKE $${pi} OR hu.jabatan ILIKE $${pi} OR hu.instansi ILIKE $${pi} OR hu.email ILIKE $${pi})`);
         params.push(`%${search}%`);
         pi++;
     }
