@@ -41,5 +41,4 @@ Thumbs.db
 /backup/
 
 #SSO file
-/SSO.json
-/RESPONSE_SSO.png
+/SSO_DATA/

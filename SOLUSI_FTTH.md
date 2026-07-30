@@ -60,7 +60,7 @@ Agar PPPoE `satpolpp_ketua` untuk internet/remote ONT tidak terganggu, namun AP 
 
 ---
 
-## 📈 4. Strategi Skalabilitas 6.000 Pegawai OPD Pemkab Bandung
+## 📈 4. Strategi Skalabilitas 6.000 Pegawai OPD Pemkab
 
 ### A. Perluasan Subnet IP Address (Subnetting)
 Ubah subnet IP pool Hotspot di Mikrotik dari `/24` menjadi Klas A:

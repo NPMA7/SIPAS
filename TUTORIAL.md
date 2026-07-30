@@ -17,7 +17,7 @@ Saat pertama kali masuk ke Web Admin, Anda akan disajikan statistik jaringan sec
 Semua akun hotspot dikelola di menu **Pengguna Hotspot**:
 
 * **Pilihan Provider (SSO vs Lokal)**:
-  * **User SSO**: Password dikelola penuh oleh server API SSO Pemkab Bandung. Admin mengelola Limit Bandwidth, Router Target, Batas Perangkat (Max Devices), dan Situs Terblokir di Web Admin SIPAS. Data profil (NIP, Nama, Jabatan, dan Golongan) terisi otomatis saat user pertama kali login.
+  * **User SSO**: Password dikelola penuh oleh server API SSO Pemkab. Admin mengelola Limit Bandwidth, Router Target, Batas Perangkat (Max Devices), dan Situs Terblokir di Web Admin SIPAS. Data profil (NIP, Nama, Jabatan, dan Golongan) terisi otomatis saat user pertama kali login.
   * **User Lokal / Tamu**: Username & password dibuat manual oleh Admin.
 * **Batas Perangkat (Max Devices)**:
   * Batas default adalah **4 perangkat aktif** per user. Jika user login di perangkat ke-5, sistem otomatis menolak login dengan notifikasi peringatan. Jika user reconnect di perangkat yang sama (MAC Address sama), sesi lama otomatis ditendang & diperbarui.
