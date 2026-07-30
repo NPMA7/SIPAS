@@ -12,8 +12,8 @@ const ssoService = {
   async loginSSO(username, password) {
     const mode = (process.env.SSO_MODE || "mock").toLowerCase();
     const port = process.env.PORT || 3001;
-    const realUrl = process.env.SSO_REAL_URL || "https://sso.bandungkab.go.id/api/login";
-    const mockUrl = process.env.SSO_MOCK_URL || `http://localhost:${port}/api/sso-mock/login`;
+    const realUrl = process.env.SSO_REAL_URL;
+    const mockUrl = process.env.SSO_MOCK_URL;
 
     // Jika mode 'real' ATAU format NIP 18 digit -> Gunakan Real SSO sebagai prioritas utama
     const cleanUname = (username || "").trim();
