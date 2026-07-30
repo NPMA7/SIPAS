@@ -10,6 +10,7 @@ const EMPTY_FORM = {
   domains: '',
   l7_regex: '',
   is_active: true,
+  user_ids: [],
 };
 
 function generateL7Regex(domainsStr) {
@@ -31,13 +32,16 @@ function generateL7Regex(domainsStr) {
 export default function BlockedSites() {
   const ctx = useContext(ToastContext);
   const [sites, setSites] = useState([]);
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [userSearch, setUserSearch] = useState('');
   const [modal, setModal] = useState(false);
   const [editSite, setEditSite] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [confirmDel, setConfirmDel] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     ctx?.setPageTitle?.('Daftar Situs Diblokir');
@@ -50,6 +54,7 @@ export default function BlockedSites() {
       const res = await apiFetch('/blocked-sites');
       if (res?.success) {
         setSites(res.data || []);
+        setUsers(res.users || []);
       }
     } catch (err) {
       ctx?.addToast?.('danger', err.message || 'Gagal memuat daftar situs.');
@@ -81,39 +86,41 @@ export default function BlockedSites() {
     });
   }
 
-  function openAddModal() {
-    setEditingSite(null);
-    setForm(EMPTY_FORM);
-    setShowModal(true);
+  function openAdd() {
+    setEditSite(null);
+    setUserSearch('');
+    setForm({ ...EMPTY_FORM, user_ids: users.map(u => u.id) });
+    setModal(true);
   }
 
-  function openEditModal(site) {
-    setEditingSite(site);
+  function openEdit(site) {
+    setEditSite(site);
+    setUserSearch('');
     setForm({
-      name: site.name || '',
       key: site.key || '',
-      category: site.category || 'Streaming & Sosmed',
+      name: site.name || '',
       domains: site.domains || '',
-      description: site.description || '',
-      is_active: site.is_active !== undefined ? site.is_active : true,
+      l7_regex: site.l7_regex || '',
+      is_active: site.is_active !== false,
+      user_ids: site.blocked_user_ids || [],
     });
-    setShowModal(true);
+    setModal(true);
   }
 
-  async function handleSubmit(e) {
+  async function submitForm(e) {
     e.preventDefault();
     setSaving(true);
     try {
       let res;
-      if (editingSite) {
-        res = await apiPut(`/blocked-sites/${editingSite.id}`, form);
+      if (editSite) {
+        res = await apiPut(`/blocked-sites/${editSite.id}`, form);
       } else {
         res = await apiPost('/blocked-sites', form);
       }
 
       if (res?.success) {
         ctx?.addToast('Sukses', res.message || 'Situs berhasil disimpan.', 'success');
-        setShowModal(false);
+        setModal(false);
         loadSites();
       } else {
         ctx?.addToast('Gagal', res?.message || 'Gagal menyimpan situs.', 'danger');
@@ -190,14 +197,14 @@ export default function BlockedSites() {
         <div style={{ display: 'grid', gap: 12, padding: 16 }}>
           {filteredSites.map(site => (
             <div key={site.id} className="user-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1 }}>
                 <div className="user-card-avatar" style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444' }}>
                   🔒
                 </div>
-                <div>
-                  <div style={{ fontWeight: 600, fontSize: 15 }}>{site.name}</div>
-                  <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
-                    Key Identifier: <code style={{ color: '#38bdf8' }}>{site.key}</code>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 600, fontSize: 15, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span>{site.name}</span>
+                    <span style={{ fontSize: 13, color: '#38bdf8', fontWeight: 500 }}>({site.key})</span>
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                     {site.domains.split(',').map(d => (
@@ -206,10 +213,24 @@ export default function BlockedSites() {
                       </span>
                     ))}
                   </div>
+
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    <span style={{ color: '#f87171', fontWeight: 600, fontSize: 11 }}>🔒 Diblokir untuk ({site.blocked_user_ids?.length || 0} User):</span>
+                    {site.blocked_usernames && site.blocked_usernames.length > 0 ? (
+                      site.blocked_usernames.slice(0, 5).map((uname, idx) => (
+                        <Badge key={idx} variant="danger" style={{ fontSize: 10, padding: '2px 6px' }}>{uname}</Badge>
+                      ))
+                    ) : (
+                      <span style={{ fontStyle: 'italic', color: 'var(--text-muted)', fontSize: 11 }}>Tidak ada user</span>
+                    )}
+                    {site.blocked_usernames && site.blocked_usernames.length > 5 && (
+                      <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>+{site.blocked_usernames.length - 5} lainnya</span>
+                    )}
+                  </div>
                 </div>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginLeft: 16 }}>
                 <Badge variant={site.is_active ? 'success' : 'neutral'}>
                   {site.is_active ? 'Aktif' : 'Nonaktif'}
                 </Badge>
@@ -273,6 +294,7 @@ export default function BlockedSites() {
               />
             </div>
           </div>
+
           <div className="form-group">
             <label className="form-label">Daftar Domain (Pisahkan dengan koma) *</label>
             <input
@@ -284,6 +306,7 @@ export default function BlockedSites() {
             />
             <div className="form-hint">Domain utama & CDN yang berhubungan dengan situs ini</div>
           </div>
+
           <div className="form-group">
             <label className="form-label">Custom Layer-7 Regex (Opsional)</label>
             <input
@@ -294,8 +317,88 @@ export default function BlockedSites() {
             />
             <div className="form-hint">Jika dikosongkan, regex akan dibuat otomatis dari daftar domain</div>
           </div>
+
+          {/* User Selection Section */}
+          <div className="form-group" style={{ marginTop: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <label className="form-label" style={{ margin: 0, fontWeight: 600 }}>🔒 Pilih User yang Diblokir Situs Ini</label>
+              <button
+                type="button"
+                className="btn btn-ghost btn-xs"
+                style={{ color: 'var(--primary-light)' }}
+                onClick={() => {
+                  const allSelected = (form.user_ids || []).length === users.length;
+                  setForm(f => ({ ...f, user_ids: allSelected ? [] : users.map(u => u.id) }));
+                }}
+              >
+                {(form.user_ids || []).length === users.length ? 'Batalkan Semua' : 'Pilih Semua User'}
+              </button>
+            </div>
+
+            <div className="search-wrapper" style={{ marginBottom: 8 }}>
+              <svg className="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input
+                type="text"
+                className="search-input"
+                style={{ fontSize: '0.8rem', padding: '6px 12px 6px 30px' }}
+                placeholder="Cari nama / username..."
+                value={userSearch}
+                onChange={e => setUserSearch(e.target.value)}
+              />
+            </div>
+
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+              gap: 8,
+              maxHeight: 180,
+              overflowY: 'auto',
+              padding: 10,
+              background: 'var(--bg-tertiary, #0f172a)',
+              borderRadius: 6,
+              border: '1px solid var(--border)'
+            }}>
+              {users.filter(u =>
+                (u.full_name || '').toLowerCase().includes(userSearch.toLowerCase()) ||
+                (u.username || '').toLowerCase().includes(userSearch.toLowerCase())
+              ).length === 0 ? (
+                <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Tidak ada user yang cocok.</span>
+              ) : (
+                users
+                  .filter(u =>
+                    (u.full_name || '').toLowerCase().includes(userSearch.toLowerCase()) ||
+                    (u.username || '').toLowerCase().includes(userSearch.toLowerCase())
+                  )
+                  .map(u => {
+                    const isChecked = (form.user_ids || []).includes(u.id);
+                    return (
+                      <label key={u.id} className="form-check" style={{ fontSize: 12, cursor: 'pointer' }}>
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={e => {
+                            const checked = e.target.checked;
+                            setForm(f => ({
+                              ...f,
+                              user_ids: checked
+                                ? [...(f.user_ids || []), u.id]
+                                : (f.user_ids || []).filter(id => id !== u.id)
+                            }));
+                          }}
+                        />
+                        <span>{u.full_name || u.username} <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>({u.username})</span></span>
+                      </label>
+                    );
+                  })
+              )}
+            </div>
+            <div className="form-hint">User yang dicentang akan diblokir pengaksesan domain situs ini.</div>
+          </div>
+
           {editSite && (
-            <div className="form-group">
+            <div className="form-group" style={{ marginTop: 12 }}>
               <label className="form-check">
                 <input
                   type="checkbox"

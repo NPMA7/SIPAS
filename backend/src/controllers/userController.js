@@ -431,5 +431,5 @@ const importCSV = [
 
 module.exports = {
     getUsers, getUserById, createUser, updateUser, deleteUser,
-    updateBandwidth, toggleWebsiteBlock, importCSV
+    updateBandwidth, toggleWebsiteBlock, importCSV, syncUserToActiveRouters
 };

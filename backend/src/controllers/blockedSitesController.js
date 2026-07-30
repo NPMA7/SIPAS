@@ -1,4 +1,5 @@
 const { query } = require('../config/db');
+const { syncUserToActiveRouters } = require('./userController');
 
 // Ensure table blocked_sites exists on start
 const ensureTableExists = async () => {
@@ -32,12 +33,70 @@ const ensureTableExists = async () => {
 
 ensureTableExists();
 
+// Helper untuk memperbarui daftar user yang diblokir untuk suatu site key
+const syncUsersForBlockedSite = async (siteKey, targetUserIds) => {
+    if (!Array.isArray(targetUserIds)) return;
+
+    const targetSet = new Set(targetUserIds.map(id => parseInt(id)));
+    const cleanSiteKey = siteKey.toLowerCase().trim();
+
+    const usersRes = await query(`SELECT * FROM hotspot_users WHERE is_active = TRUE`);
+    for (const u of usersRes.rows) {
+        let blocks = (u.website_block || '')
+            .split(',')
+            .map(s => s.trim().toLowerCase())
+            .filter(Boolean);
+
+        const shouldHave = targetSet.has(u.id);
+        const hasBlock = blocks.includes(cleanSiteKey);
+
+        let modified = false;
+        if (shouldHave && !hasBlock) {
+            blocks.push(cleanSiteKey);
+            modified = true;
+        } else if (!shouldHave && hasBlock) {
+            blocks = blocks.filter(b => b !== cleanSiteKey);
+            modified = true;
+        }
+
+        if (modified) {
+            const newBlockStr = blocks.join(',');
+            await query(`UPDATE hotspot_users SET website_block = $1, updated_at = NOW() WHERE id = $2`, [newBlockStr, u.id]);
+            u.website_block = newBlockStr;
+            syncUserToActiveRouters(u).catch(() => {});
+        }
+    }
+};
+
 // ─── GET /api/blocked-sites ──────────────────────────────────────────────────
 const getBlockedSites = async (req, res) => {
     try {
         await ensureTableExists();
-        const result = await query(`SELECT * FROM blocked_sites ORDER BY id ASC`);
-        res.json({ success: true, data: result.rows });
+        const sitesResult = await query(`SELECT * FROM blocked_sites ORDER BY id ASC`);
+        const usersResult = await query(`SELECT id, username, full_name, website_block FROM hotspot_users WHERE is_active = TRUE ORDER BY id ASC`);
+
+        const sites = sitesResult.rows.map(site => {
+            const blockedUserIds = [];
+            const blockedUsernames = [];
+            usersResult.rows.forEach(u => {
+                const userBlocks = (u.website_block || '').split(',').map(s => s.trim().toLowerCase());
+                if (userBlocks.includes(site.key.toLowerCase())) {
+                    blockedUserIds.push(u.id);
+                    blockedUsernames.push(u.full_name || u.username);
+                }
+            });
+            return {
+                ...site,
+                blocked_user_ids: blockedUserIds,
+                blocked_usernames: blockedUsernames,
+            };
+        });
+
+        res.json({
+            success: true,
+            data: sites,
+            users: usersResult.rows.map(u => ({ id: u.id, username: u.username, full_name: u.full_name }))
+        });
     } catch (err) {
         console.error('[BlockedSitesController] getBlockedSites:', err.message);
         res.status(500).json({ success: false, message: 'Gagal mengambil daftar situs terblokir.' });
@@ -46,7 +105,7 @@ const getBlockedSites = async (req, res) => {
 
 // ─── POST /api/blocked-sites ─────────────────────────────────────────────────
 const createBlockedSite = async (req, res) => {
-    const { key, name, domains, l7_regex } = req.body;
+    const { key, name, domains, l7_regex, user_ids } = req.body;
     if (!key || !name || !domains) {
         return res.status(400).json({ success: false, message: 'Key, Nama, dan Domain wajib diisi.' });
     }
@@ -63,7 +122,14 @@ const createBlockedSite = async (req, res) => {
              RETURNING *`,
             [cleanKey, name.trim(), domains.trim(), l7_regex ? l7_regex.trim() : null]
         );
-        res.json({ success: true, data: result.rows[0], message: 'Situs terblokir berhasil ditambahkan.' });
+
+        const newSite = result.rows[0];
+
+        if (Array.isArray(user_ids)) {
+            await syncUsersForBlockedSite(cleanKey, user_ids);
+        }
+
+        res.json({ success: true, data: newSite, message: 'Situs terblokir berhasil ditambahkan.' });
     } catch (err) {
         console.error('[BlockedSitesController] createBlockedSite:', err.message);
         if (err.code === '23505') {
@@ -75,7 +141,7 @@ const createBlockedSite = async (req, res) => {
 
 // ─── PUT /api/blocked-sites/:id ──────────────────────────────────────────────
 const updateBlockedSite = async (req, res) => {
-    const { name, domains, l7_regex, is_active } = req.body;
+    const { name, domains, l7_regex, is_active, user_ids } = req.body;
     const { id } = req.params;
 
     try {
@@ -94,7 +160,14 @@ const updateBlockedSite = async (req, res) => {
         if (result.rows.length === 0) {
             return res.status(404).json({ success: false, message: 'Situs terblokir tidak ditemukan.' });
         }
-        res.json({ success: true, data: result.rows[0], message: 'Situs terblokir berhasil diperbarui.' });
+
+        const site = result.rows[0];
+
+        if (Array.isArray(user_ids)) {
+            await syncUsersForBlockedSite(site.key, user_ids);
+        }
+
+        res.json({ success: true, data: site, message: 'Situs terblokir berhasil diperbarui.' });
     } catch (err) {
         console.error('[BlockedSitesController] updateBlockedSite:', err.message);
         res.status(500).json({ success: false, message: 'Gagal memperbarui situs terblokir.' });
@@ -109,7 +182,11 @@ const deleteBlockedSite = async (req, res) => {
         if (result.rows.length === 0) {
             return res.status(404).json({ success: false, message: 'Situs terblokir tidak ditemukan.' });
         }
-        res.json({ success: true, message: `Situs "${result.rows[0].name}" berhasil dihapus.` });
+        const site = result.rows[0];
+        // Hapus site.key dari semua user
+        await syncUsersForBlockedSite(site.key, []);
+
+        res.json({ success: true, message: `Situs "${site.name}" berhasil dihapus.` });
     } catch (err) {
         console.error('[BlockedSitesController] deleteBlockedSite:', err.message);
         res.status(500).json({ success: false, message: 'Gagal menghapus situs terblokir.' });

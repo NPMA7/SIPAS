@@ -502,25 +502,6 @@ export default function Users() {
             </select>
           </div>
           <div className="form-group">
-            <label className="form-label">🔒 Blokir Akses Situs</label>
-            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-              {blockedSites.length === 0 ? (
-                <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>Belum ada situs terdaftar.</span>
-              ) : (
-                blockedSites.map(site => (
-                  <label key={site.key} className="form-check">
-                    <input
-                      type="checkbox"
-                      checked={blocks.includes(site.key)}
-                      onChange={e => setBlock(site.key, e.target.checked)}
-                    />
-                    {site.name} ({site.key})
-                  </label>
-                ))
-              )}
-            </div>
-          </div>
-          <div className="form-group">
             <label className="form-label">Catatan</label>
             <textarea className="input" rows={2} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Catatan tambahan..." style={{ resize: 'vertical' }} />
           </div>
