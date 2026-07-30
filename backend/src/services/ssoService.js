@@ -34,9 +34,9 @@ const ssoService = {
 
       const data = await response.json();
 
-      if (!response.ok || data.status === false || data.code >= 400) {
+      if (!response.ok || data.status === false || data.status === "false") {
         throw new Error(
-          data.message || "Kredensial SSO Diskominfo tidak valid.",
+          data.message || "Username atau password SSO Diskominfo tidak valid.",
         );
       }
 

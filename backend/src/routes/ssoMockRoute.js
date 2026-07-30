@@ -8,14 +8,20 @@ const upload = multer();
  */
 const DUMMY_SSO_USERS = [
   {
+    username: "197804132003121005",
+    password: "197804132003121005",
+    nama: "MILKI TEGUH BAGJA IRAWAN",
+    nip: "197804132003121005",
+    jabatan: "PRANATA KOMPUTER AHLI MUDA",
+    golongan: "IV/a",
+  },
+  {
     username: "199001012023011001",
     password: "password123",
     nama: "Budi Santoso, S.Kom",
     nip: "199001012023011001",
     jabatan: "Pranata Komputer Ahli Pertama",
-    instansi: "Diskominfo Kab. Bandung",
-    email: "budi.santoso@bandungkab.go.id",
-    role: "ASN",
+    golongan: "III/a",
   },
   {
     username: "199205122023012002",
@@ -23,19 +29,7 @@ const DUMMY_SSO_USERS = [
     nama: "Siti Rahmawati, S.T",
     nip: "199205122023012002",
     jabatan: "Pengelola Jaringan",
-    instansi: "Diskominfo Kab. Bandung",
-    email: "siti.rahmawati@bandungkab.go.id",
-    role: "ASN",
-  },
-  {
-    username: "198503152010011003",
-    password: "password123",
-    nama: "Administrator SSO Diskominfo",
-    nip: "198503152010011003",
-    jabatan: "Kepala Bidang Informatika",
-    instansi: "Diskominfo Kab. Bandung",
-    email: "admin.sso@bandungkab.go.id",
-    role: "ADMIN",
+    golongan: "III/b",
   },
 ];
 
@@ -53,16 +47,15 @@ router.get("/users", (req, res) => {
       nama: u.nama,
       nip: u.nip,
       jabatan: u.jabatan,
-      instansi: u.instansi,
+      golongan: u.golongan,
     })),
   });
 });
 
 /**
  * POST /api/sso-mock/login
- * Menirukan endpoint POST
- * Menerima body mode: formdata / urlencoded / json
- * Parameter: username, password
+ * Menirukan endpoint POST sso.bandungkab.go.id/api/login
+ * Body: username, password
  */
 router.post("/login", upload.none(), (req, res) => {
   const { username, password } = req.body || {};
@@ -70,7 +63,6 @@ router.post("/login", upload.none(), (req, res) => {
   if (!username || !password) {
     return res.status(400).json({
       status: false,
-      code: 400,
       message: "Username dan password wajib diisi.",
     });
   }
@@ -88,33 +80,19 @@ router.post("/login", upload.none(), (req, res) => {
   if (!user) {
     return res.status(401).json({
       status: false,
-      code: 401,
       message: "Username atau password SSO tidak valid.",
     });
   }
 
-  // Token simulasi
-  const mockToken =
-    "mock_sso_token_" +
-    Buffer.from(`${user.username}:${Date.now()}`).toString("base64");
-
   return res.status(200).json({
     status: true,
-    code: 200,
-    message: "Login SSO berhasil (Mock)",
     data: {
-      token: mockToken,
-      token_type: "Bearer",
-      user: {
-        username: user.username,
-        nip: user.nip,
-        nama: user.nama,
-        jabatan: user.jabatan,
-        instansi: user.instansi,
-        email: user.email,
-        role: user.role,
-      },
+      nip: user.nip,
+      nama: user.nama,
+      jabatan: user.jabatan,
+      golongan: user.golongan || "III/a",
     },
+    message: "Berhasil masuk",
   });
 });
 

@@ -17,7 +17,7 @@ function UserCard({ user, routers, blockedSites = [], onEdit, onDelete, onBwChan
   const subInfo = [
     user.full_name,
     user.jabatan,
-    user.instansi ? `(${user.instansi})` : null
+    user.instansi ? (user.instansi.toLowerCase().includes('gol') ? user.instansi : `Gol. ${user.instansi}`) : null
   ].filter(Boolean).join(' • ') || '—';
 
   return (
@@ -415,22 +415,16 @@ export default function Users() {
           <div className="form-row">
             <div className="form-group">
               <label className="form-label">Nama Lengkap</label>
-              <input className="input" value={form.full_name} onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))} placeholder="Budi Santoso" />
+              <input className="input" value={form.full_name} onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))} placeholder="Nama lengkap..." />
             </div>
             <div className="form-group">
-              <label className="form-label">Email</label>
-              <input className="input" type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="user@mail.com" />
+              <label className="form-label">Golongan</label>
+              <input className="input" value={form.instansi} onChange={e => setForm(f => ({ ...f, instansi: e.target.value }))} placeholder="IV/a, III/a, dll" />
             </div>
           </div>
-          <div className="form-row">
-            <div className="form-group">
-              <label className="form-label">Jabatan</label>
-              <input className="input" value={form.jabatan} onChange={e => setForm(f => ({ ...f, jabatan: e.target.value }))} placeholder="Pranata Komputer / Kabid" />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Instansi / OPD</label>
-              <input className="input" value={form.instansi} onChange={e => setForm(f => ({ ...f, instansi: e.target.value }))} placeholder="Diskominfo Kab. Bandung" />
-            </div>
+          <div className="form-group" style={{ marginBottom: 16 }}>
+            <label className="form-label">Jabatan</label>
+            <input className="input" value={form.jabatan} onChange={e => setForm(f => ({ ...f, jabatan: e.target.value }))} placeholder="Pranata Komputer / Kabid / dll" />
           </div>
 
           <div className="form-row">

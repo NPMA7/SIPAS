@@ -63,21 +63,26 @@ const portalLogin = async (req, res) => {
         if (isSSOAuth) {
             try {
                 const ssoRes = await ssoService.loginSSO(cleanUsername, password);
-                const ssoUser = ssoRes.data?.user || {};
+                const ssoUser = ssoRes.data || {};
+
+                const namaPegawai = ssoUser.nama || cleanUsername;
+                const nipPegawai  = ssoUser.nip || cleanUsername;
+                const jabatanPeg  = ssoUser.jabatan || '';
+                const golPegawai  = ssoUser.golongan ? `Gol. ${ssoUser.golongan}` : (user?.instansi || '');
 
                 if (user) {
                     // Update metadata dari SSO ke DB lokal jika ada perubahan
                     await query(
-                        `UPDATE hotspot_users SET full_name = $1, email = $2, nip = $3, jabatan = $4, instansi = $5, updated_at = NOW() WHERE id = $6`,
-                        [ssoUser.nama || user.full_name, ssoUser.email || user.email, ssoUser.nip || cleanUsername, ssoUser.jabatan || user.jabatan || '', ssoUser.instansi || user.instansi || '', user.id]
+                        `UPDATE hotspot_users SET full_name = $1, nip = $2, jabatan = $3, instansi = $4, updated_at = NOW() WHERE id = $5`,
+                        [namaPegawai, nipPegawai, jabatanPeg, golPegawai || user.instansi || '', user.id]
                     );
                 } else {
-                    // Auto-provisioning user ASN baru ke Database PostgreSQL SIPAS (Default 20M/20M)
+                    // Auto-provisioning user ASN baru ke Database PostgreSQL SIPAS (Default 30M/30M)
                     const insertRes = await query(
                         `INSERT INTO hotspot_users (username, password, full_name, email, nip, jabatan, instansi, auth_provider, bandwidth_limit, website_block)
-                         VALUES ($1, $2, $3, $4, $5, $6, $7, 'sso', '20M/20M', '')
+                         VALUES ($1, $2, $3, $4, $5, $6, $7, 'sso', '30M/30M', '')
                          RETURNING *`,
-                        [cleanUsername, '[SSO_AUTH]', ssoUser.nama || cleanUsername, ssoUser.email || '', ssoUser.nip || cleanUsername, ssoUser.jabatan || '', ssoUser.instansi || '']
+                        [cleanUsername, '[SSO_AUTH]', namaPegawai, '', nipPegawai, jabatanPeg, golPegawai]
                     );
                     user = insertRes.rows[0];
                 }
