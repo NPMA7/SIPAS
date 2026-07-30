@@ -984,14 +984,14 @@ const setupPortalUser = async (
       }
     }
 
-    // 3. Setup blokir situs menggunakan Layer7 Protocol & IP Address List (Lapis Ganda)
+    // 3. Setup blokir situs (HANYA dijalankan jika user memiliki daftar situs diblokir)
     const blockedSites = (websiteBlock || "")
       .split(",")
       .map((s) => s.trim().toLowerCase())
       .filter(Boolean);
-    const blockConfigs = await getBlockConfigs();
-if (ip) {
-      // Ambil data yang diperlukan sekaligus
+
+    if (ip && blockedSites.length > 0) {
+      const blockConfigs = await getBlockConfigs();
       const allAddressLists = await conn.write("/ip/firewall/address-list/print");
       const allFilters = await conn.write("/ip/firewall/filter/print");
 

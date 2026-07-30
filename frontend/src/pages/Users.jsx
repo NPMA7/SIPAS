@@ -395,9 +395,6 @@ export default function Users() {
               <span>🔒</span>
               <div>
                 <strong>User SSO</strong>
-                <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>
-                  Password dikelola penuh oleh API SSO Pemkab. Anda mengelola limit bandwidth, router, dan situs terblokir di sini.
-                </div>
               </div>
             </div>
           )}
@@ -412,7 +409,6 @@ export default function Users() {
               {editUser?.auth_provider === 'sso' ? (
                 <div>
                   <input className="input" value="••••••••••••" disabled style={{ opacity: 0.6, cursor: 'not-allowed' }} />
-                  <div className="form-hint" style={{ color: 'var(--info)' }}>Dikelola oleh SSO Pemkab</div>
                 </div>
               ) : (
                 <input className="input" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} placeholder="password" required={!editUser} />
@@ -430,7 +426,6 @@ export default function Users() {
                 disabled={editUser?.auth_provider === 'sso'}
                 style={editUser?.auth_provider === 'sso' ? { opacity: 0.6, cursor: 'not-allowed' } : {}}
               />
-              {editUser?.auth_provider === 'sso' && <div className="form-hint" style={{ color: 'var(--info)' }}>Dikelola oleh SSO Pemkab</div>}
             </div>
             <div className="form-group">
               <label className="form-label">Golongan</label>
@@ -442,7 +437,6 @@ export default function Users() {
                 disabled={editUser?.auth_provider === 'sso'}
                 style={editUser?.auth_provider === 'sso' ? { opacity: 0.6, cursor: 'not-allowed' } : {}}
               />
-              {editUser?.auth_provider === 'sso' && <div className="form-hint" style={{ color: 'var(--info)' }}>Dikelola oleh SSO Pemkab</div>}
             </div>
           </div>
           <div className="form-group" style={{ marginBottom: 16 }}>
@@ -455,7 +449,6 @@ export default function Users() {
               disabled={editUser?.auth_provider === 'sso'}
               style={editUser?.auth_provider === 'sso' ? { opacity: 0.6, cursor: 'not-allowed' } : {}}
             />
-            {editUser?.auth_provider === 'sso' && <div className="form-hint" style={{ color: 'var(--info)' }}>Dikelola oleh SSO Pemkab</div>}
           </div>
 
           <div className="form-row">
