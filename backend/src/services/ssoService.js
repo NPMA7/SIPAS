@@ -36,7 +36,7 @@ const ssoService = {
 
       if (!response.ok || data.status === false || data.status === "false") {
         throw new Error(
-          data.message || "Username atau password SSO tidak valid.",
+          data.message || "Username atau password tidak valid.",
         );
       }
 

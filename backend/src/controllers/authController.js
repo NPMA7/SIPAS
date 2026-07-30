@@ -94,7 +94,7 @@ const portalLogin = async (req, res) => {
             } catch (ssoErr) {
                 return res.status(401).json({
                     success: false,
-                    message: ssoErr.message || 'Username atau password SSO tidak valid.'
+                    message: ssoErr.message || 'Username atau password tidak valid.'
                 });
             }
         }

@@ -843,25 +843,64 @@ const setupPortalUser = async (
   mac,
   bandwidthLimit,
   websiteBlock,
+  maxDevices = 4,
 ) => {
   return withConnection(routerConfig, async (conn) => {
-    // 1. Buat/Update Hotspot User
+    const maxUsersNum = parseInt(maxDevices || 4);
+    const maxUsersStr = String(maxUsersNum);
+    const profileName = `profile-${maxUsersNum}-devices`;
+
+    // 1. Pastikan User Profile khusus (misal profile-4-devices) & profile default terkonfigurasi shared-users di MikroTik
+    try {
+      // Set fallback default profile shared-users
+      const defaultProfiles = await conn.write("/ip/hotspot/user/profile/print", [
+        `?name=default`,
+      ]);
+      if (defaultProfiles && defaultProfiles.length > 0) {
+        await conn.write("/ip/hotspot/user/profile/set", [
+          `=.id=${defaultProfiles[0][".id"]}`,
+          `=shared-users=${maxUsersStr}`,
+        ]);
+      }
+
+      // Buat/Update User Profile khusus sesuai kuota max_devices
+      const targetProfiles = await conn.write("/ip/hotspot/user/profile/print", [
+        `?name=${profileName}`,
+      ]);
+      if (!targetProfiles || targetProfiles.length === 0) {
+        await conn.write("/ip/hotspot/user/profile/add", [
+          `=name=${profileName}`,
+          `=shared-users=${maxUsersStr}`,
+        ]);
+      } else {
+        await conn.write("/ip/hotspot/user/profile/set", [
+          `=.id=${targetProfiles[0][".id"]}`,
+          `=shared-users=${maxUsersStr}`,
+        ]);
+      }
+    } catch (pErr) {
+      console.warn("[setupPortalUser] Profile setup warning:", pErr.message);
+    }
+
+    // 2. Buat/Update Hotspot User tanpa menghapus user yang ada (agar sesi aktif perangkat lain tidak terputus)
     const existingUser = await conn.write("/ip/hotspot/user/print", [
       `?name=${username}`,
     ]);
 
     if (existingUser && existingUser.length > 0) {
-      await conn.write("/ip/hotspot/user/remove", [
+      await conn.write("/ip/hotspot/user/set", [
         `=.id=${existingUser[0][".id"]}`,
+        `=password=${password}`,
+        `=profile=${profileName}`,
+      ]);
+    } else {
+      await conn.write("/ip/hotspot/user/add", [
+        `=name=${username}`,
+        `=password=${password}`,
+        `=profile=${profileName}`,
+        `=comment=temp-${Date.now()}`,
       ]);
     }
-
-    await conn.write("/ip/hotspot/user/add", [
-      `=name=${username}`,
-      `=password=${password}`,
-      `=profile=default`,
-      `=comment=temp-${Date.now()}`,
-    ]);
 
     // 1.5. Bersihkan IP Binding lama (jika ada sisa bypass) agar user wajib autentikasi via Captive Portal
     if (mac || ip) {

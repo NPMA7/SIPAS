@@ -172,7 +172,8 @@ const syncUserToActiveRouters = async (user) => {
                         session.address,
                         session.mac,
                         user.bandwidth_limit,
-                        user.website_block
+                        user.website_block,
+                        user.max_devices || 4
                     );
                 }
             } catch (rErr) {

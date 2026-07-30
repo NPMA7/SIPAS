@@ -80,7 +80,7 @@ router.post("/login", upload.none(), (req, res) => {
   if (!user) {
     return res.status(401).json({
       status: false,
-      message: "Username atau password SSO tidak valid.",
+      message: "Username atau password tidak valid.",
     });
   }
 
