@@ -41,7 +41,6 @@ add chain=forward action=accept connection-state=established,related
 add chain=input action=drop connection-state=invalid
 add chain=forward action=drop connection-state=invalid
 add chain=input action=accept protocol=icmp
-add chain=input action=accept src-address=192.168.88.0/24 comment="Akses LAN Admin Lokal (ether2)"
 add chain=input action=accept src-address=192.168.42.0/24 comment="Akses VPN Server VPS"
 add chain=input action=accept in-interface=bridge-hotspot protocol=udp dst-port=53
 add chain=input action=accept in-interface=bridge-hotspot protocol=tcp dst-port=53

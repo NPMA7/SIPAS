@@ -11,6 +11,7 @@
 add name=bridge-hotspot comment="Bridge Hotspot"
 
 /interface bridge port
+add bridge=bridge-hotspot interface=ether2
 add bridge=bridge-hotspot interface=ether3
 add bridge=bridge-hotspot interface=wlan1
 
@@ -20,9 +21,6 @@ add bridge=bridge-hotspot interface=wlan1
 set [find name=wlan1] mode=ap-bridge ssid=SIPAS-WiFi band=2ghz-onlyn channel-width=20/40mhz-eC distance=indoors frequency=auto wireless-protocol=802.11 disabled=no
 
 # --- LANGKAH 3: IP Address Interface ---
-
-/ip address
-add address=192.168.88.1/24 interface=ether2 comment="Akses LAN Admin Lokal"
 
 /ip address
 add address=10.10.0.1/16 interface=bridge-hotspot comment="IP Gateway Hotspot Kelas A (Max 65,534 Users)"
