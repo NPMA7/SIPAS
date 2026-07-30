@@ -36,6 +36,7 @@ export default function BlockedSites() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [userSearch, setUserSearch] = useState('');
+  const [userFilterTab, setUserFilterTab] = useState('all');
   const [modal, setModal] = useState(false);
   const [editSite, setEditSite] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -156,6 +157,16 @@ export default function BlockedSites() {
     s.key?.toLowerCase().includes(search.toLowerCase()) ||
     s.domains?.toLowerCase().includes(search.toLowerCase())
   );
+
+  const displayUsers = users.filter(u => {
+    const matchesSearch = (u.full_name || '').toLowerCase().includes(userSearch.toLowerCase()) ||
+                          (u.username || '').toLowerCase().includes(userSearch.toLowerCase());
+    if (!matchesSearch) return false;
+    const isChecked = (form.user_ids || []).includes(u.id);
+    if (userFilterTab === 'selected') return isChecked;
+    if (userFilterTab === 'unselected') return !isChecked;
+    return true;
+  });
 
   return (
     <div className="card">
@@ -318,83 +329,175 @@ export default function BlockedSites() {
             <div className="form-hint">Jika dikosongkan, regex akan dibuat otomatis dari daftar domain</div>
           </div>
 
-          {/* User Selection Section */}
+          {/* User Selection Section (Desain Skalabel untuk 1000+ User) */}
           <div className="form-group" style={{ marginTop: 16 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <label className="form-label" style={{ margin: 0, fontWeight: 600 }}>🔒 Pilih User yang Diblokir Situs Ini</label>
-              <button
-                type="button"
-                className="btn btn-ghost btn-xs"
-                style={{ color: 'var(--primary-light)' }}
-                onClick={() => {
-                  const allSelected = (form.user_ids || []).length === users.length;
-                  setForm(f => ({ ...f, user_ids: allSelected ? [] : users.map(u => u.id) }));
-                }}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, flexWrap: 'wrap', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <label className="form-label" style={{ margin: 0, fontWeight: 600 }}>🔒 Pilih User yang Diblokir Situs Ini</label>
+                <Badge variant={(form.user_ids || []).length > 0 ? 'danger' : 'neutral'}>
+                  {(form.user_ids || []).length} / {users.length} User
+                </Badge>
+              </div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-xs"
+                  onClick={() => setForm(f => ({ ...f, user_ids: users.map(u => u.id) }))}
+                  style={{ fontSize: 11, color: '#38bdf8' }}
+                >
+                  Pilih Semua ({users.length})
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-xs"
+                  onClick={() => setForm(f => ({ ...f, user_ids: [] }))}
+                  style={{ color: 'var(--text-muted)', fontSize: 11 }}
+                >
+                  Batalkan Semua
+                </button>
+              </div>
+            </div>
+
+            {/* Filter Mode Tabs & Search Bar */}
+            <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+              <div className="search-wrapper" style={{ flex: 1 }}>
+                <svg className="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13">
+                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input
+                  type="text"
+                  className="search-input"
+                  style={{ fontSize: '0.8rem', padding: '6px 12px 6px 30px' }}
+                  placeholder="Cari nama / username..."
+                  value={userSearch}
+                  onChange={e => setUserSearch(e.target.value)}
+                />
+              </div>
+              <select
+                className="input"
+                style={{ width: 'auto', fontSize: '0.8rem', padding: '6px 10px' }}
+                value={userFilterTab}
+                onChange={e => setUserFilterTab(e.target.value)}
               >
-                {(form.user_ids || []).length === users.length ? 'Batalkan Semua' : 'Pilih Semua User'}
-              </button>
+                <option value="all">Semua User ({users.length})</option>
+                <option value="selected">Terpilih ({(form.user_ids || []).length})</option>
+                <option value="unselected">Belum Terpilih ({users.length - (form.user_ids || []).length})</option>
+              </select>
             </div>
 
-            <div className="search-wrapper" style={{ marginBottom: 8 }}>
-              <svg className="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13">
-                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-              </svg>
-              <input
-                type="text"
-                className="search-input"
-                style={{ fontSize: '0.8rem', padding: '6px 12px 6px 30px' }}
-                placeholder="Cari nama / username..."
-                value={userSearch}
-                onChange={e => setUserSearch(e.target.value)}
-              />
-            </div>
+            {/* Selected Chips Preview */}
+            {(form.user_ids || []).length > 0 && (
+              <div style={{
+                display: 'flex',
+                gap: 6,
+                flexWrap: 'wrap',
+                padding: '6px 10px',
+                background: 'rgba(239, 68, 68, 0.08)',
+                borderRadius: 6,
+                border: '1px solid rgba(239, 68, 68, 0.2)',
+                marginBottom: 8,
+                maxHeight: 75,
+                overflowY: 'auto'
+              }}>
+                <span style={{ fontSize: 11, color: '#f87171', fontWeight: 600, alignSelf: 'center' }}>Terpilih:</span>
+                {users.filter(u => (form.user_ids || []).includes(u.id)).slice(0, 10).map(u => (
+                  <span
+                    key={u.id}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      background: '#ef4444',
+                      color: '#fff',
+                      fontSize: 10,
+                      fontWeight: 500,
+                      padding: '2px 8px',
+                      borderRadius: 12
+                    }}
+                  >
+                    {u.username}
+                    <span
+                      style={{ cursor: 'pointer', fontWeight: 700, marginLeft: 2 }}
+                      onClick={() => setForm(f => ({ ...f, user_ids: (f.user_ids || []).filter(id => id !== u.id) }))}
+                    >
+                      ×
+                    </span>
+                  </span>
+                ))}
+                {(form.user_ids || []).length > 10 && (
+                  <span style={{ fontSize: 10, color: 'var(--text-muted)', alignSelf: 'center' }}>
+                    +{(form.user_ids || []).length - 10} lainnya
+                  </span>
+                )}
+              </div>
+            )}
 
+            {/* High Performance Scrollable User List */}
             <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-              gap: 8,
-              maxHeight: 180,
+              display: 'flex',
+              flexDirection: 'column',
+              maxHeight: 210,
               overflowY: 'auto',
-              padding: 10,
               background: 'var(--bg-tertiary, #0f172a)',
               borderRadius: 6,
               border: '1px solid var(--border)'
             }}>
-              {users.filter(u =>
-                (u.full_name || '').toLowerCase().includes(userSearch.toLowerCase()) ||
-                (u.username || '').toLowerCase().includes(userSearch.toLowerCase())
-              ).length === 0 ? (
-                <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Tidak ada user yang cocok.</span>
+              {displayUsers.length === 0 ? (
+                <div style={{ padding: 16, textAlign: 'center', fontSize: 12, color: 'var(--text-muted)' }}>
+                  Tidak ada user yang sesuai filter.
+                </div>
               ) : (
-                users
-                  .filter(u =>
-                    (u.full_name || '').toLowerCase().includes(userSearch.toLowerCase()) ||
-                    (u.username || '').toLowerCase().includes(userSearch.toLowerCase())
-                  )
-                  .map(u => {
-                    const isChecked = (form.user_ids || []).includes(u.id);
-                    return (
-                      <label key={u.id} className="form-check" style={{ fontSize: 12, cursor: 'pointer' }}>
+                displayUsers.map(u => {
+                  const isChecked = (form.user_ids || []).includes(u.id);
+                  return (
+                    <div
+                      key={u.id}
+                      onClick={() => {
+                        setForm(f => ({
+                          ...f,
+                          user_ids: isChecked
+                            ? (f.user_ids || []).filter(id => id !== u.id)
+                            : [...(f.user_ids || []), u.id]
+                        }));
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '8px 12px',
+                        borderBottom: '1px solid var(--border)',
+                        background: isChecked ? 'rgba(239, 68, 68, 0.08)' : 'transparent',
+                        cursor: 'pointer',
+                        transition: 'background 0.15s ease'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <input
                           type="checkbox"
                           checked={isChecked}
-                          onChange={e => {
-                            const checked = e.target.checked;
-                            setForm(f => ({
-                              ...f,
-                              user_ids: checked
-                                ? [...(f.user_ids || []), u.id]
-                                : (f.user_ids || []).filter(id => id !== u.id)
-                            }));
-                          }}
+                          onChange={() => {}}
+                          style={{ cursor: 'pointer' }}
                         />
-                        <span>{u.full_name || u.username} <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>({u.username})</span></span>
-                      </label>
-                    );
-                  })
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <span style={{ fontSize: 13, fontWeight: isChecked ? 600 : 500, color: isChecked ? '#f87171' : 'var(--text-main)' }}>
+                            {u.full_name || u.username}
+                          </span>
+                          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                            @{u.username} {u.jabatan ? `• ${u.jabatan}` : ''}
+                          </span>
+                        </div>
+                      </div>
+                      <Badge variant={isChecked ? 'danger' : 'neutral'} style={{ fontSize: 10 }}>
+                        {isChecked ? 'Diblokir' : 'Diizinkan'}
+                      </Badge>
+                    </div>
+                  );
+                })
               )}
             </div>
-            <div className="form-hint">User yang dicentang akan diblokir pengaksesan domain situs ini.</div>
+            <div className="form-hint" style={{ marginTop: 6 }}>
+              Centang user untuk memblokir situs ini. Mendukung ribuan user dengan fitur pencarian &amp; filter cepat.
+            </div>
           </div>
 
           {editSite && (
