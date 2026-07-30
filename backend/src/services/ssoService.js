@@ -12,15 +12,22 @@ const ssoService = {
   async loginSSO(username, password) {
     const mode = (process.env.SSO_MODE || "mock").toLowerCase();
     const port = process.env.PORT || 3001;
-    const realUrl = process.env.SSO_REAL_URL;
-    const mockUrl = process.env.SSO_MOCK_URL;
 
-    // Jika mode 'real' ATAU format NIP 18 digit -> Gunakan Real SSO sebagai prioritas utama
+    const realUrl = (process.env.SSO_REAL_URL || "").trim();
+    const mockUrl = (process.env.SSO_MOCK_URL || `http://localhost:${port}/api/sso-mock/login`).trim();
+
+    // Jika mode 'real' ATAU format NIP 18 digit -> Prioritaskan Real SSO dari .env
     const cleanUname = (username || "").trim();
     const isNipFormat = /^\d{18}$/.test(cleanUname);
     const useRealFirst = mode === "real" || isNipFormat;
 
-    const urlsToTry = useRealFirst ? [realUrl, mockUrl] : [mockUrl, realUrl];
+    const rawUrls = useRealFirst ? [realUrl, mockUrl] : [mockUrl, realUrl];
+    const urlsToTry = [...new Set(rawUrls.filter(Boolean))];
+
+    if (urlsToTry.length === 0) {
+      throw new Error("URL SSO belum dikonfigurasi pada file .env (SSO_REAL_URL).");
+    }
+
     let lastError = null;
 
     for (const targetUrl of urlsToTry) {
