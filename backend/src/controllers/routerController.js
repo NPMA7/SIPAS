@@ -5,7 +5,7 @@ const mikrotik    = require('../services/mikrotikService');
 const getRouters = async (req, res) => {
     try {
         const result = await query(
-            `SELECT id, name, ip_address, api_port, api_username, location, is_active, last_seen, created_at
+            `SELECT id, name, ip_address, api_port, api_username, location, router_type, is_active, last_seen, created_at
              FROM routers ORDER BY id ASC`
         );
         // Hitung jumlah user per router
@@ -24,7 +24,7 @@ const getRouters = async (req, res) => {
 const getRouterById = async (req, res) => {
     try {
         const result = await query(
-            'SELECT id, name, ip_address, api_port, api_username, location, is_active, last_seen, created_at FROM routers WHERE id = $1',
+            'SELECT id, name, ip_address, api_port, api_username, location, router_type, is_active, last_seen, created_at FROM routers WHERE id = $1',
             [req.params.id]
         );
         if (result.rows.length === 0) {
@@ -38,17 +38,19 @@ const getRouterById = async (req, res) => {
 
 // ─── POST /api/routers ───────────────────────────────────────────────────────
 const createRouter = async (req, res) => {
-    const { name, ip_address, api_port, api_username, api_password, location } = req.body;
+    const { name, ip_address, api_port, api_username, api_password, location, router_type } = req.body;
 
-    if (!name || !ip_address || !api_username) {
-        return res.status(400).json({ success: false, message: 'Name, IP, dan username API wajib diisi.' });
+    const rType = router_type === 'external' ? 'external' : 'internal';
+
+    if (!name || !ip_address) {
+        return res.status(400).json({ success: false, message: 'Nama Router dan IP Address wajib diisi.' });
     }
 
     try {
         const result = await query(
-            `INSERT INTO routers (name, ip_address, api_port, api_username, api_password, location)
-             VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, name, ip_address, api_port, api_username, location, is_active`,
-            [name, ip_address, api_port || 8728, api_username, api_password || '', location || null]
+            `INSERT INTO routers (name, ip_address, api_port, api_username, api_password, location, router_type)
+             VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, name, ip_address, api_port, api_username, location, router_type, is_active`,
+            [name, ip_address, api_port || 8728, api_username || 'admin', api_password || '', location || null, rType]
         );
         res.status(201).json({ success: true, message: 'Router berhasil ditambahkan.', data: result.rows[0] });
     } catch (err) {
@@ -59,7 +61,7 @@ const createRouter = async (req, res) => {
 
 // ─── PUT /api/routers/:id ────────────────────────────────────────────────────
 const updateRouter = async (req, res) => {
-    const { name, ip_address, api_port, api_username, api_password, location, is_active } = req.body;
+    const { name, ip_address, api_port, api_username, api_password, location, router_type, is_active } = req.body;
 
     try {
         const result = await query(
@@ -70,9 +72,10 @@ const updateRouter = async (req, res) => {
                 api_username = COALESCE($4, api_username),
                 api_password = COALESCE($5, api_password),
                 location     = COALESCE($6, location),
-                is_active    = COALESCE($7, is_active)
-             WHERE id = $8 RETURNING id, name, ip_address, api_port, api_username, location, is_active`,
-            [name, ip_address, api_port, api_username, api_password, location, is_active, req.params.id]
+                router_type  = COALESCE($7, router_type),
+                is_active    = COALESCE($8, is_active)
+             WHERE id = $9 RETURNING id, name, ip_address, api_port, api_username, location, router_type, is_active`,
+            [name, ip_address, api_port, api_username, api_password, location, router_type, is_active, req.params.id]
         );
         if (result.rows.length === 0) {
             return res.status(404).json({ success: false, message: 'Router tidak ditemukan.' });
@@ -105,6 +108,16 @@ const testConnection = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Router tidak ditemukan.' });
         }
         const router = result.rows[0];
+
+        // Jika router tipe external / vendor, tidak perlu tes API Mikrotik
+        if (router.router_type === 'external') {
+            await query('UPDATE routers SET last_seen = NOW() WHERE id = $1', [req.params.id]);
+            return res.json({
+                success: true,
+                message: `Router Vendor / Eksternal Aktif (Portal-Only). Koneksi API dikelola oleh Vendor.`,
+                data: { identity: 'Vendor Portal (External)', last_seen: new Date().toISOString() }
+            });
+        }
 
         const testResult = await mikrotik.testConnection(router);
 

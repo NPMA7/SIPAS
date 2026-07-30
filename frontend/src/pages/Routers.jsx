@@ -4,7 +4,9 @@ import { ToastContext } from '../hooks/ToastContext';
 import Modal from '../components/ui/Modal';
 import { Badge, Loader, EmptyState } from '../components/ui/index';
 
-const EMPTY_FORM = { name: '', ip_address: '', api_port: 8728, api_username: 'admin', api_password: '', location: '' };
+const EMPTY_FORM = {
+  name: '', ip_address: '', api_port: 8728, api_username: 'admin', api_password: '', location: '', router_type: 'internal'
+};
 
 function RouterCard({ router, onEdit, onDelete, onTest }) {
   const [testing, setTesting] = useState(false);
@@ -23,17 +25,24 @@ function RouterCard({ router, onEdit, onDelete, onTest }) {
     <div className="router-card">
       <div className="router-card-header">
         <div className="router-card-name">{router.name}</div>
-        <Badge variant={router.is_active ? 'success' : 'neutral'}>
-          {router.is_active ? 'Aktif' : 'Nonaktif'}
-        </Badge>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          {router.router_type === 'external' ? (
+            <Badge variant="warning">Vendor / Eksternal</Badge>
+          ) : (
+            <Badge variant="info">Internal Diskominfo</Badge>
+          )}
+          <Badge variant={router.is_active ? 'success' : 'neutral'}>
+            {router.is_active ? 'Aktif' : 'Nonaktif'}
+          </Badge>
+        </div>
       </div>
       <div className="router-card-detail">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
-        <span className="mono">{router.ip_address}:{router.api_port}</span>
+        <span className="mono">{router.ip_address}:{router.api_port || 8728}</span>
       </div>
       <div className="router-card-detail">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        <span>{router.api_username}</span>
+        <span>{router.router_type === 'external' ? 'Vendor Portal (No API)' : router.api_username}</span>
       </div>
       {router.location && (
         <div className="router-card-detail">
@@ -100,7 +109,15 @@ export default function Routers() {
 
   function openEdit(r) {
     setEditRouter(r);
-    setForm({ name: r.name, ip_address: r.ip_address, api_port: r.api_port, api_username: r.api_username, api_password: '', location: r.location || '' });
+    setForm({
+      name: r.name,
+      ip_address: r.ip_address,
+      api_port: r.api_port || 8728,
+      api_username: r.api_username || 'admin',
+      api_password: '',
+      location: r.location || '',
+      router_type: r.router_type || 'internal'
+    });
     setModal(true);
   }
 
@@ -127,7 +144,7 @@ export default function Routers() {
   async function handleTest(router) {
     const res = await apiFetch(`/routers/${router.id}/test`);
     if (res?.success) {
-      ctx?.addToast('Koneksi Berhasil', `Identity: "${res.data?.identity}"`, 'success');
+      ctx?.addToast('Status Router', res.message || 'Koneksi Berhasil', 'success');
       loadRouters();
     } else {
       ctx?.addToast('Koneksi Gagal', res?.message || 'Tidak dapat terhubung.', 'error');
@@ -202,34 +219,55 @@ export default function Routers() {
         }
       >
         <form onSubmit={submitForm}>
+          <div className="form-group" style={{ marginBottom: 16 }}>
+            <label className="form-label">Tipe Pengelolaan Router *</label>
+            <select
+              className="select"
+              value={form.router_type}
+              onChange={e => setForm(f => ({ ...f, router_type: e.target.value }))}
+            >
+              <option value="internal">🏢 Internal Diskominfo (Full API Management — Bandwidth & Blocking)</option>
+              <option value="external">🌐 Vendor / Eksternal Diskominfo (Portal Auth Only — Tanpa API Mikrotik)</option>
+            </select>
+            {form.router_type === 'external' ? (
+              <div className="form-hint" style={{ color: 'var(--warning)', marginTop: 4 }}>
+                ℹ Router Vendor hanya meminjam portal ini untuk verifikasi login SSO/Lokal. Bandwidth, bloking, dan penanganan koneksi diatur penuh oleh Vendor.
+              </div>
+            ) : (
+              <div className="form-hint" style={{ color: 'var(--text-muted)', marginTop: 4 }}>
+                ℹ Admin Diskominfo mengelola penuh limit bandwidth, pemblokiran situs, dan akun hotspot via Mikrotik API.
+              </div>
+            )}
+          </div>
+
           <div className="form-row">
             <div className="form-group">
               <label className="form-label">Nama Router *</label>
-              <input className="input" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Router Utama" required />
+              <input className="input" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Router Utama / Vendor A" required />
             </div>
             <div className="form-group">
-              <label className="form-label">IP Address *</label>
-              <input className="input" value={form.ip_address} onChange={e => setForm(f => ({ ...f, ip_address: e.target.value }))} placeholder="192.168.88.1" required />
+              <label className="form-label">IP Address / Host Target *</label>
+              <input className="input" value={form.ip_address} onChange={e => setForm(f => ({ ...f, ip_address: e.target.value }))} placeholder="192.168.88.1 / portal.vendor.com" required />
             </div>
           </div>
           <div className="form-row">
             <div className="form-group">
-              <label className="form-label">API Port</label>
+              <label className="form-label">API Port {form.router_type === 'external' ? '(Opsional)' : ''}</label>
               <input className="input" type="number" value={form.api_port} onChange={e => setForm(f => ({ ...f, api_port: e.target.value }))} placeholder="8728" />
             </div>
             <div className="form-group">
-              <label className="form-label">Lokasi</label>
-              <input className="input" value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} placeholder="Lantai 1, Gedung A" />
+              <label className="form-label">Lokasi / Keterangan</label>
+              <input className="input" value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} placeholder="Lokasi / Nama Vendor" />
             </div>
           </div>
           <div className="form-row">
             <div className="form-group">
-              <label className="form-label">Username API *</label>
-              <input className="input" value={form.api_username} onChange={e => setForm(f => ({ ...f, api_username: e.target.value }))} placeholder="admin" required autoCapitalize="none" />
+              <label className="form-label">Username API {form.router_type === 'external' ? '(Opsional)' : '*'}</label>
+              <input className="input" value={form.api_username} onChange={e => setForm(f => ({ ...f, api_username: e.target.value }))} placeholder="admin" required={form.router_type === 'internal'} autoCapitalize="none" />
             </div>
             <div className="form-group">
-              <label className="form-label">{editRouter ? 'Password API (kosongkan jika tidak ganti)' : 'Password API *'}</label>
-              <input className="input" type="password" value={form.api_password} onChange={e => setForm(f => ({ ...f, api_password: e.target.value }))} placeholder="••••••••" required={!editRouter} />
+              <label className="form-label">{editRouter ? 'Password API (kosongkan jika tidak ganti)' : (form.router_type === 'external' ? 'Password API (Opsional)' : 'Password API *')}</label>
+              <input className="input" type="password" value={form.api_password} onChange={e => setForm(f => ({ ...f, api_password: e.target.value }))} placeholder="••••••••" required={!editRouter && form.router_type === 'internal'} />
             </div>
           </div>
         </form>

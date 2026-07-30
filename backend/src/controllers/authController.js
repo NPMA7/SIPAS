@@ -138,49 +138,50 @@ const portalLogin = async (req, res) => {
             return res.status(403).json({ success: false, message: 'Akun Anda tidak terdaftar untuk digunakan di router ini.' });
         }
 
-        // 4. Cek apakah username sudah memiliki sesi aktif di Mikrotik
-        //    Jika ya, bandingkan MAC address untuk membedakan stale session (device sama) vs double login (device beda)
-        try {
-            const activeSessions = await mikrotik.getActiveHotspotUsers(routerConfig);
-            const existingSession = activeSessions.find(
-                s => s.user && s.user.toLowerCase() === username.toLowerCase()
-            );
+        // 4. Jika Router Tipe Vendor / Eksternal -> Lewati Konfigurasi Mikrotik API (Portal Auth Only)
+        if (routerConfig.router_type === 'external') {
+            console.log(`[AuthController] Router Vendor/Eksternal (${routerConfig.name}): Autentikasi portal berhasil tanpa API Mikrotik.`);
+        } else {
+            // Router Internal Diskominfo -> Lakukan Cek Sesi & Setup Mikrotik API
+            try {
+                const activeSessions = await mikrotik.getActiveHotspotUsers(routerConfig);
+                const existingSession = activeSessions.find(
+                    s => s.user && s.user.toLowerCase() === username.toLowerCase()
+                );
 
-            if (existingSession) {
-                const existingMac = (existingSession.mac || '').toLowerCase().trim();
-                const currentMac  = (mac || '').toLowerCase().trim();
+                if (existingSession) {
+                    const existingMac = (existingSession.mac || '').toLowerCase().trim();
+                    const currentMac  = (mac || '').toLowerCase().trim();
 
-                if (existingMac && currentMac && existingMac !== currentMac) {
-                    // Beda perangkat -> Blokir & tampilkan peringatan
-                    return res.status(409).json({
-                        success: false,
-                        error_code: 'session_active',
-                        message: `Akun ini sedang digunakan oleh perangkat lain (${existingSession.address}). Silakan coba beberapa saat lagi atau hubungi administrator.`,
-                        active_ip: existingSession.address,
-                        uptime: existingSession.uptime,
-                    });
-                } else {
-                    // Perangkat sama (stale session karena IP ganti/reconnect) -> Tendang sesi lama, lanjutkan login baru
-                    console.log(`[AuthController] Menendang sesi usang untuk MAC yang sama: ${currentMac || existingMac}`);
-                    await mikrotik.removeHotspotActive(routerConfig, existingSession.id);
+                    if (existingMac && currentMac && existingMac !== currentMac) {
+                        return res.status(409).json({
+                            success: false,
+                            error_code: 'session_active',
+                            message: `Akun ini sedang digunakan oleh perangkat lain (${existingSession.address}). Silakan coba beberapa saat lagi atau hubungi administrator.`,
+                            active_ip: existingSession.address,
+                            uptime: existingSession.uptime,
+                        });
+                    } else {
+                        console.log(`[AuthController] Menendang sesi usang untuk MAC yang sama: ${currentMac || existingMac}`);
+                        await mikrotik.removeHotspotActive(routerConfig, existingSession.id);
+                    }
                 }
+            } catch (sessionCheckErr) {
+                console.warn('[AuthController] Gagal cek sesi aktif, melanjutkan login:', sessionCheckErr.message);
             }
-        } catch (sessionCheckErr) {
-            // Jika tidak bisa cek sesi (router mati/timeout), lanjutkan saja
-            console.warn('[AuthController] Gagal cek sesi aktif, melanjutkan login:', sessionCheckErr.message);
-        }
 
-        // 5. Konfigurasi semua parameter user ke Mikrotik dalam SATU koneksi saja (efisien & bebas timeout)
-        const cleanUsername = username.toLowerCase().trim();
-        await mikrotik.setupPortalUser(
-            routerConfig,
-            cleanUsername,
-            password,
-            ip || null,
-            mac || null,
-            user.bandwidth_limit,
-            user.website_block
-        );
+            // 5. Konfigurasi semua parameter user ke Mikrotik Internal
+            const cleanUsername = username.toLowerCase().trim();
+            await mikrotik.setupPortalUser(
+                routerConfig,
+                cleanUsername,
+                password,
+                ip || null,
+                mac || null,
+                user.bandwidth_limit,
+                user.website_block
+            );
+        }
 
         // 6. Bersihkan sesi DB lama (jika ada sisa) dan log sesi aktif baru ke DB
         await query(

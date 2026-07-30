@@ -21,7 +21,7 @@ pool.on('connect', () => {
     console.log('[DB] Connected to PostgreSQL at', dbHost);
 });
 
-// Auto-migration ringan untuk mendukung SSO Diskominfo
+// Auto-migration ringan untuk mendukung SSO Diskominfo & Tipe Router (Internal vs External)
 (async () => {
     try {
         await pool.query(`
@@ -29,9 +29,9 @@ pool.on('connect', () => {
             ALTER TABLE hotspot_users ADD COLUMN IF NOT EXISTS nip VARCHAR(50);
             ALTER TABLE hotspot_users ADD COLUMN IF NOT EXISTS jabatan VARCHAR(150);
             ALTER TABLE hotspot_users ADD COLUMN IF NOT EXISTS instansi VARCHAR(150);
-
+            ALTER TABLE routers ADD COLUMN IF NOT EXISTS router_type VARCHAR(20) DEFAULT 'internal';
         `);
-        console.log('[DB] Auto-migration SSO columns initialized successfully');
+        console.log('[DB] Auto-migration SSO & Router Type columns initialized successfully');
     } catch (err) {
         console.warn('[DB] Auto-migration warning:', err.message);
     }

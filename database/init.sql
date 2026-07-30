@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS routers (
     api_username VARCHAR(100) NOT NULL,
     api_password VARCHAR(255) NOT NULL,
     location VARCHAR(255),
+    router_type VARCHAR(20) DEFAULT 'internal',     -- 'internal' (Full API) atau 'external' (Vendor/Portal Only)
     is_active BOOLEAN DEFAULT TRUE,
     last_seen TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT NOW(),
