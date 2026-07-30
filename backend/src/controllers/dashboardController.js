@@ -80,7 +80,7 @@ const getSummary = async (req, res) => {
     try {
         const routerCount  = await query('SELECT COUNT(*) FROM routers WHERE is_active = TRUE');
         const userCount    = await query('SELECT COUNT(*) FROM hotspot_users WHERE is_active = TRUE');
-        const blockedCount = await query("SELECT COUNT(*) FROM hotspot_users WHERE website_block IS NOT NULL AND website_block <> ''");
+        const blockedCount = await query("SELECT COUNT(*) FROM hotspot_users WHERE website_block IS NOT NULL AND website_block <> '' AND LOWER(website_block) <> 'false' AND website_block <> '0'");
         const sessionCount = await query('SELECT COUNT(*) FROM active_sessions WHERE logout_at IS NULL');
 
         res.json({

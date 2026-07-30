@@ -30,6 +30,10 @@ pool.on('connect', () => {
             ALTER TABLE hotspot_users ADD COLUMN IF NOT EXISTS jabatan VARCHAR(150);
             ALTER TABLE hotspot_users ADD COLUMN IF NOT EXISTS instansi VARCHAR(150);
             ALTER TABLE routers ADD COLUMN IF NOT EXISTS router_type VARCHAR(20) DEFAULT 'internal';
+
+            -- Data cleanup untuk website_block bawaan seed lama
+            UPDATE hotspot_users SET website_block = '' WHERE LOWER(website_block) = 'false' OR website_block = '0';
+            UPDATE hotspot_users SET website_block = 'npma' WHERE LOWER(website_block) = 'true';
         `);
         console.log('[DB] Auto-migration SSO & Router Type columns initialized successfully');
     } catch (err) {

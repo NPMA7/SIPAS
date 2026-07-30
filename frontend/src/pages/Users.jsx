@@ -196,15 +196,24 @@ export default function Users() {
     }
   }
 
+  const [deleting, setDeleting] = useState(false);
+
   async function deleteUser() {
-    if (!confirmDel) return;
-    const res = await apiDelete(`/users/${confirmDel.id}`);
-    if (res?.success) {
-      ctx?.addToast('Dihapus', `User "${confirmDel.username}" berhasil dihapus.`, 'success');
-      setConfirmDel(null);
-      loadUsers(1);
-    } else {
-      ctx?.addToast('Gagal', res?.message || 'Gagal menghapus user.', 'error');
+    if (!confirmDel || deleting) return;
+    setDeleting(true);
+    try {
+      const res = await apiDelete(`/users/${confirmDel.id}`);
+      if (res?.success) {
+        ctx?.addToast('Dihapus', `User "${confirmDel.username}" berhasil dihapus.`, 'success');
+        setConfirmDel(null);
+        loadUsers(1);
+      } else {
+        ctx?.addToast('Gagal', res?.message || 'Gagal menghapus user.', 'error');
+      }
+    } catch (err) {
+      ctx?.addToast('Error', err.message || 'Terjadi kesalahan saat menghapus user.', 'error');
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -491,12 +500,15 @@ export default function Users() {
       {/* Delete Confirm Modal */}
       <Modal
         open={!!confirmDel}
-        onClose={() => setConfirmDel(null)}
+        onClose={() => !deleting && setConfirmDel(null)}
         title="Hapus User"
         footer={
           <>
-            <button className="btn btn-secondary" onClick={() => setConfirmDel(null)}>Batal</button>
-            <button className="btn btn-danger" onClick={deleteUser}>Hapus & Putuskan Koneksi</button>
+            <button className="btn btn-secondary" onClick={() => setConfirmDel(null)} disabled={deleting}>Batal</button>
+            <button className="btn btn-danger" onClick={deleteUser} disabled={deleting} style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+              {deleting ? <div className="loader-ring" style={{ width: 14, height: 14, borderWidth: 2 }} /> : null}
+              {deleting ? 'Menghapus & Memutuskan Koneksi...' : 'Hapus & Putuskan Koneksi'}
+            </button>
           </>
         }
       >
