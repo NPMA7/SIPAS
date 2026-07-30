@@ -35,7 +35,6 @@ Untuk memblokir situs-situs CDN modern seperti YouTube atau domain kustom (NPMA)
 
 ### 2. Penanganan DHCP Lease Ghosting & Cleanup Otomatis
 * Backend secara cerdas menyaring data sampah (lease kosong) pada menu DHCP Leases.
-* Script pembersih otomatis berjalan setiap 2 detik di dalam router Mikrotik untuk menghapus sesi hotspot, host, dan sewa IP yang tersisa jika perangkat client terputus secara fisik (Wireless Registration Table kosong).
 * Ketika status blokir untuk suatu situs dimatikan (uncheck) di web admin, sistem mendeteksi apakah masih ada user lain yang diblokir. Jika list kosong, backend otomatis menghapus **seluruh rule filter L7/IP/QUIC, address-list target, dan regex L7** dari router secara real-time agar konfigurasi Winbox tetap bersih.
 
 ### 4. Hybrid SSO & Dual Router Support

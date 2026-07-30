@@ -44,9 +44,6 @@ Dokumen ini berfungsi sebagai jembatan komunikasi teknis antara **Software Devel
 
 - **Routing & NAT Setup**: Network Engineer mengatur tabel routing agar port 8728 Mikrotik terbuka dan aman via jalur VPN L2TP (`192.168.42.0/24`).
 - **Walled Garden Bypass**: Mengonfigurasi `/ip hotspot walled-garden ip` agar IP server VPS (`103.67.244.193`) di-bypass dari captive portal redirection.
-- **Implementasi Scheduler & Autocleanup (`mikrotik_project_setup.rsc`)**:
-  - Network Engineer memasang script dan scheduler yang memantau wireless registration-table.
-  - Ketika client terputus sinyal, script akan membaca comment berawalan `temp-` yang dibuat developer, lalu menghapus active session hotspot, simple queue, dan lease DHCP yang bersangkutan dalam waktu 2 detik agar resource router tetap kosong dan bersih.
 
 ---
 

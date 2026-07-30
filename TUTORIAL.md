@@ -60,8 +60,7 @@ Pada menu **Sesi Aktif Hotspot**, Anda bisa memantau siapa saja perangkat yang s
 
 ---
 
-## 📑 6. DHCP Leases & Pembersih IP Hantu
+## 📑 6. DHCP Leases
 Pada menu **DHCP Leases**, Anda dapat melihat daftar sewa IP address pada jaringan hotspot:
 * Tabel ini secara otomatis menyaring baris sewa IP yang kosong (tanpa IP/MAC) agar data di web admin bersih dan akurat.
 * **Hapus DHCP Lease**: Jika ada IP tersangkut, klik tombol **Hapus Lease** untuk melepaskan sewa IP tersebut dari router.
-* **Wireless Autocleanup (Script di Mikrotik)**: Scheduler router secara otomatis mendeteksi jika client terputus sinyal Wi-Fi secara fisik (misal client pulang ke rumah/menjauh dari router). Scheduler akan otomatis membersihkan active session, host table, dan DHCP lease client tersebut secara instan dalam 2 detik sehingga tidak ada data hantu (stale sessions) tersisa di router.
