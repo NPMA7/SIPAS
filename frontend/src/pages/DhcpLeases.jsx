@@ -13,6 +13,7 @@ export default function DhcpLeases() {
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [confirmDel, setConfirmDel] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => { ctx?.setPageTitle?.('DHCP Leases'); }, [ctx]);
 
@@ -40,15 +41,20 @@ export default function DhcpLeases() {
   }
 
   async function deleteLease() {
-    if (!confirmDel) return;
-    const { id, address } = confirmDel;
-    const res = await apiFetch(`/dhcp/leases/${id}?router_id=${routerId}`, { method: 'DELETE' });
-    if (res?.success) {
-      ctx?.addToast('Berhasil', `Lease ${address} berhasil dihapus & koneksi diputuskan.`, 'success');
-      setConfirmDel(null);
-      load();
-    } else {
-      ctx?.addToast('Gagal', res?.message || 'Gagal menghapus lease.', 'error');
+    if (!confirmDel || deleting) return;
+    setDeleting(true);
+    try {
+      const { id, address } = confirmDel;
+      const res = await apiFetch(`/dhcp/leases/${id}?router_id=${routerId}`, { method: 'DELETE' });
+      if (res?.success) {
+        ctx?.addToast('Berhasil', `Lease ${address} berhasil dihapus & koneksi diputuskan.`, 'success');
+        setConfirmDel(null);
+        load();
+      } else {
+        ctx?.addToast('Gagal', res?.message || 'Gagal menghapus lease.', 'error');
+      }
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -150,12 +156,15 @@ export default function DhcpLeases() {
       {/* Delete Lease Confirm Modal */}
       <Modal
         open={!!confirmDel}
-        onClose={() => setConfirmDel(null)}
+        onClose={() => !deleting && setConfirmDel(null)}
         title="Hapus DHCP Lease"
         footer={
           <>
-            <button className="btn btn-secondary" onClick={() => setConfirmDel(null)}>Batal</button>
-            <button className="btn btn-danger" onClick={deleteLease}>Hapus & Putuskan</button>
+            <button className="btn btn-secondary" onClick={() => setConfirmDel(null)} disabled={deleting}>Batal</button>
+            <button className="btn btn-danger" onClick={deleteLease} disabled={deleting} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              {deleting && <div className="loader-ring" style={{ width: 14, height: 14, borderWidth: 2 }} />}
+              {deleting ? 'Memproses...' : 'Hapus & Putuskan'}
+            </button>
           </>
         }
       >

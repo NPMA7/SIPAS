@@ -81,41 +81,42 @@ export default function BlockedSites() {
     });
   }
 
-  function openAdd() {
-    setEditSite(null);
+  function openAddModal() {
+    setEditingSite(null);
     setForm(EMPTY_FORM);
-    setModal(true);
+    setShowModal(true);
   }
 
-  function openEdit(site) {
-    setEditSite(site);
+  function openEditModal(site) {
+    setEditingSite(site);
     setForm({
-      key: site.key,
-      name: site.name,
-      domains: site.domains,
-      l7_regex: site.l7_regex || '',
-      is_active: site.is_active !== false,
+      name: site.name || '',
+      key: site.key || '',
+      category: site.category || 'Streaming & Sosmed',
+      domains: site.domains || '',
+      description: site.description || '',
+      is_active: site.is_active !== undefined ? site.is_active : true,
     });
-    setModal(true);
+    setShowModal(true);
   }
 
-  async function submitForm(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     setSaving(true);
     try {
       let res;
-      if (editSite) {
-        res = await apiPut(`/blocked-sites/${editSite.id}`, form);
+      if (editingSite) {
+        res = await apiPut(`/blocked-sites/${editingSite.id}`, form);
       } else {
         res = await apiPost('/blocked-sites', form);
       }
 
       if (res?.success) {
-        ctx?.addToast('Berhasil', res.message || 'Data situs terblokir disimpan.', 'success');
-        setModal(false);
+        ctx?.addToast('Sukses', res.message || 'Situs berhasil disimpan.', 'success');
+        setShowModal(false);
         loadSites();
       } else {
-        ctx?.addToast('Gagal', res?.message || 'Terjadi kesalahan.', 'danger');
+        ctx?.addToast('Gagal', res?.message || 'Gagal menyimpan situs.', 'danger');
       }
     } catch (err) {
       ctx?.addToast('Error', err.message || 'Koneksi gagal.', 'danger');
@@ -125,7 +126,8 @@ export default function BlockedSites() {
   }
 
   async function deleteSite() {
-    if (!confirmDel) return;
+    if (!confirmDel || deleting) return;
+    setDeleting(true);
     try {
       const res = await apiDelete(`/blocked-sites/${confirmDel.id}`);
       if (res?.success) {
@@ -137,6 +139,8 @@ export default function BlockedSites() {
       }
     } catch (err) {
       ctx?.addToast('Error', err.message || 'Koneksi gagal.', 'danger');
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -308,12 +312,15 @@ export default function BlockedSites() {
       {/* Delete Confirmation Modal */}
       <Modal
         open={!!confirmDel}
-        onClose={() => setConfirmDel(null)}
+        onClose={() => !deleting && setConfirmDel(null)}
         title="Hapus Situs Diblokir"
         footer={
           <>
-            <button className="btn btn-secondary" onClick={() => setConfirmDel(null)}>Batal</button>
-            <button className="btn btn-danger" onClick={deleteSite}>Ya, Hapus</button>
+            <button className="btn btn-secondary" onClick={() => setConfirmDel(null)} disabled={deleting}>Batal</button>
+            <button className="btn btn-danger" onClick={deleteSite} disabled={deleting} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              {deleting && <div className="loader-ring" style={{ width: 14, height: 14, borderWidth: 2 }} />}
+              {deleting ? 'Menghapus...' : 'Ya, Hapus'}
+            </button>
           </>
         }
       >

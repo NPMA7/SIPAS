@@ -71,11 +71,15 @@ const portalLogin = async (req, res) => {
                 const golPegawai  = ssoUser.golongan ? `Gol. ${ssoUser.golongan}` : (user?.instansi || '');
 
                 if (user) {
-                    // Update metadata dari SSO ke DB lokal jika ada perubahan
+                    // Update metadata dari SSO ke DB lokal jika ada perubahan di server SSO pusat
                     await query(
                         `UPDATE hotspot_users SET full_name = $1, nip = $2, jabatan = $3, instansi = $4, updated_at = NOW() WHERE id = $5`,
                         [namaPegawai, nipPegawai, jabatanPeg, golPegawai || user.instansi || '', user.id]
                     );
+                    user.full_name = namaPegawai;
+                    user.nip = nipPegawai;
+                    user.jabatan = jabatanPeg;
+                    user.instansi = golPegawai || user.instansi || '';
                 } else {
                     // Auto-provisioning user ASN baru ke Database PostgreSQL SIPAS (Default 30M/30M)
                     const insertRes = await query(

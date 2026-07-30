@@ -40,6 +40,7 @@ export default function Hotspot() {
   const [search, setSearch] = useState('');
   const [counts, setCounts] = useState({ active: 0, hosts: 0, users: 0 });
   const [confirmKick, setConfirmKick] = useState(null);
+  const [kicking, setKicking] = useState(false);
 
   useEffect(() => { ctx?.setPageTitle?.('Hotspot Router'); }, [ctx]);
 
@@ -111,16 +112,21 @@ export default function Hotspot() {
   }
 
   async function kickSession() {
-    if (!confirmKick) return;
-    const { id, user } = confirmKick;
-    const res = await apiFetch(`/hotspot-router/active/${id}?router_id=${routerId}`, { method: 'DELETE' });
-    if (res?.success) {
-      ctx?.addToast('Berhasil', `Sesi untuk "${user}" berhasil diputuskan.`, 'success');
-      setConfirmKick(null);
-      loadTab('active');
-      loadAllCounts();
-    } else {
-      ctx?.addToast('Gagal', res?.message || 'Gagal memutuskan sesi.', 'error');
+    if (!confirmKick || kicking) return;
+    setKicking(true);
+    try {
+      const { id, user } = confirmKick;
+      const res = await apiFetch(`/hotspot-router/active/${id}?router_id=${routerId}`, { method: 'DELETE' });
+      if (res?.success) {
+        ctx?.addToast('Berhasil', `Sesi untuk "${user}" berhasil diputuskan.`, 'success');
+        setConfirmKick(null);
+        loadTab('active');
+        loadAllCounts();
+      } else {
+        ctx?.addToast('Gagal', res?.message || 'Gagal memutuskan sesi.', 'error');
+      }
+    } finally {
+      setKicking(false);
     }
   }
 
@@ -303,12 +309,15 @@ export default function Hotspot() {
       {/* Kick Active Session Modal */}
       <Modal
         open={!!confirmKick}
-        onClose={() => setConfirmKick(null)}
+        onClose={() => !kicking && setConfirmKick(null)}
         title="Putuskan Sesi Aktif (Kick)"
         footer={
           <>
-            <button className="btn btn-secondary" onClick={() => setConfirmKick(null)}>Batal</button>
-            <button className="btn btn-danger" onClick={kickSession}>Putuskan Sesi</button>
+            <button className="btn btn-secondary" onClick={() => setConfirmKick(null)} disabled={kicking}>Batal</button>
+            <button className="btn btn-danger" onClick={kickSession} disabled={kicking} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              {kicking && <div className="loader-ring" style={{ width: 14, height: 14, borderWidth: 2 }} />}
+              {kicking ? 'Memproses...' : 'Putuskan Sesi'}
+            </button>
           </>
         }
       >

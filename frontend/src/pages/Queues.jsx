@@ -241,29 +241,29 @@ export default function Queues() {
       </div>
 
       {/* Delete Confirmation Modal */}
-      {confirmDelete && (
-        <Modal
-          isOpen={true}
-          onClose={() => setConfirmDelete(null)}
-          title="Konfirmasi Hapus Queue"
-        >
-          <p style={{ color: 'var(--text-secondary)', marginBottom: 20 }}>
-            Apakah Anda yakin ingin menghapus Simple Queue <strong>{confirmDelete.name}</strong> ({confirmDelete.target}) dari router?
-          </p>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-            <button className="btn btn-ghost" onClick={() => setConfirmDelete(null)}>
-              Batal
-            </button>
+      <Modal
+        open={!!confirmDelete}
+        onClose={() => !actionLoading && setConfirmDelete(null)}
+        title="Konfirmasi Hapus Queue"
+        footer={
+          <>
+            <button className="btn btn-secondary" onClick={() => setConfirmDelete(null)} disabled={actionLoading}>Batal</button>
             <button
               className="btn btn-danger"
-              onClick={() => handleQueueAction(confirmDelete.id, 'remove')}
+              onClick={() => handleQueueAction(confirmDelete?.id, 'remove')}
               disabled={actionLoading}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
             >
+              {actionLoading && <div className="loader-ring" style={{ width: 14, height: 14, borderWidth: 2 }} />}
               {actionLoading ? 'Menghapus...' : 'Ya, Hapus'}
             </button>
-          </div>
-        </Modal>
-      )}
+          </>
+        }
+      >
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+          Apakah Anda yakin ingin menghapus Simple Queue <strong style={{ color: 'var(--text)' }}>{confirmDelete?.name}</strong> ({confirmDelete?.target}) dari router?
+        </p>
+      </Modal>
     </>
   );
 }

@@ -422,16 +422,40 @@ export default function Users() {
           <div className="form-row">
             <div className="form-group">
               <label className="form-label">Nama Lengkap</label>
-              <input className="input" value={form.full_name} onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))} placeholder="Nama lengkap..." />
+              <input
+                className="input"
+                value={form.full_name}
+                onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))}
+                placeholder="Nama lengkap..."
+                disabled={editUser?.auth_provider === 'sso'}
+                style={editUser?.auth_provider === 'sso' ? { opacity: 0.6, cursor: 'not-allowed' } : {}}
+              />
+              {editUser?.auth_provider === 'sso' && <div className="form-hint" style={{ color: 'var(--info)' }}>Dikelola oleh SSO Pemkab</div>}
             </div>
             <div className="form-group">
               <label className="form-label">Golongan</label>
-              <input className="input" value={form.instansi} onChange={e => setForm(f => ({ ...f, instansi: e.target.value }))} placeholder="IV/a, III/a, dll" />
+              <input
+                className="input"
+                value={form.instansi}
+                onChange={e => setForm(f => ({ ...f, instansi: e.target.value }))}
+                placeholder="IV/a, III/a, dll"
+                disabled={editUser?.auth_provider === 'sso'}
+                style={editUser?.auth_provider === 'sso' ? { opacity: 0.6, cursor: 'not-allowed' } : {}}
+              />
+              {editUser?.auth_provider === 'sso' && <div className="form-hint" style={{ color: 'var(--info)' }}>Dikelola oleh SSO Pemkab</div>}
             </div>
           </div>
           <div className="form-group" style={{ marginBottom: 16 }}>
             <label className="form-label">Jabatan</label>
-            <input className="input" value={form.jabatan} onChange={e => setForm(f => ({ ...f, jabatan: e.target.value }))} placeholder="Pranata Komputer / Kabid / dll" />
+            <input
+              className="input"
+              value={form.jabatan}
+              onChange={e => setForm(f => ({ ...f, jabatan: e.target.value }))}
+              placeholder="Pranata Komputer / Kabid / dll"
+              disabled={editUser?.auth_provider === 'sso'}
+              style={editUser?.auth_provider === 'sso' ? { opacity: 0.6, cursor: 'not-allowed' } : {}}
+            />
+            {editUser?.auth_provider === 'sso' && <div className="form-hint" style={{ color: 'var(--info)' }}>Dikelola oleh SSO Pemkab</div>}
           </div>
 
           <div className="form-row">

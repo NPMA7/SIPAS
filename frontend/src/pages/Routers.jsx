@@ -83,6 +83,7 @@ export default function Routers() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [confirmDel, setConfirmDel] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => { ctx?.setPageTitle?.('Manajemen Router'); }, [ctx]);
   useEffect(() => { loadRouters(); }, []);
@@ -91,14 +92,9 @@ export default function Routers() {
     setLoading(true);
     try {
       const d = await apiFetch('/routers');
-      if (d?.success) {
-        setRouters(d.data || []);
-      }
-    } catch (err) {
-      ctx?.addToast?.('danger', err.message || 'Gagal memuat daftar router.');
-    } finally {
-      setLoading(false);
-    }
+      if (d?.success) setRouters(d.data || []);
+    } catch (_) {}
+    setLoading(false);
   }
 
   function openAdd() {
@@ -107,30 +103,33 @@ export default function Routers() {
     setModal(true);
   }
 
-  function openEdit(r) {
-    setEditRouter(r);
+  function openEdit(router) {
+    setEditRouter(router);
     setForm({
-      name: r.name,
-      ip_address: r.ip_address,
-      api_port: r.api_port || 8728,
-      api_username: r.api_username || 'admin',
+      name: router.name || '',
+      ip_address: router.ip_address || '',
+      api_port: router.api_port || 8728,
+      api_username: router.api_username || 'admin',
       api_password: '',
-      location: r.location || '',
-      router_type: r.router_type || 'internal'
+      location: router.location || '',
+      router_type: router.router_type || 'internal',
     });
     setModal(true);
   }
 
-  async function submitForm(e) {
+  async function handleSave(e) {
     e.preventDefault();
     setSaving(true);
     try {
-      const body = { ...form, api_port: parseInt(form.api_port) || 8728 };
-      const res = editRouter
-        ? await apiPut(`/routers/${editRouter.id}`, body)
-        : await apiPost('/routers', body);
+      const body = { ...form };
+      let res;
+      if (editRouter) {
+        res = await apiPut(`/routers/${editRouter.id}`, body);
+      } else {
+        res = await apiPost('/routers', body);
+      }
       if (res?.success) {
-        ctx?.addToast('Berhasil', res.message || 'Disimpan.', 'success');
+        ctx?.addToast('Berhasil', editRouter ? 'Router diupdate.' : 'Router ditambahkan.', 'success');
         setModal(false);
         loadRouters();
       } else {
@@ -141,10 +140,11 @@ export default function Routers() {
     }
   }
 
-  async function handleTest(router) {
-    const res = await apiFetch(`/routers/${router.id}/test`);
+  async function testConnection(id) {
+    ctx?.addToast('Mencoba...', 'Menghubungi MikroTik API...', 'info');
+    const res = await apiFetch(`/routers/${id}/test`);
     if (res?.success) {
-      ctx?.addToast('Status Router', res.message || 'Koneksi Berhasil', 'success');
+      ctx?.addToast('Koneksi Sukses', res.message || 'Berhasil terhubung ke MikroTik.', 'success');
       loadRouters();
     } else {
       ctx?.addToast('Koneksi Gagal', res?.message || 'Tidak dapat terhubung.', 'error');
@@ -152,14 +152,19 @@ export default function Routers() {
   }
 
   async function deleteRouter() {
-    if (!confirmDel) return;
-    const res = await apiDelete(`/routers/${confirmDel.id}`);
-    if (res?.success) {
-      ctx?.addToast('Dihapus', res.message || 'Router dihapus.', 'success');
-      setConfirmDel(null);
-      loadRouters();
-    } else {
-      ctx?.addToast('Gagal', res?.message || 'Gagal menghapus.', 'error');
+    if (!confirmDel || deleting) return;
+    setDeleting(true);
+    try {
+      const res = await apiDelete(`/routers/${confirmDel.id}`);
+      if (res?.success) {
+        ctx?.addToast('Dihapus', res.message || 'Router dihapus.', 'success');
+        setConfirmDel(null);
+        loadRouters();
+      } else {
+        ctx?.addToast('Gagal', res?.message || 'Gagal menghapus.', 'error');
+      }
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -276,12 +281,15 @@ export default function Routers() {
       {/* Delete Confirm */}
       <Modal
         open={!!confirmDel}
-        onClose={() => setConfirmDel(null)}
+        onClose={() => !deleting && setConfirmDel(null)}
         title="Hapus Router"
         footer={
           <>
-            <button className="btn btn-secondary" onClick={() => setConfirmDel(null)}>Batal</button>
-            <button className="btn btn-danger" onClick={deleteRouter}>Hapus</button>
+            <button className="btn btn-secondary" onClick={() => setConfirmDel(null)} disabled={deleting}>Batal</button>
+            <button className="btn btn-danger" onClick={deleteRouter} disabled={deleting} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              {deleting && <div className="loader-ring" style={{ width: 14, height: 14, borderWidth: 2 }} />}
+              {deleting ? 'Menghapus...' : 'Hapus'}
+            </button>
           </>
         }
       >
