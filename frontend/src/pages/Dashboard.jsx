@@ -84,7 +84,10 @@ export default function Dashboard() {
         apiFetch(`/dashboard/${routerId}/sessions`),
       ]);
       if (statsRes?.success) setStats(statsRes.data);
-      if (sessRes?.success) setSessions(sessRes.data || []);
+      if (sessRes?.success) {
+        const raw = sessRes.data || [];
+        setSessions(raw.filter(s => s && s.user && String(s.user).trim() !== '' && String(s.user).trim() !== '—' && String(s.user).trim() !== 'undefined' && String(s.user).trim() !== 'null'));
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);

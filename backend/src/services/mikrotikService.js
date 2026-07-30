@@ -500,7 +500,17 @@ const getActiveHotspotUsers = async (routerConfig) => {
 
     const now = Date.now();
 
-    return sessions.map((s) => {
+    const validSessions = (sessions || []).filter(
+      (s) =>
+        s &&
+        s.user &&
+        String(s.user).trim() !== "" &&
+        String(s.user).trim() !== "—" &&
+        String(s.user).trim() !== "undefined" &&
+        String(s.user).trim() !== "null"
+    );
+
+    return validSessions.map((s) => {
       const userIp = s["address"] || "";
       const username = s["user"] || "";
       const queueName = `hotspot-${username}`;

@@ -72,7 +72,8 @@ export default function Hotspot() {
         apiFetch(`/hotspot-router/hosts?router_id=${routerId}`),
         apiFetch(`/hotspot-router/users?router_id=${routerId}`)
       ]);
-      const validActive = (resActive?.data || []).filter(a => a.user && a.address);
+      const isRealUser = a => a && a.user && String(a.user).trim() !== '' && String(a.user).trim() !== '—' && String(a.user).trim() !== 'undefined' && String(a.user).trim() !== 'null';
+      const validActive = (resActive?.data || []).filter(isRealUser);
       setCounts({
         active: validActive.length,
         hosts: resHosts?.success ? (resHosts.data || []).length : 0,
@@ -96,7 +97,8 @@ export default function Hotspot() {
         const rawList = res.data || [];
         if (t === 'active') {
           // Filter out rows without valid usernames/address/MAC to clean up stale ghosts
-          setData(rawList.filter(a => a.user && a.address));
+          const isRealUser = a => a && a.user && String(a.user).trim() !== '' && String(a.user).trim() !== '—' && String(a.user).trim() !== 'undefined' && String(a.user).trim() !== 'null';
+          setData(rawList.filter(isRealUser));
         } else {
           setData(rawList);
         }
