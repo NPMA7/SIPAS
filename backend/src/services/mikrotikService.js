@@ -1502,28 +1502,52 @@ const removeHotspotActive = async (routerConfig, activeId) => {
           }
         }
 
-        // 6. Hapus user hotspot lokal jika temporary
+        // 6. Cek sisa sesi aktif milik user ini sebelum menghapus user temporary / Simple Queue
         if (username) {
-          const localUsers = await conn.write("/ip/hotspot/user/print", [
-            `?name=${username}`,
-          ]);
-          for (const u of localUsers) {
-            const comment = u.comment || "";
-            if (comment.startsWith("temp-")) {
-              await conn.write("/ip/hotspot/user/remove", [`=.id=${u[".id"]}`]);
+          try {
+            const remainingActive = await conn.write("/ip/hotspot/active/print", [
+              `?user=${username}`,
+            ]);
+            const remainingIps = (remainingActive || [])
+              .map((s) => s.address)
+              .filter(Boolean);
 
-              // Hapus Simple Queue jika ada
+            if (remainingIps.length > 0) {
+              // Masih ada perangkat lain milik user ini yang sedang aktif online -> Update Target Simple Queue
+              const queueName = `hotspot-${username}`;
+              const allQueues = await conn.write("/queue/simple/print");
+              const existingQueue = (allQueues || []).find((q) => q.name === queueName);
+              if (existingQueue) {
+                await conn.write("/queue/simple/set", [
+                  `=.id=${existingQueue[".id"]}`,
+                  `=target=${remainingIps.join(",")}`,
+                ]);
+              }
+            } else {
+              // Tidak ada sesi aktif tersisa (0 devices) -> Hapus user temporary dan Simple Queue
+              const localUsers = await conn.write("/ip/hotspot/user/print", [
+                `?name=${username}`,
+              ]);
+              for (const u of localUsers) {
+                const comment = u.comment || "";
+                if (comment.startsWith("temp-")) {
+                  try {
+                    await conn.write("/ip/hotspot/user/remove", [`=.id=${u[".id"]}`]);
+                  } catch (_) {}
+                }
+              }
+
               try {
                 const queues = await conn.write("/queue/simple/print", [
                   `?name=hotspot-${username}`,
                 ]);
                 for (const q of queues) {
-                  await conn.write("/queue/simple/remove", [
-                    `=.id=${q[".id"]}`,
-                  ]);
+                  await conn.write("/queue/simple/remove", [`=.id=${q[".id"]}`]);
                 }
               } catch (_) {}
             }
+          } catch (sessionCheckErr) {
+            console.warn("[removeHotspotActive] Session check warning:", sessionCheckErr.message);
           }
         }
       }
