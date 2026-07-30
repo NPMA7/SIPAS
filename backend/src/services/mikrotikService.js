@@ -1539,7 +1539,7 @@ const manageSimpleQueue = async (routerConfig, queueId, action) => {
 };
 
 /**
- * Hapus pemblokiran situs untuk user tertentu langsung dari address-list MikroTik
+ * Hapus pemblokiran situs untuk user tertentu dari address-list MikroTik
  */
 const removeUserBlockFromMikrotik = async (routerConfig, siteKey, username, userIp = null) => {
   return withConnection(routerConfig, async (conn) => {
@@ -1565,35 +1565,86 @@ const removeUserBlockFromMikrotik = async (routerConfig, siteKey, username, user
       }
     }
 
-    // Jika tidak ada user lagi yang diblokir untuk situs ini, bersihkan filter rule, Layer7, dan domain address-list
+    // Cek apakah masih ada user aktif online yang diblokir untuk situs ini
+    try {
+      const freshLists = await conn.write("/ip/firewall/address-list/print");
+      const remainingListEntries = (freshLists || []).filter(e =>
+        e.list === targetUserList ||
+        (e.list === BLOCK_ADDRESS_LIST && e.comment && e.comment.toLowerCase().includes(`block ${cleanKey}`))
+      );
+
+      // Cek sesi aktif di hotspot
+      const activeSessions = await conn.write("/ip/hotspot/active/print");
+      const activeUsernames = (activeSessions || []).map(s => (s.user || '').toLowerCase().trim());
+
+      // Jika tidak ada IP di address list DAN tidak ada user terblokir yang sedang online aktif, bersihkan rules dari MikroTik
+      if (remainingListEntries.length === 0) {
+        let hasActiveBlockedUser = false;
+        // Cek via address list comment
+        for (const entry of freshLists || []) {
+          if (entry.comment && entry.comment.toLowerCase().includes(`block ${cleanKey}`)) {
+            hasActiveBlockedUser = true;
+            break;
+          }
+        }
+
+        if (!hasActiveBlockedUser) {
+          // Bersihkan Filter rules, Layer7, dan Target Domain list
+          const filters = await conn.write("/ip/firewall/filter/print");
+          for (const rule of filters || []) {
+            if (
+              rule["src-address-list"] === targetUserList ||
+              (rule.comment && rule.comment.toLowerCase().includes(cleanKey))
+            ) {
+              try { await conn.write("/ip/firewall/filter/remove", [`=.id=${rule[".id"]}`]); } catch (_) {}
+            }
+          }
+
+          const l7s = await conn.write("/ip/firewall/layer7-protocol/print");
+          const l7Entry = (l7s || []).find(e => e.name === `${cleanKey}-block`);
+          if (l7Entry) {
+            try { await conn.write("/ip/firewall/layer7-protocol/remove", [`=.id=${l7Entry[".id"]}`]); } catch (_) {}
+          }
+
+          for (const entry of freshLists || []) {
+            if (entry.list === `${cleanKey}-blocked`) {
+              try { await conn.write("/ip/firewall/address-list/remove", [`=.id=${entry[".id"]}`]); } catch (_) {}
+            }
+          }
+        }
+      }
+    } catch (_) {}
+  });
+};
+
+/**
+ * Hapus seluruh aturan firewall (Filter rules, Layer7, Domain lists) jika suatu situs terblokir dihapus total oleh Admin
+ */
+const purgeBlockedSiteFromMikrotik = async (routerConfig, siteKey) => {
+  return withConnection(routerConfig, async (conn) => {
+    const cleanKey = siteKey.toLowerCase().trim();
+    const targetUserList = `hotspot-blocked-${cleanKey}`;
+
+    const filters = await conn.write("/ip/firewall/filter/print");
+    for (const rule of filters || []) {
+      if (
+        rule["src-address-list"] === targetUserList ||
+        (rule.comment && rule.comment.toLowerCase().includes(cleanKey))
+      ) {
+        try { await conn.write("/ip/firewall/filter/remove", [`=.id=${rule[".id"]}`]); } catch (_) {}
+      }
+    }
+
+    const l7s = await conn.write("/ip/firewall/layer7-protocol/print");
+    const l7Entry = (l7s || []).find(e => e.name === `${cleanKey}-block`);
+    if (l7Entry) {
+      try { await conn.write("/ip/firewall/layer7-protocol/remove", [`=.id=${l7Entry[".id"]}`]); } catch (_) {}
+    }
+
     const freshLists = await conn.write("/ip/firewall/address-list/print");
-    const remaining = (freshLists || []).filter(e =>
-      e.list === targetUserList ||
-      (e.list === BLOCK_ADDRESS_LIST && e.comment && e.comment.toLowerCase().includes(`block ${cleanKey}`))
-    );
-
-    if (remaining.length === 0) {
-      const filters = await conn.write("/ip/firewall/filter/print");
-      for (const rule of filters || []) {
-        if (
-          rule["src-address-list"] === targetUserList ||
-          rule["src-address-list"] === BLOCK_ADDRESS_LIST ||
-          (rule.comment && rule.comment.toLowerCase().includes(cleanKey))
-        ) {
-          try { await conn.write("/ip/firewall/filter/remove", [`=.id=${rule[".id"]}`]); } catch (_) {}
-        }
-      }
-
-      const l7s = await conn.write("/ip/firewall/layer7-protocol/print");
-      const l7Entry = (l7s || []).find(e => e.name === `${cleanKey}-block`);
-      if (l7Entry) {
-        try { await conn.write("/ip/firewall/layer7-protocol/remove", [`=.id=${l7Entry[".id"]}`]); } catch (_) {}
-      }
-
-      for (const entry of freshLists || []) {
-        if (entry.list === `${cleanKey}-blocked`) {
-          try { await conn.write("/ip/firewall/address-list/remove", [`=.id=${entry[".id"]}`]); } catch (_) {}
-        }
+    for (const entry of freshLists || []) {
+      if (entry.list === `${cleanKey}-blocked` || entry.list === targetUserList) {
+        try { await conn.write("/ip/firewall/address-list/remove", [`=.id=${entry[".id"]}`]); } catch (_) {}
       }
     }
   });
@@ -1614,6 +1665,7 @@ module.exports = {
   addUserToBlockList,
   removeUserFromBlockList,
   removeUserBlockFromMikrotik,
+  purgeBlockedSiteFromMikrotik,
   testConnection,
   setupPortalUser,
   BLOCK_ADDRESS_LIST,

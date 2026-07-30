@@ -204,8 +204,14 @@ const deleteBlockedSite = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Situs terblokir tidak ditemukan.' });
         }
         const site = result.rows[0];
-        // Hapus site.key dari semua user
+        // Hapus site.key dari semua user dan bersihkan rules MikroTik
         await syncUsersForBlockedSite(site.key, []);
+        try {
+            const activeRouters = await query(`SELECT * FROM routers WHERE is_active = TRUE`);
+            for (const r of activeRouters.rows) {
+                mikrotik.purgeBlockedSiteFromMikrotik(r, site.key).catch(() => {});
+            }
+        } catch (_) {}
 
         res.json({ success: true, message: `Situs "${site.name}" berhasil dihapus.` });
     } catch (err) {
