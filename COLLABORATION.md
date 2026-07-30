@@ -9,12 +9,12 @@ Dokumen ini berfungsi sebagai jembatan komunikasi teknis antara **Software Devel
 ### 🔑 Data yang Dibutuhkan Developer dari Network Engineer:
 
 1. **Kredensial Akses API Mikrotik**:
-   - IP management router (contoh: `192.168.88.1`).
+   - IP management / IP VPN client router (contoh: `192.168.42.2`).
    - Port API RouterOS (default: `8728` atau `8729` untuk SSL).
    - Akun administrator khusus API dengan hak akses _read_ dan _write_.
 2. **Topologi IP & Nama Interface**:
    - Nama interface / bridge tempat hotspot dijalankan (contoh: `bridge-hotspot`).
-   - IP Address range subnet hotspot (contoh: `192.168.10.0/24`).
+   - IP Address range subnet hotspot (contoh: `10.10.0.0/16` atau VLAN per-dinas).
 3. **Format Limit Bandwidth (Simple Queue)**:
    - Penamaan Queue yang diinginkan agar tidak bentrok dengan setup jaringan kantor/sekolah lainnya.
 4. **Target Domain Pemblokiran**:
@@ -33,17 +33,17 @@ Dokumen ini berfungsi sebagai jembatan komunikasi teknis antara **Software Devel
 ### 🔑 Data yang Dibutuhkan Network Engineer dari Developer:
 
 1. **IP Address & Port Server Application**:
-   - IP Address host server tempat Docker backend dan database Postgres dijalankan (contoh: `192.168.88.2`).
-   - Port HTTP Server Portal Admin (contoh: `3000`).
+   - IP Public VPS host server tempat Docker backend dan database Postgres dijalankan (`103.67.244.193`).
+   - Port HTTP Server Portal Admin (port `80` / `3000`).
 2. **Kebutuhan Walled Garden**:
-   - Domain dan alamat IP server backend yang harus dilewati (bypass) sebelum pengguna melakukan login (agar browser client dapat memuat halaman captive portal).
+   - Domain dan alamat IP server backend (`103.67.244.193`) yang harus dilewati (bypass) sebelum pengguna melakukan login (agar browser client dapat memuat halaman captive portal).
 3. **Pola Penandaan User (Comments)**:
    - Format tanda pengenal (comment) yang diberikan backend saat membuat user hotspot sementara (contoh format: `temp-<timestamp>` atau `Block npma for <username>`). Ini penting agar script scheduler Mikrotik dapat membedakan mana user statis dan mana user dinamis buatan web.
 
 ### 🛠️ Apa yang Dilakukan Network Engineer Terhadap Data Tersebut:
 
-- **Routing & NAT Setup**: Network Engineer mengatur tabel routing agar port 8728 Mikrotik terbuka dan aman (hanya dapat diakses oleh IP server Docker host `192.168.88.2`).
-- **Walled Garden Bypass**: Mengonfigurasi `/ip hotspot walled-garden ip` agar IP server web admin (`192.168.88.2`) di-bypass dari captive portal redirection.
+- **Routing & NAT Setup**: Network Engineer mengatur tabel routing agar port 8728 Mikrotik terbuka dan aman via jalur VPN L2TP (`192.168.42.0/24`).
+- **Walled Garden Bypass**: Mengonfigurasi `/ip hotspot walled-garden ip` agar IP server VPS (`103.67.244.193`) di-bypass dari captive portal redirection.
 - **Implementasi Scheduler & Autocleanup (`mikrotik_project_setup.rsc`)**:
   - Network Engineer memasang script dan scheduler yang memantau wireless registration-table.
   - Ketika client terputus sinyal, script akan membaca comment berawalan `temp-` yang dibuat developer, lalu menghapus active session hotspot, simple queue, dan lease DHCP yang bersangkutan dalam waktu 2 detik agar resource router tetap kosong dan bersih.
@@ -54,12 +54,14 @@ Dokumen ini berfungsi sebagai jembatan komunikasi teknis antara **Software Devel
 
 Gunakan tabel ini untuk mencocokkan parameter sebelum melakukan deployment final:
 
-| Parameter Integrasi        | Nilai / Konfigurasi        | Pemilik Data     | Status    |
-| :------------------------- | :------------------------- | :--------------- | :-------- |
-| **IP Management Mikrotik** | `192.168.88.1`             | Network Engineer | [ ] Cocok |
-| **IP Docker Host Server**  | `192.168.88.2`             | Developer        | [ ] Cocok |
-| **Port API RouterOS**      | `8728`                     | Network Engineer | [ ] Cocok |
-| **SSID Wi-Fi Hotspot**     | `SIPAS-WiFi`               | Network Engineer | [ ] Cocok |
-| **Format Queue Name**      | `hotspot-<username>`       | Developer        | [ ] Cocok |
-| **Format Comment User**    | `temp-<timestamp>`         | Developer        | [ ] Cocok |
-| **Target Bypass Portal**   | `http://192.168.88.2:3000` | Developer        | [ ] Cocok |
+| Parameter Integrasi            | Nilai / Konfigurasi                             | Pemilik Data     | Status    |
+| :----------------------------- | :---------------------------------------------- | :--------------- | :-------- |
+| **IP Management Mikrotik**     | IP VPN `192.168.42.X` (cth: `192.168.42.2`)     | Network Engineer | [ ] Cocok |
+| **IP Public / Docker VPS**     | `103.67.244.193`                                | Developer        | [ ] Cocok |
+| **Port API RouterOS**          | `8728`                                          | Network Engineer | [ ] Cocok |
+| **Mode Topologi Jaringan**     | Non-VLAN (`10.10.0.0/16`) / Multi-VLAN Kelas A  | Network Engineer | [ ] Cocok |
+| **Tipe Router SIPAS**          | Internal (Full API) / Eksternal (Vendor Portal) | Developer        | [ ] Cocok |
+| **Batas Perangkat (Max)**      | Default `4` Perangkat / User                    | Developer        | [ ] Cocok |
+| **SSID Wi-Fi Hotspot**         | `SIPAS-WiFi`                                    | Network Engineer | [ ] Cocok |
+| **Format Queue Name**          | `hotspot-<username>`                            | Developer        | [ ] Cocok |
+| **Target Walled Garden VPS**   | `103.67.244.193`                                | Network Engineer | [ ] Cocok |

@@ -1,7 +1,7 @@
 const { RouterOSAPI } = require('node-routeros');
 
 const r = {
-    ip_address: '192.168.88.1',
+    ip_address: '192.168.42.2',
     api_port: 8728,
     api_username: 'admin',
     api_password: 'admin',

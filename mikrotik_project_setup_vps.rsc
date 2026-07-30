@@ -1,5 +1,5 @@
 # =============================================================================
-#     MIKROTIK WEBHOTSPOT INTEGRATION SCRIPT FOR VPS 
+#     MIKROTIK SIPAS INTEGRATION SCRIPT FOR VPS 
 # =============================================================================
 # Script ini sudah disesuaikan untuk deployment VPS dengan IP Public: 103.67.244.193
 # dan Subnet VPN L2TP: 192.168.42.0/24

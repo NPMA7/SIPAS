@@ -54,7 +54,7 @@ router.get("/users", (req, res) => {
 
 /**
  * POST /api/sso-mock/login
- * Menirukan endpoint POST sso.bandungkab.go.id/api/login
+ * Menirukan endpoint POST SSO
  * Body: username, password
  */
 router.post("/login", upload.none(), (req, res) => {

@@ -38,7 +38,7 @@ Proyek ini menyediakan 3 berkas script Mikrotik (`.rsc`) yang dijalankan sesuai 
    ```
 
 4. **Khusus Skenario VPS / Remote Router**:
-   Jika server WebHotspot Anda berada di VPS, jalankan script VPN Client:
+   Jika server SIPAS Anda berada di VPS, jalankan script VPN Client:
    ```routeros
    /import file-name=mikrotik_vpn_setup.rsc
    ```
@@ -50,7 +50,7 @@ Proyek ini menyediakan 3 berkas script Mikrotik (`.rsc`) yang dijalankan sesuai 
 
 Di komputer Server / VPS (yang sudah terpasang Docker & Docker Compose):
 
-1. Buka terminal di direktori root proyek `WebHotspot`.
+1. Buka terminal di direktori root proyek `SIPAS`.
 2. Jalankan perintah untuk mengaktifkan Database PostgreSQL, Backend, dan Frontend Nginx:
    ```bash
    docker-compose up -d --build
@@ -64,13 +64,12 @@ Di komputer Server / VPS (yang sudah terpasang Docker & Docker Compose):
 
 ## 🌐 Langkah 3: Hubungkan Web Admin ke Router Mikrotik
 
-1. Buka browser Anda dan akses halaman admin di:
-   - **Lokal**: `http://localhost:3000` (atau IP PC Server `http://192.168.88.2:3000`)
-   - **VPS**: `http://IP_PUBLIC_VPS:3000` (atau domain Anda)
+1. Buka browser Anda dan akses halaman admin Web SIPAS di:
+   - `http://103.67.244.193` (IP Public VPS)
 2. Login ke Web Admin, lalu masuk ke menu **Setting / Router Setup**.
-3. Daftarkan Router Anda:
-   - **Skenario Lokal**: Isikan IP Address Mikrotik `192.168.88.1` dan API Port `8728`.
-   - **Skenario VPS**: Isikan IP VPN Mikrotik (misal `10.8.0.2` atau `192.168.42.2`) dan API Port `8728`.
+3. Daftarkan Router Mikrotik Anda:
+   - Isikan **IP VPN Client Mikrotik**: `192.168.42.2` (atau IP VPN router yang terhubung ke VPS).
+   - Isikan **API Port**: `8728`.
 4. Simpan data router dan pastikan indikator status koneksi menunjukkan **Connected (Hijau)**.
 
 ---
@@ -78,8 +77,7 @@ Di komputer Server / VPS (yang sudah terpasang Docker & Docker Compose):
 ## 🔑 Langkah 4: Upload Halaman Login Captive Portal (Hotspot Files)
 
 1. Buka folder proyek [flash/hotspot](./flash/hotspot).
-2. **Catatan Skenario VPS**:
-   Jika deploy di VPS, buka file `login.html` dan `rlogin.html`, lalu ganti URL `http://192.168.88.2:3000/` dengan IP Public VPS / Domain Anda (contoh: `http://portal-wifi.my.id/`).
+2. Pastikan file `login.html` dan `rlogin.html` sudah mengarah ke IP Public VPS `103.67.244.193` / domain portal Anda.
 3. Drag & drop seluruh isi folder `flash/hotspot` ke menu **Files** Winbox router Mikrotik Anda (folder `flash/hotspot` atau `hotspot`).
 4. Di Winbox, buka **IP -> Hotspot -> Server Profiles**:
    - Double-click `hsprof-captive`, pastikan **HTML Directory** sudah terarah ke folder `hotspot`.

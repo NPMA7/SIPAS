@@ -247,7 +247,7 @@ export default function Routers() {
             </div>
             <div className="form-group">
               <label className="form-label">IP Address / Host Target *</label>
-              <input className="input" value={form.ip_address} onChange={e => setForm(f => ({ ...f, ip_address: e.target.value }))} placeholder="192.168.88.1 / portal.vendor.com" required />
+              <input className="input" value={form.ip_address} onChange={e => setForm(f => ({ ...f, ip_address: e.target.value }))} placeholder="192.168.42.2 / portal.vendor.com" required />
             </div>
           </div>
           <div className="form-row">

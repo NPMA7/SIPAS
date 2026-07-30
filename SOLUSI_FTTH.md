@@ -18,15 +18,15 @@ Dokumen ini berisi dokumentasi teknis lengkap mengenai konfigurasi **SIPAS VPS**
 ## 🛠️ 2. Solusi Redirect Captive Portal ke VPS Public IP
 
 ### Masalah:
-Klien HP/Laptop terarah ke IP lokal `http://192.168.88.2:3000/` dan error connection refused.
+Klien HP/Laptop terarah ke IP lokal lama dan error connection refused.
 
 ### Penyebab:
-File HTML captive portal bawaan di memori Winbox Mikrotik (`login.html` & `rlogin.html`) masih menyimpan alamat IP lokal lama.
+File HTML captive portal bawaan di memori Winbox Mikrotik (`login.html` & `rlogin.html`) masih menyimpan alamat IP lama.
 
 ### Solusi:
 Ubah variabel `portalUrl` pada berkas `login.html` dan `rlogin.html` di folder `flash/hotspot/` menjadi:
 ```javascript
-var portalUrl = "http://103.67.244.193:3000/";
+var portalUrl = "http://103.67.244.193/";
 ```
 Lalu upload / replace seluruh folder `hotspot` tersebut ke menu **Files** Winbox Mikrotik.
 

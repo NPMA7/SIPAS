@@ -147,8 +147,8 @@ ON CONFLICT (username) DO NOTHING;
 -- ============================================================
 -- SEED DATA: Sample Router
 -- ============================================================
-INSERT INTO routers (name, ip_address, api_port, api_username, api_password, location) VALUES
-('Router-Utama', '192.168.88.1', 8728, 'admin', '', 'Ruang Server Utama')
+INSERT INTO routers (name, ip_address, api_port, api_username, api_password, location, router_type) VALUES
+('Router-Utama', '192.168.42.2', 8728, 'admin', '', 'Ruang Server / VPN Client', 'internal')
 ON CONFLICT DO NOTHING;
 
 -- ============================================================
@@ -156,8 +156,8 @@ ON CONFLICT DO NOTHING;
 -- ============================================================
 INSERT INTO hotspot_users (username, password, full_name, bandwidth_limit, website_block, router_id, notes) VALUES
 (
-    'user_normal',
-    'pass123',
+    'user1',
+    'user1',
     'Budi Santoso',
     '10M/10M',
     FALSE,
@@ -165,21 +165,12 @@ INSERT INTO hotspot_users (username, password, full_name, bandwidth_limit, websi
     'User normal tanpa pembatasan khusus'
 ),
 (
-    'user_limited',
-    'pass456',
+    'user2',
+    'user2',
     'Siti Rahayu',
-    '2M/512k',
-    FALSE,
-    1,
-    'User dengan bandwidth terbatas 2Mbps download / 512kbps upload'
-),
-(
-    'user_blocked',
-    'pass789',
-    'Ahmad Fauzi',
     '5M/5M',
     TRUE,
     1,
-    'User dengan akses ke npma.my.id diblokir'
-)
+    'User dengan bandwidth terbatas 5Mbps download / 5Mbps upload'
+),
 ON CONFLICT (username) DO NOTHING;

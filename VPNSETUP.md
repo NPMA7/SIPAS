@@ -49,6 +49,7 @@ Tambahkan akun Mikrotik baru di paling bawah file:
 ```text
 # Username       Server     Password                  IP Address
 "mikrotik"       *          "password_rahasia_anda"   *
+"mikrotik2"       *          "password_rahasia_anda"   *
 ```
 
 ### B. Mengubah IPsec Secret (Pre-Shared Key)

@@ -38,6 +38,12 @@ Untuk memblokir situs-situs CDN modern seperti YouTube atau domain kustom (NPMA)
 * Script pembersih otomatis berjalan setiap 2 detik di dalam router Mikrotik untuk menghapus sesi hotspot, host, dan sewa IP yang tersisa jika perangkat client terputus secara fisik (Wireless Registration Table kosong).
 * Ketika status blokir untuk suatu situs dimatikan (uncheck) di web admin, sistem mendeteksi apakah masih ada user lain yang diblokir. Jika list kosong, backend otomatis menghapus **seluruh rule filter L7/IP/QUIC, address-list target, dan regex L7** dari router secara real-time agar konfigurasi Winbox tetap bersih.
 
+### 4. Hybrid SSO & Dual Router Support
+* **Hybrid SSO**: Terintegrasi langsung dengan API SSO Pemkab untuk pegawai ASN (autofill NIP, Nama, Jabatan, Golongan) serta mendukung pendaftaran manual User Lokal/Tamu.
+* **Batas Perangkat (Max Devices)**: Mengunci jumlah perangkat aktif bersamaan per user (default: **4 perangkat**). Mengganti sesi lama jika reconnect dari perangkat yang sama dan menolak login perangkat ke-5.
+* **Dual Router Support**: Mendukung Router Internal Diskominfo (Full Mikrotik API) dan Router Eksternal/Vendor (Portal Auth Bypass).
+* **Multi-VLAN Subnet Kelas A**: Menyediakan pilihan script setup komplit Multi-VLAN Per-Dinas (`mikrotik_vlan_setup.rsc`) dengan subnet Kelas A (/16 = 65,534 IP per Dinas).
+
 ---
 
 ## 📂 Dokumentasi Lainnya

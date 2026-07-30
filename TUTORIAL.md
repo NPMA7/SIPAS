@@ -16,9 +16,14 @@ Saat pertama kali masuk ke Web Admin, Anda akan disajikan statistik jaringan sec
 ## 👥 2. Manajemen Pengguna Hotspot (Add, Edit, & Delete)
 Semua akun hotspot dikelola di menu **Pengguna Hotspot**:
 
-* **Menambah User**: Klik tombol **+ Tambah User**, isi username, password, nama lengkap, limit bandwidth, dan pilih router. Akun akan tersimpan di database web dan otomatis dibuatkan akun hotspot-nya di Winbox.
-* **Mengedit User**: Klik icon edit (✏️) pada baris nama user untuk mengubah password, limit bandwidth, atau status aktif.
-* **Menghapus User**: Klik icon tempat sampah (🗑️) merah. Sistem akan otomatis menghapus akun di database sekaligus membersihkan data akun hotspot tersebut dari Mikrotik.
+* **Pilihan Provider (SSO vs Lokal)**:
+  * **User SSO**: Password dikelola penuh oleh server API SSO Pemkab Bandung. Admin mengelola Limit Bandwidth, Router Target, Batas Perangkat (Max Devices), dan Situs Terblokir di Web Admin SIPAS. Data profil (NIP, Nama, Jabatan, dan Golongan) terisi otomatis saat user pertama kali login.
+  * **User Lokal / Tamu**: Username & password dibuat manual oleh Admin.
+* **Batas Perangkat (Max Devices)**:
+  * Batas default adalah **4 perangkat aktif** per user. Jika user login di perangkat ke-5, sistem otomatis menolak login dengan notifikasi peringatan. Jika user reconnect di perangkat yang sama (MAC Address sama), sesi lama otomatis ditendang & diperbarui.
+* **Menambah User**: Klik tombol **+ Tambah User**, isi data user, limit bandwidth, batas perangkat (default: 4), dan pilih router.
+* **Mengedit User**: Klik icon edit (✏️) untuk mengubah limit bandwidth, batas max devices, router, atau situs terblokir.
+* **Menghapus User**: Klik icon tempat sampah (🗑️) merah. Tombol konfirmasi dilengkapi indikator animasi *loading ring* dan *double-click guard* untuk memproses pemutusan koneksi di Mikrotik secara aman.
 
 ---
 

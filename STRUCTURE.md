@@ -7,7 +7,7 @@ Dokumen ini menjelaskan struktur folder secara komprehensif beserta fungsi detai
 ## 🌳 Pohon Direktori Lengkap (Detailed Directory Tree)
 
 ```text
-WebHotspot/
+SIPAS/
 │
 ├── backend/                              # REST API & Komunikasi Jaringan (Node.js)
 │   ├── src/
@@ -93,8 +93,9 @@ WebHotspot/
 │
 ├── .env                                  # Konfigurasi Variabel Lingkungan Sistem
 ├── docker-compose.yml                    # Konfigurasi Orkestrasi Container Docker
-├── mikrotik_basic_setup.rsc              # Script Setup Internet & LAN Dasar Router
-├── mikrotik_project_setup.rsc            # Script Setup Hotspot & Integrasi API Web
+├── mikrotik_basic_setup.rsc              # Script Setup Internet & LAN Dasar Router (Single Subnet)
+├── mikrotik_vlan_setup.rsc               # Script Setup Internet, LAN, & Multi-VLAN Per-Dinas Subnet Kelas A (/16)
+├── mikrotik_project_setup_vps.rsc        # Script Setup Hotspot & Integrasi API VPS Web
 ├── mikrotik_vpn_setup.rsc                # Script Setup L2TP/IPsec Client di Router Mikrotik
 ├── sample_users.csv                      # Templat Format Berkas CSV Impor Massal
 ├── README.md                             # Panduan Instalasi Sistem Lengkap
