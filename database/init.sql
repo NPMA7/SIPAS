@@ -55,7 +55,7 @@ CREATE TABLE IF NOT EXISTS hotspot_users (
     jabatan VARCHAR(150),                             -- Jabatan ASN / Pegawai
     instansi VARCHAR(150),                            -- OPD / Instansi
     bandwidth_limit VARCHAR(50) DEFAULT '10M/10M',   -- format: download/upload, e.g. 10M/10M
-
+    max_devices INTEGER DEFAULT 4,                   -- Batas maksimal perangkat terhubung simultan (default: 4)
     website_block VARCHAR(255) DEFAULT '',            -- situs terblokir (comma-separated, e.g. 'npma,youtube')
     router_id INTEGER REFERENCES routers(id) ON DELETE SET NULL,
     is_active BOOLEAN DEFAULT TRUE,

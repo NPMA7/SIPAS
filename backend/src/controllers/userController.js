@@ -57,7 +57,7 @@ const getUsers = async (req, res) => {
 
         const result = await query(
             `SELECT hu.id, hu.username, hu.password, hu.full_name, hu.email, hu.phone,
-                    hu.bandwidth_limit, hu.website_block, hu.is_active, hu.auth_provider, hu.nip,
+                    hu.bandwidth_limit, hu.max_devices, hu.website_block, hu.is_active, hu.auth_provider, hu.nip,
                     hu.jabatan, hu.instansi,
                     hu.router_id, r.name as router_name, r.ip_address as router_ip,
                     hu.notes, hu.created_at, hu.updated_at
@@ -107,7 +107,7 @@ const getUserById = async (req, res) => {
 
 // ─── POST /api/users ─────────────────────────────────────────────────────────
 const createUser = async (req, res) => {
-    const { username, password, full_name, email, phone, bandwidth_limit, website_block, router_id, notes, auth_provider, nip, jabatan, instansi } = req.body;
+    const { username, password, full_name, email, phone, bandwidth_limit, max_devices, website_block, router_id, notes, auth_provider, nip, jabatan, instansi } = req.body;
 
     const provider = auth_provider === 'sso' ? 'sso' : 'local';
     const userPass = provider === 'sso' ? '[SSO_AUTH]' : password;
@@ -122,15 +122,17 @@ const createUser = async (req, res) => {
         return res.status(400).json({ success: false, message: 'Format bandwidth tidak valid. Contoh: 10M/10M' });
     }
 
+    const maxDev = max_devices ? Math.max(1, parseInt(max_devices)) : 4;
+
     try {
         const result = await query(
             `INSERT INTO hotspot_users
-             (username, password, full_name, email, phone, bandwidth_limit, website_block, router_id, notes, auth_provider, nip, jabatan, instansi)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+             (username, password, full_name, email, phone, bandwidth_limit, max_devices, website_block, router_id, notes, auth_provider, nip, jabatan, instansi)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
              RETURNING *`,
             [
                 username.toLowerCase().trim(), userPass, full_name || null,
-                email || null, phone || null, bw.toUpperCase(),
+                email || null, phone || null, bw.toUpperCase(), maxDev,
                 website_block || '', router_id || null, notes || null,
                 provider, nip || username.toLowerCase().trim(),
                 jabatan || '', instansi || ''
@@ -184,7 +186,7 @@ const syncUserToActiveRouters = async (user) => {
 
 // ─── PUT /api/users/:id ──────────────────────────────────────────────────────
 const updateUser = async (req, res) => {
-    const { full_name, email, phone, password, bandwidth_limit, website_block, router_id, is_active, notes, jabatan, instansi, nip } = req.body;
+    const { full_name, email, phone, password, bandwidth_limit, max_devices, website_block, router_id, is_active, notes, jabatan, instansi, nip } = req.body;
 
     try {
         const existing = await query('SELECT * FROM hotspot_users WHERE id = $1', [req.params.id]);
@@ -194,6 +196,7 @@ const updateUser = async (req, res) => {
 
         const user = existing.rows[0];
         const bw = bandwidth_limit || user.bandwidth_limit;
+        const maxDev = max_devices !== undefined ? Math.max(1, parseInt(max_devices)) : (user.max_devices || 4);
 
         // Normalisasi router_id. Jika kosong atau null, simpan sebagai null (untuk Semua Router)
         let rId = user.router_id;
@@ -214,10 +217,11 @@ const updateUser = async (req, res) => {
                 notes           = COALESCE($9, notes),
                 jabatan         = COALESCE($10, jabatan),
                 instansi        = COALESCE($11, instansi),
-                nip             = COALESCE($12, nip)
-             WHERE id = $13
+                nip             = COALESCE($12, nip),
+                max_devices     = $13
+             WHERE id = $14
              RETURNING *`,
-            [full_name, email, phone, password, bw, website_block, rId, is_active, notes, jabatan, instansi, nip, req.params.id]
+            [full_name, email, phone, password, bw, website_block, rId, is_active, notes, jabatan, instansi, nip, maxDev, req.params.id]
         );
 
 

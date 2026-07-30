@@ -149,27 +149,31 @@ const portalLogin = async (req, res) => {
         } else {
             // Router Internal Diskominfo -> Lakukan Cek Sesi & Setup Mikrotik API
             try {
+                const maxAllowedDevices = user.max_devices ? parseInt(user.max_devices) : 4;
                 const activeSessions = await mikrotik.getActiveHotspotUsers(routerConfig);
-                const existingSession = activeSessions.find(
+
+                const userActiveSessions = activeSessions.filter(
                     s => s.user && s.user.toLowerCase() === username.toLowerCase()
                 );
 
-                if (existingSession) {
-                    const existingMac = (existingSession.mac || '').toLowerCase().trim();
-                    const currentMac  = (mac || '').toLowerCase().trim();
+                const currentMacClean = (mac || '').toLowerCase().trim();
+                const existingSameMacSession = userActiveSessions.find(
+                    s => (s.mac || s['mac-address'] || '').toLowerCase().trim() === currentMacClean
+                );
 
-                    if (existingMac && currentMac && existingMac !== currentMac) {
-                        return res.status(409).json({
-                            success: false,
-                            error_code: 'session_active',
-                            message: `Akun ini sedang digunakan oleh perangkat lain (${existingSession.address}). Silakan coba beberapa saat lagi atau hubungi administrator.`,
-                            active_ip: existingSession.address,
-                            uptime: existingSession.uptime,
-                        });
-                    } else {
-                        console.log(`[AuthController] Menendang sesi usang untuk MAC yang sama: ${currentMac || existingMac}`);
-                        await mikrotik.removeHotspotActive(routerConfig, existingSession.id);
-                    }
+                if (existingSameMacSession) {
+                    // Reconnect dari MAC yang sama -> Tendang sesi lama dari MAC tersebut
+                    console.log(`[AuthController] Menendang sesi usang untuk MAC yang sama: ${currentMacClean}`);
+                    await mikrotik.removeHotspotActive(routerConfig, existingSameMacSession.id);
+                } else if (userActiveSessions.length >= maxAllowedDevices) {
+                    // Perangkat baru & batas max_devices telah tercapai
+                    return res.status(409).json({
+                        success: false,
+                        error_code: 'max_devices_reached',
+                        message: `Akun ini sudah terhubung di ${userActiveSessions.length} dari maksimal ${maxAllowedDevices} perangkat aktif. Silakan logout dari salah satu perangkat terlebih dahulu.`,
+                        active_count: userActiveSessions.length,
+                        max_devices: maxAllowedDevices
+                    });
                 }
             } catch (sessionCheckErr) {
                 console.warn('[AuthController] Gagal cek sesi aktif, melanjutkan login:', sessionCheckErr.message);

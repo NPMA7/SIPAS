@@ -36,6 +36,7 @@ function UserCard({ user, routers, blockedSites = [], onEdit, onDelete, onBwChan
       </div>
       <div className="user-card-meta">
         <Badge variant="primary">{user.bandwidth_limit || '—'}</Badge>
+        <Badge variant="neutral">Max {user.max_devices || 4} Device</Badge>
         {blocks.map(bKey => (
           <Badge key={bKey} variant="danger">
             {siteMap[bKey]?.name || bKey.toUpperCase()}
@@ -78,7 +79,7 @@ function UserCard({ user, routers, blockedSites = [], onEdit, onDelete, onBwChan
 
 const EMPTY_FORM = {
   username: '', password: '', full_name: '', email: '', jabatan: '', instansi: '',
-  bandwidth_limit: '10M/10M', router_id: '', website_block: '', notes: '', is_active: true,
+  bandwidth_limit: '10M/10M', max_devices: 4, router_id: '', website_block: '', notes: '', is_active: true,
   auth_provider: 'local',
 };
 
@@ -155,6 +156,7 @@ export default function Users() {
       jabatan: user.jabatan || '',
       instansi: user.instansi || '',
       bandwidth_limit: user.bandwidth_limit || '10M/10M',
+      max_devices: user.max_devices || 4,
       router_id: user.router_id || '',
       website_block: user.website_block || '',
       notes: user.notes || '',
@@ -450,12 +452,25 @@ export default function Users() {
               <div className="form-hint">Format: down/up — cth: 10M/10M</div>
             </div>
             <div className="form-group">
-              <label className="form-label">Router</label>
-              <select className="select" value={form.router_id} onChange={e => setForm(f => ({ ...f, router_id: e.target.value }))}>
-                <option value="">— Pilih Router —</option>
-                {routers.map(r => <option key={r.id} value={r.id}>{r.name} ({r.ip_address})</option>)}
-              </select>
+              <label className="form-label">Max Devices (Batas Perangkat)</label>
+              <input
+                className="input"
+                type="number"
+                min={1}
+                max={50}
+                value={form.max_devices}
+                onChange={e => setForm(f => ({ ...f, max_devices: parseInt(e.target.value) || 4 }))}
+                placeholder="4"
+              />
+              <div className="form-hint">Default 4 perangkat aktif terhubung</div>
             </div>
+          </div>
+          <div className="form-group" style={{ marginBottom: 16 }}>
+            <label className="form-label">Router</label>
+            <select className="select" value={form.router_id} onChange={e => setForm(f => ({ ...f, router_id: e.target.value }))}>
+              <option value="">— Semua Router —</option>
+              {routers.map(r => <option key={r.id} value={r.id}>{r.name} ({r.ip_address})</option>)}
+            </select>
           </div>
           <div className="form-group">
             <label className="form-label">🔒 Blokir Akses Situs</label>
