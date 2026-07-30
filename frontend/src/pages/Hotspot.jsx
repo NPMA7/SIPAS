@@ -239,7 +239,9 @@ export default function Hotspot() {
           {filtered.map((u, i) => (
             <tr key={i}>
               <td style={{ fontWeight: 600 }}>{u.name || '—'}</td>
-              <td className="mono" style={{ fontSize: '0.72rem' }}>{u.password || '—'}</td>
+              <td className="mono" style={{ fontSize: '0.72rem' }}>
+                {u.password ? '••••••••' : <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>SSO (Tanpa Pass)</span>}
+              </td>
               <td>{u.profile || '—'}</td>
               <td style={{ color: 'var(--text-muted)', maxWidth: 180 }}>{u.comment || '—'}</td>
               <td>

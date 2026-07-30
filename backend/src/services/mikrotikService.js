@@ -887,16 +887,18 @@ const setupPortalUser = async (
       `?name=${username}`,
     ]);
 
+    const userPass = password || "";
+
     if (existingUser && existingUser.length > 0) {
       await conn.write("/ip/hotspot/user/set", [
         `=.id=${existingUser[0][".id"]}`,
-        `=password=${password}`,
+        `=password=${userPass}`,
         `=profile=${profileName}`,
       ]);
     } else {
       await conn.write("/ip/hotspot/user/add", [
         `=name=${username}`,
-        `=password=${password}`,
+        `=password=${userPass}`,
         `=profile=${profileName}`,
         `=comment=temp-${Date.now()}`,
       ]);
