@@ -226,16 +226,16 @@ export default function Routers() {
               value={form.router_type}
               onChange={e => setForm(f => ({ ...f, router_type: e.target.value }))}
             >
-              <option value="internal">🏢 Internal Diskominfo (Full API Management — Bandwidth & Blocking)</option>
-              <option value="external">🌐 Vendor / Eksternal Diskominfo (Portal Auth Only — Tanpa API Mikrotik)</option>
+              <option value="internal">Internal (Full API Management)</option>
+              <option value="external">Eksternal (Portal Auth Only)</option>
             </select>
             {form.router_type === 'external' ? (
               <div className="form-hint" style={{ color: 'var(--warning)', marginTop: 4 }}>
-                ℹ Router Vendor hanya meminjam portal ini untuk verifikasi login SSO/Lokal. Bandwidth, bloking, dan penanganan koneksi diatur penuh oleh Vendor.
+                ℹ Router Eksternal hanya meminjam portal ini untuk verifikasi login SSO/Lokal. Bandwidth, bloking, dan penanganan koneksi diatur penuh oleh Vendor.
               </div>
             ) : (
               <div className="form-hint" style={{ color: 'var(--text-muted)', marginTop: 4 }}>
-                ℹ Admin Diskominfo mengelola penuh limit bandwidth, pemblokiran situs, dan akun hotspot via Mikrotik API.
+                ℹ Admin mengelola penuh limit bandwidth, pemblokiran situs, dan akun hotspot via Mikrotik API.
               </div>
             )}
           </div>
