@@ -194,9 +194,10 @@ const portalLogin = async (req, res) => {
                 console.warn('[AuthController] Gagal cek sesi aktif, melanjutkan login:', sessionCheckErr.message);
             }
 
-            // 5. Konfigurasi semua parameter user ke Mikrotik Internal
+            // 5. Konfigurasi parameter user ke Mikrotik Internal di background (non-blocking)
+            // Hal ini membuat HP menerima respon 'Autentikasi Berhasil' secara instan (< 200ms)
             const cleanUsername = username.toLowerCase().trim();
-            await mikrotik.setupPortalUser(
+            mikrotik.setupPortalUser(
                 routerConfig,
                 cleanUsername,
                 password,
@@ -204,7 +205,7 @@ const portalLogin = async (req, res) => {
                 mac || null,
                 user.bandwidth_limit,
                 user.website_block
-            );
+            ).catch(sErr => console.warn('[AuthController] Background setupPortalUser warning:', sErr.message));
         }
 
         // 6. Bersihkan sesi DB lama (jika ada sisa) dan log sesi aktif baru ke DB
