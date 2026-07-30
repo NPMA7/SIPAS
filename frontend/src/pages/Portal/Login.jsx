@@ -74,54 +74,27 @@ export default function PortalLogin() {
 
           const rawDst = decodeURIComponent(targetDst || '');
 
-          // Jika targetDst kosong, berupa placeholder $(dst), IP router, atau URL test yang loop ke portal login,
+          // Jika targetDst kosong, berupa placeholder $(dst), IP router, domain hotspot, atau URL captive test (generate_204, gstatic, msftconnecttest, etc.)
           // maka arahkan ke google.com sebagai halaman tujuan utama.
           if (
             !targetDst ||
             rawDst.includes('$(dst)') ||
-            rawDst.includes('192.168.10.1') ||
+            rawDst.includes('192.168.') ||
+            rawDst.includes('10.10.') ||
             rawDst.includes('hotspot.net') ||
-            rawDst.includes('connecttest.txt')
+            rawDst.includes('connecttest') ||
+            rawDst.includes('generate_204') ||
+            rawDst.includes('gstatic') ||
+            rawDst.includes('apple.com') ||
+            rawDst.includes('msftconnecttest')
           ) {
             targetDst = 'https://www.google.com';
           }
 
-          // 100% Guarantee Internet Access:
-          // 1. Backend VPS sudah login-kan IP/MAC user via RouterOS API (/ip/hotspot/active)
-          // 2. Frontend mengirimkan Form Submit langsung ke Gateway MikroTik (linkLogin) sebagai garansi ganda!
-          if (params.linkLogin && params.linkLogin !== '') {
-            try {
-              const formEl = document.createElement('form');
-              formEl.method = 'POST';
-              formEl.action = params.linkLogin;
-
-              const userInp = document.createElement('input');
-              userInp.type = 'hidden';
-              userInp.name = 'username';
-              userInp.value = username;
-
-              const passInp = document.createElement('input');
-              passInp.type = 'hidden';
-              passInp.name = 'password';
-              passInp.value = password;
-
-              const dstInp = document.createElement('input');
-              dstInp.type = 'hidden';
-              dstInp.name = 'dst';
-              dstInp.value = targetDst;
-
-              formEl.appendChild(userInp);
-              formEl.appendChild(passInp);
-              formEl.appendChild(dstInp);
-
-              document.body.appendChild(formEl);
-              formEl.submit();
-              return;
-            } catch (_) {}
-          }
-
-          window.location.href = targetDst;
-        }, 100);
+          // User IP/MAC sudah diautentikasi dan dibuka akses internetnya oleh Backend VPS via RouterOS API (/ip/hotspot/active).
+          // Langsung arahkan browser ke target URL (https://www.google.com) tanpa POST ke hotspot.net agar tidak memicu layar peringatan "Dangerous site" Chrome.
+          window.location.replace(targetDst);
+        }, 500);
       } else {
         setStatus('failed');
         setAlert({ type: 'error', msg: data.message || 'Login gagal. Periksa username dan password.' });
