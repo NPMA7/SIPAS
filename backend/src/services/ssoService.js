@@ -16,64 +16,53 @@ const ssoService = {
     const realUrl = (process.env.SSO_REAL_URL || "").trim();
     const mockUrl = (process.env.SSO_MOCK_URL || `http://localhost:${port}/api/sso-mock/login`).trim();
 
-    // Jika mode 'real' ATAU format NIP 18 digit -> Prioritaskan Real SSO dari .env
+    const targetUrl = mode === "real" ? realUrl : mockUrl;
     const cleanUname = (username || "").trim();
-    const isNipFormat = /^\d{18}$/.test(cleanUname);
-    const useRealFirst = mode === "real" || isNipFormat;
 
-    const rawUrls = useRealFirst ? [realUrl, mockUrl] : [mockUrl, realUrl];
-    const urlsToTry = [...new Set(rawUrls.filter(Boolean))];
-
-    if (urlsToTry.length === 0) {
-      throw new Error("URL SSO belum dikonfigurasi pada file .env (SSO_REAL_URL).");
+    if (!targetUrl) {
+      throw new Error(`URL SSO belum dikonfigurasi pada file .env (${mode === "real" ? "SSO_REAL_URL" : "SSO_MOCK_URL"}).`);
     }
 
-    let lastError = null;
+    console.log(`[SSO SERVICE] Attempting ${mode.toUpperCase()} SSO login for user "${cleanUname}" at: ${targetUrl}`);
 
-    for (const targetUrl of urlsToTry) {
-      console.log(`[SSO SERVICE] Attempting login for user "${cleanUname}" at: ${targetUrl}`);
+    try {
+      const formData = new URLSearchParams();
+      formData.append("username", cleanUname);
+      formData.append("password", password);
 
+      let response = await fetch(targetUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: formData,
+      });
+
+      let data;
       try {
-        const formData = new URLSearchParams();
-        formData.append("username", cleanUname);
-        formData.append("password", password);
-
-        let response = await fetch(targetUrl, {
+        data = await response.json();
+      } catch (_) {
+        const jsonResp = await fetch(targetUrl, {
           method: "POST",
           headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
+            "Content-Type": "application/json",
           },
-          body: formData,
+          body: JSON.stringify({ username: cleanUname, password }),
         });
-
-        let data;
-        try {
-          data = await response.json();
-        } catch (_) {
-          const jsonResp = await fetch(targetUrl, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ username: cleanUname, password }),
-          });
-          data = await jsonResp.json();
-        }
-
-        console.log(`[SSO SERVICE] [${targetUrl}] Status: ${data?.status}, Message: "${data?.message}"`);
-
-        if (response.ok && data && (data.status === true || data.status === "true")) {
-          return data;
-        }
-
-        lastError = new Error(data?.message || "Username atau password tidak valid.");
-      } catch (err) {
-        console.warn(`[SSO SERVICE WARNING] Failed at ${targetUrl}:`, err.message);
-        lastError = err;
+        data = await jsonResp.json();
       }
-    }
 
-    throw lastError || new Error("Username atau password tidak valid.");
+      console.log(`[SSO SERVICE] [${targetUrl}] Status: ${data?.status}, Message: "${data?.message}"`);
+
+      if (!response.ok || data.status === false || data.status === "false") {
+        throw new Error(data?.message || "Username atau password tidak valid.");
+      }
+
+      return data;
+    } catch (error) {
+      console.error("[SSO SERVICE ERROR]", error.message);
+      throw error;
+    }
   },
 };
 
