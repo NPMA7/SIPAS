@@ -42,6 +42,12 @@ const syncUsersForBlockedSite = async (siteKey, targetUserIds) => {
     const cleanSiteKey = siteKey.toLowerCase().trim();
 
     const usersRes = await query(`SELECT * FROM hotspot_users WHERE is_active = TRUE`);
+    let activeRouters = [];
+    try {
+        const activeRoutersRes = await query(`SELECT * FROM routers WHERE is_active = TRUE`);
+        activeRouters = activeRoutersRes.rows;
+    } catch (_) {}
+
     for (const u of usersRes.rows) {
         let blocks = (u.website_block || '')
             .split(',')
@@ -65,15 +71,20 @@ const syncUsersForBlockedSite = async (siteKey, targetUserIds) => {
             await query(`UPDATE hotspot_users SET website_block = $1, updated_at = NOW() WHERE id = $2`, [newBlockStr, u.id]);
             u.website_block = newBlockStr;
 
-            if (!shouldHave) {
-                try {
-                    const activeRouters = await query(`SELECT * FROM routers WHERE is_active = TRUE`);
-                    for (const r of activeRouters.rows) {
-                        mikrotik.removeUserBlockFromMikrotik(r, cleanSiteKey, u.username).catch(() => {});
+            // Jalankan sinkronisasi jaringan MikroTik di background (non-blocking)
+            // agar response HTTP dapat langsung dikirim ke browser tanpa 'Failed to fetch'
+            (async () => {
+                if (!shouldHave) {
+                    for (const r of activeRouters) {
+                        try {
+                            await mikrotik.removeUserBlockFromMikrotik(r, cleanSiteKey, u.username);
+                        } catch (_) {}
                     }
+                }
+                try {
+                    await syncUserToActiveRouters(u);
                 } catch (_) {}
-            }
-            syncUserToActiveRouters(u).catch(() => {});
+            })();
         }
     }
 };

@@ -163,14 +163,14 @@ const syncUserToActiveRouters = async (user) => {
         for (const routerConfig of routersToSync) {
             try {
                 const sessions = await mikrotik.getActiveHotspotUsers(routerConfig);
-                const userSession = sessions.find(s => s.user && s.user.toLowerCase() === user.username.toLowerCase());
-                if (userSession) {
+                const userSessions = sessions.filter(s => s.user && s.user.toLowerCase() === user.username.toLowerCase());
+                for (const session of userSessions) {
                     await mikrotik.setupPortalUser(
                         routerConfig,
                         user.username,
                         user.password,
-                        userSession.address,
-                        userSession.mac,
+                        session.address,
+                        session.mac,
                         user.bandwidth_limit,
                         user.website_block
                     );

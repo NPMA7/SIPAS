@@ -896,30 +896,51 @@ const setupPortalUser = async (
       }
     }
 
-    // 2. Buat/Update Simple Queue jika ada IP dan Limit
-    if (ip && bandwidthLimit) {
+    // 2. Buat/Update Single Simple Queue per User (1 Queue per user dengan multiple target IP untuk multi-device)
+    if (bandwidthLimit) {
       const queueName = `hotspot-${username}`;
 
-      // Hapus semua queue yang conflict: baik berdasarkan nama username NOR target IP yang sama
-      const allQueues = await conn.write("/queue/simple/print");
-      for (const q of allQueues) {
-        const qTarget = q.target || "";
-        const qIp = qTarget.split("/")[0];
-        const nameMatch = q.name === queueName;
-        const ipMatch = qIp === ip;
-        if (nameMatch || ipMatch) {
-          try {
-            await conn.write("/queue/simple/remove", [`=.id=${q[".id"]}`]);
-          } catch (_) {}
+      let targetIps = [];
+      if (ip) targetIps.push(ip);
+      try {
+        const activeSessions = await conn.write("/ip/hotspot/active/print", [
+          `?user=${username}`
+        ]);
+        if (activeSessions && Array.isArray(activeSessions)) {
+          activeSessions.forEach(s => {
+            if (s.address && !targetIps.includes(s.address)) {
+              targetIps.push(s.address);
+            }
+          });
+        }
+      } catch (_) {}
+
+      if (targetIps.length > 0) {
+        const targetStr = targetIps.join(",");
+        const allQueues = await conn.write("/queue/simple/print");
+
+        // Hapus queue legacy bersuaian format lama (misal hotspot-user-10.10.x.x)
+        for (const q of allQueues || []) {
+          if (q.name && q.name.startsWith(`${queueName}-`) && q.name !== queueName) {
+            try { await conn.write("/queue/simple/remove", [`=.id=${q[".id"]}`]); } catch (_) {}
+          }
+        }
+
+        const existingQueue = (allQueues || []).find(q => q.name === queueName);
+        if (existingQueue) {
+          await conn.write("/queue/simple/set", [
+            `=.id=${existingQueue[".id"]}`,
+            `=target=${targetStr}`,
+            `=max-limit=${bandwidthLimit.toUpperCase()}`,
+          ]);
+        } else {
+          await conn.write("/queue/simple/add", [
+            `=name=${queueName}`,
+            `=target=${targetStr}`,
+            `=max-limit=${bandwidthLimit.toUpperCase()}`,
+          ]);
         }
       }
-
-      // Tambahkan queue baru (selalu fresh, tanpa risiko duplicate)
-      await conn.write("/queue/simple/add", [
-        `=name=${queueName}`,
-        `=target=${ip}`,
-        `=max-limit=${bandwidthLimit.toUpperCase()}`,
-      ]);
     }
 
     // 3. Setup blokir situs menggunakan Layer7 Protocol & IP Address List (Lapis Ganda)
