@@ -140,7 +140,8 @@ export default function Routers() {
     }
   }
 
-  async function testConnection(id) {
+  async function testConnection(target) {
+    const id = typeof target === 'object' ? target?.id : target;
     ctx?.addToast('Mencoba...', 'Menghubungi MikroTik API...', 'info');
     const res = await apiFetch(`/routers/${id}/test`);
     if (res?.success) {
@@ -200,7 +201,7 @@ export default function Routers() {
                   router={r}
                   onEdit={openEdit}
                   onDelete={setConfirmDel}
-                  onTest={handleTest}
+                  onTest={testConnection}
                 />
               ))}
             </div>
@@ -216,14 +217,14 @@ export default function Routers() {
         footer={
           <>
             <button className="btn btn-secondary" onClick={() => setModal(false)}>Batal</button>
-            <button className="btn btn-primary" onClick={submitForm} disabled={saving}>
+            <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
               {saving ? <div className="loader-ring" style={{ width: 14, height: 14, borderWidth: 2 }} /> : null}
               Simpan
             </button>
           </>
         }
       >
-        <form onSubmit={submitForm}>
+        <form onSubmit={handleSave}>
           <div className="form-group" style={{ marginBottom: 16 }}>
             <label className="form-label">Tipe Pengelolaan Router *</label>
             <select

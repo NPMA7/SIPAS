@@ -1,5 +1,6 @@
 const { query } = require('../config/db');
 const { syncUserToActiveRouters } = require('./userController');
+const mikrotik = require('../services/mikrotikService');
 
 // Ensure table blocked_sites exists on start
 const ensureTableExists = async () => {
@@ -63,6 +64,15 @@ const syncUsersForBlockedSite = async (siteKey, targetUserIds) => {
             const newBlockStr = blocks.join(',');
             await query(`UPDATE hotspot_users SET website_block = $1, updated_at = NOW() WHERE id = $2`, [newBlockStr, u.id]);
             u.website_block = newBlockStr;
+
+            if (!shouldHave) {
+                try {
+                    const activeRouters = await query(`SELECT * FROM routers WHERE is_active = TRUE`);
+                    for (const r of activeRouters.rows) {
+                        mikrotik.removeUserBlockFromMikrotik(r, cleanSiteKey, u.username).catch(() => {});
+                    }
+                } catch (_) {}
+            }
             syncUserToActiveRouters(u).catch(() => {});
         }
     }
