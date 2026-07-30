@@ -11,9 +11,6 @@ set api port=8728 address=0.0.0.0/0 disabled=no
 set www disabled=no
 set winbox disabled=no
 set ssh disabled=no
-set api-ssl disabled=yes
-set telnet disabled=yes
-set ftp disabled=yes
 
 # --- LANGKAH 2: Hotspot User Profile ---
 /ip hotspot user profile

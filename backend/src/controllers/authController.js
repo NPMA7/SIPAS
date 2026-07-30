@@ -15,9 +15,9 @@ const getRouterConfig = async (routerId) => {
 
 /**
  * POST /api/portal/login
- * Alur login captive portal Hybrid (SSO Diskominfo + Master Data DB SIPAS):
+ * Alur login captive portal Hybrid (SSO + Master Data DB SIPAS):
  *  1. Cari user di database PostgreSQL SIPAS.
- *  2. Jika user tipe SSO atau tidak ditemukan di DB, lakukan autentikasi ke SSO Diskominfo.
+ *  2. Jika user tipe SSO atau tidak ditemukan di DB, lakukan autentikasi ke SSO .
  *  3. Ambil profil bandwidth & website block dari DB SIPAS (atau auto-provision jika user baru).
  *  4. Buat hotspot user sementara & Simple Queue di Mikrotik.
  *  5. Kembalikan link untuk authenticate ke Mikrotik.
@@ -55,11 +55,11 @@ const portalLogin = async (req, res) => {
                 }
             }
         } else {
-            // User tidak ada di DB lokal -> Coba verifikasi ke SSO Diskominfo
+            // User tidak ada di DB lokal -> Coba verifikasi ke SSO 
             isSSOAuth = true;
         }
 
-        // 2. Jika merupakan Autentikasi SSO Diskominfo
+        // 2. Jika merupakan Autentikasi SSO 
         if (isSSOAuth) {
             try {
                 const ssoRes = await ssoService.loginSSO(cleanUsername, password);
@@ -90,7 +90,7 @@ const portalLogin = async (req, res) => {
             } catch (ssoErr) {
                 return res.status(401).json({
                     success: false,
-                    message: ssoErr.message || 'Username atau password SSO Diskominfo tidak valid.'
+                    message: ssoErr.message || 'Username atau password SSO tidak valid.'
                 });
             }
         }
@@ -147,7 +147,7 @@ const portalLogin = async (req, res) => {
         if (routerConfig.router_type === 'external') {
             console.log(`[AuthController] Router Vendor/Eksternal (${routerConfig.name}): Autentikasi portal berhasil tanpa API Mikrotik.`);
         } else {
-            // Router Internal Diskominfo -> Lakukan Cek Sesi & Setup Mikrotik API
+            // Router Internal -> Lakukan Cek Sesi & Setup Mikrotik API
             try {
                 const maxAllowedDevices = user.max_devices ? parseInt(user.max_devices) : 4;
                 const activeSessions = await mikrotik.getActiveHotspotUsers(routerConfig);

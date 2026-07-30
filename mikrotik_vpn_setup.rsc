@@ -9,7 +9,7 @@
     name=l2tp-to-vps \
     connect-to=103.67.244.193 \
     user=vpnuser \
-    password=Hi7ZD6mhgBwVkxhi \
+    password=vpnuser \
     use-ipsec=yes \
     ipsec-secret=ATE7GEM3frnPqjhhDpMc \
     profile=default-encryption \

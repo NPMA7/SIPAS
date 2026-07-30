@@ -1,10 +1,10 @@
 /**
- * Service untuk mengurus Autentikasi SSO Diskominfo
- * Mendukung mode MOCK (Pengujian Lokal) dan REAL (Diskominfo Production)
+ * Service untuk mengurus Autentikasi SSO 
+ * Mendukung mode MOCK (Pengujian Lokal) dan REAL (Production)
  */
 const ssoService = {
   /**
-   * Authenticate user dengan SSO Diskominfo / Mock SSO
+   * Authenticate user dengan SSO / Mock SSO
    * @param {string} username
    * @param {string} password
    * @returns {Promise<Object>} Respon data user dari SSO
@@ -36,7 +36,7 @@ const ssoService = {
 
       if (!response.ok || data.status === false || data.status === "false") {
         throw new Error(
-          data.message || "Username atau password SSO Diskominfo tidak valid.",
+          data.message || "Username atau password SSO tidak valid.",
         );
       }
 

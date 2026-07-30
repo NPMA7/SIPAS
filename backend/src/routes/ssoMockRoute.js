@@ -4,7 +4,7 @@ const multer = require("multer");
 const upload = multer();
 
 /**
- * Daftar Akun Dummy SSO Diskominfo untuk Keperluan Pengujian
+ * Daftar Akun Dummy SSO untuk Keperluan Pengujian
  */
 const DUMMY_SSO_USERS = [
   {
@@ -40,7 +40,7 @@ const DUMMY_SSO_USERS = [
 router.get("/users", (req, res) => {
   res.json({
     status: true,
-    message: "Daftar user dummy SSO Diskominfo",
+    message: "Daftar user dummy SSO",
     users: DUMMY_SSO_USERS.map((u) => ({
       username: u.username,
       password: u.password,

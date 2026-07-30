@@ -21,7 +21,7 @@ pool.on('connect', () => {
     console.log('[DB] Connected to PostgreSQL at', dbHost);
 });
 
-// Auto-migration ringan untuk mendukung SSO Diskominfo, Tipe Router, & Max Devices
+// Auto-migration ringan untuk mendukung SSO, Tipe Router, & Max Devices
 (async () => {
     try {
         await pool.query(`

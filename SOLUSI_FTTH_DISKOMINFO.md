@@ -1,4 +1,4 @@
-# Panduan Solusi Arsitektur & Deployment SIPAS Hotspot Diskominfo Kab. Bandung 🏛️🌐
+# Panduan Solusi Arsitektur & Deployment SIPAS Hotspot OPD 🏛️🌐
 
 Dokumen ini berisi dokumentasi teknis lengkap mengenai konfigurasi **SIPAS VPS**, integrasi topologi **FTTH (`Mikrotik -> OLT -> ONT -> AP Ruijie`)**, konfigurasi perangkat lapangan, dan strategi skala **6.000 Pegawai OPD**.
 

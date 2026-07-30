@@ -8,11 +8,12 @@ Dokumen ini menjelaskan alur instalasi **SIPAS** (*Sistem Integrasi Portal & Aut
 
 Proyek ini menyediakan 3 berkas script Mikrotik (`.rsc`) yang dijalankan sesuai kebutuhan:
 
-| File Script                                                    | Fungsi                                                                       | Kapan Diimpor?            |
-| :------------------------------------------------------------- | :--------------------------------------------------------------------------- | :------------------------ |
-| **[mikrotik_basic_setup.rsc](./mikrotik_basic_setup.rsc)**     | Konfigurasi dasar ISP, IP Address, DHCP Server, NAT, dan DNS.                | **Wajib** (Awal)          |
-| **[mikrotik_project_setup.rsc](./mikrotik_project_setup.rsc)** | Konfigurasi Hotspot Server, API Port `8728`, Walled Garden, dan Autocleanup. | **Wajib** (Setelah Basic) |
-| **[mikrotik_vpn_setup.rsc](./mikrotik_vpn_setup.rsc)**         | Konfigurasi L2TP/IPsec Client untuk menghubungkan Mikrotik ke VPS.           | **Khusus VPS**            |
+| File Script                                                            | Fungsi                                                                       | Kapan Diimpor?                            |
+| :--------------------------------------------------------------------- | :--------------------------------------------------------------------------- | :---------------------------------------- |
+| **[mikrotik_basic_setup.rsc](./mikrotik_basic_setup.rsc)**             | Setup komplit ISP, Bridge, Single Subnet Hotspot, NAT, DNS.                  | **Pilihan A** (Non-VLAN)                  |
+| **[mikrotik_vlan_setup.rsc](./mikrotik_vlan_setup.rsc)**               | Setup komplit ISP, Bridge, Multi-VLAN Per-Dinas Subnet Kelas A (/16), NAT, DNS. | **Pilihan B** (Pengganti Basic utk VLAN)  |
+| **[mikrotik_project_setup_vps.rsc](./mikrotik_project_setup_vps.rsc)** | Konfigurasi Hotspot Server, API Port `8728`, Walled Garden, dan Autocleanup. | **Wajib** (Setelah Basic/VLAN)            |
+| **[mikrotik_vpn_setup.rsc](./mikrotik_vpn_setup.rsc)**                 | Konfigurasi L2TP/IPsec Client untuk menghubungkan Mikrotik ke VPS.           | **Khusus VPS**                            |
 
 ---
 
@@ -20,17 +21,20 @@ Proyek ini menyediakan 3 berkas script Mikrotik (`.rsc`) yang dijalankan sesuai 
 
 1. Buka **Winbox** dan hubungkan ke router Mikrotik Anda.
 2. Buka menu **Files** di Winbox, lalu drag & drop berkas script berikut:
-   - `mikrotik_basic_setup.rsc`
-   - `mikrotik_project_setup.rsc`
-   - `mikrotik_vpn_setup.rsc` _(Hanya jika deploy di VPS)_
+   - `mikrotik_basic_setup.rsc` *(atau `mikrotik_vlan_setup.rsc` jika jaringan memakai VLAN)*
+   - `mikrotik_project_setup_vps.rsc`
+   - `mikrotik_vpn_setup.rsc` _(Hanya jika deploy via VPN ke VPS)_
 3. Buka **New Terminal** di Winbox dan jalankan secara berurutan:
 
    ```routeros
-   # 1. Setup dasar jaringan internet & LAN
+   # 1A. Jika TANPA VLAN (Single Subnet Kelas A):
    /import file-name=mikrotik_basic_setup.rsc
 
-   # 2. Setup captive portal hotspot & API
-   /import file-name=mikrotik_project_setup.rsc
+   # ATAU 1B. Jika MENGGUNAKAN Multi-VLAN Per-Dinas (Subnet Kelas A /16):
+   /import file-name=mikrotik_vlan_setup.rsc
+
+   # 2. Setup captive portal hotspot & API VPS
+   /import file-name=mikrotik_project_setup_vps.rsc
    ```
 
 4. **Khusus Skenario VPS / Remote Router**:

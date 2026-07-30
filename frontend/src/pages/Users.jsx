@@ -27,7 +27,7 @@ function UserCard({ user, routers, blockedSites = [], onEdit, onDelete, onBwChan
         <div className="user-card-name" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           {user.username}
           {user.auth_provider === 'sso' ? (
-            <Badge variant="info">SSO Diskominfo</Badge>
+            <Badge variant="info">SSO</Badge>
           ) : (
             <Badge variant="neutral">Lokal</Badge>
           )}
@@ -283,7 +283,7 @@ export default function Users() {
               onChange={e => { setProviderFilter(e.target.value); setPage(1); }}
             >
               <option value="">Semua Provider</option>
-              <option value="sso">SSO Diskominfo (ASN)</option>
+              <option value="sso">User SSO</option>
               <option value="local">User Lokal / Tamu</option>
             </select>
 
@@ -389,7 +389,7 @@ export default function Users() {
             }}>
               <span>🔒</span>
               <div>
-                <strong>User SSO Diskominfo (ASN)</strong>
+                <strong>User SSO</strong>
                 <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>
                   Password dikelola penuh oleh API SSO Pemkab Bandung. Anda mengelola limit bandwidth, router, dan situs terblokir di sini.
                 </div>
