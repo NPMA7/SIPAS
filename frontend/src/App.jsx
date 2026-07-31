@@ -22,7 +22,7 @@ export default function App() {
           <Route path="users" element={<Users />} />
           <Route path="blocked-sites" element={<BlockedSites />} />
           <Route path="routers" element={<Routers />} />
-          <Route path="hotspot" element={<Hotspot />} />
+          <Route path="hotspot/*" element={<Hotspot />} />
           <Route path="queues" element={<Queues />} />
           <Route path="dhcp" element={<DhcpLeases />} />
         </Route>

@@ -1406,6 +1406,54 @@ const toggleHotspotHostBypass = async (routerConfig, mac, shouldBypass) => {
 };
 
 /**
+ * Ambil daftar IP Binding dari router
+ */
+const getHotspotBindings = async (routerConfig) => {
+  return withConnection(routerConfig, async (conn) => {
+    const bindings = await conn.write("/ip/hotspot/ip-binding/print");
+    return (bindings || []).map((b) => ({
+      id: b[".id"] || "",
+      mac_address: b["mac-address"] || "",
+      address: b["address"] || "",
+      to_address: b["to-address"] || "",
+      server: b["server"] || "all",
+      type: b["type"] || "bypassed",
+      comment: b["comment"] || "",
+      disabled: b["disabled"] || "false",
+    }));
+  });
+};
+
+/**
+ * Tambah IP Binding baru ke router
+ */
+const addHotspotBinding = async (routerConfig, { macAddress, address, toAddress, server, type, comment }) => {
+  return withConnection(routerConfig, async (conn) => {
+    const args = [];
+    if (macAddress) args.push(`=mac-address=${macAddress.trim()}`);
+    if (address) args.push(`=address=${address.trim()}`);
+    if (toAddress) args.push(`=to-address=${toAddress.trim()}`);
+    args.push(`=server=${server || "all"}`);
+    args.push(`=type=${type || "bypassed"}`);
+    if (comment) args.push(`=comment=${comment.trim()}`);
+
+    await conn.write("/ip/hotspot/ip-binding/add", args);
+    return { success: true };
+  });
+};
+
+/**
+ * Hapus IP Binding dari router
+ */
+const removeHotspotBinding = async (routerConfig, id) => {
+  return withConnection(routerConfig, async (conn) => {
+    await conn.write("/ip/hotspot/ip-binding/remove", [`=.id=${id}`]);
+    return { success: true };
+  });
+};
+
+
+/**
  * Ambil daftar user hotspot lokal yang terdaftar di router
  */
 const getRouterHotspotUsers = async (routerConfig) => {
@@ -1745,4 +1793,8 @@ module.exports = {
   removeHotspotActive,
   getSimpleQueues,
   manageSimpleQueue,
+  getHotspotBindings,
+  addHotspotBinding,
+  removeHotspotBinding,
 };
+

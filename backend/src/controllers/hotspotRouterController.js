@@ -145,6 +145,70 @@ const removeRouterUser = async (req, res) => {
     }
 };
 
+const getBindings = async (req, res) => {
+    const { router_id } = req.query;
+    if (!router_id) {
+        return res.status(400).json({ success: false, message: 'router_id wajib diisi.' });
+    }
+
+    try {
+        const rResult = await query('SELECT * FROM routers WHERE id = $1', [router_id]);
+        if (rResult.rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Router tidak ditemukan.' });
+        }
+
+        const bindings = await mikrotik.getHotspotBindings(rResult.rows[0]);
+        res.json({ success: true, data: bindings });
+    } catch (err) {
+        console.error('[HotspotRouterController] getBindings:', err.message);
+        res.status(500).json({ success: false, message: err.message || 'Gagal mengambil IP Bindings.' });
+    }
+};
+
+const addBinding = async (req, res) => {
+    const { router_id, macAddress, address, toAddress, server, type, comment } = req.body;
+    if (!router_id) {
+        return res.status(400).json({ success: false, message: 'router_id wajib diisi.' });
+    }
+    if (!macAddress && !address) {
+        return res.status(400).json({ success: false, message: 'Minimal MAC Address atau IP Address harus diisi.' });
+    }
+
+    try {
+        const rResult = await query('SELECT * FROM routers WHERE id = $1', [router_id]);
+        if (rResult.rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Router tidak ditemukan.' });
+        }
+
+        await mikrotik.addHotspotBinding(rResult.rows[0], { macAddress, address, toAddress, server, type, comment });
+        res.json({ success: true, message: 'IP Binding berhasil ditambahkan.' });
+    } catch (err) {
+        console.error('[HotspotRouterController] addBinding:', err.message);
+        res.status(500).json({ success: false, message: err.message || 'Gagal menambahkan IP Binding.' });
+    }
+};
+
+const removeBinding = async (req, res) => {
+    const { id } = req.params;
+    const { router_id } = req.query;
+    if (!router_id) {
+        return res.status(400).json({ success: false, message: 'router_id wajib diisi.' });
+    }
+
+    try {
+        const rResult = await query('SELECT * FROM routers WHERE id = $1', [router_id]);
+        if (rResult.rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Router tidak ditemukan.' });
+        }
+
+        await mikrotik.removeHotspotBinding(rResult.rows[0], id);
+        res.json({ success: true, message: 'IP Binding berhasil dihapus.' });
+    } catch (err) {
+        console.error('[HotspotRouterController] removeBinding:', err.message);
+        res.status(500).json({ success: false, message: err.message || 'Gagal menghapus IP Binding.' });
+    }
+};
+
 module.exports = {
     getActiveSessions,
     kickActiveSession,
@@ -153,4 +217,8 @@ module.exports = {
     toggleBypassHost,
     getRouterUsers,
     removeRouterUser,
+    getBindings,
+    addBinding,
+    removeBinding,
 };
+

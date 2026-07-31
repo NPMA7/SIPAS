@@ -9,5 +9,9 @@ router.delete('/hosts/:id',     adminAuth, ctrl.removeHost);
 router.post('/hosts/bypass',    adminAuth, ctrl.toggleBypassHost);
 router.get('/users',           adminAuth, ctrl.getRouterUsers);
 router.delete('/users/:id',     adminAuth, ctrl.removeRouterUser);
+router.get('/bindings',        adminAuth, ctrl.getBindings);
+router.post('/bindings',       adminAuth, ctrl.addBinding);
+router.delete('/bindings/:id',  adminAuth, ctrl.removeBinding);
 
 module.exports = router;
+

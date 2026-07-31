@@ -1,13 +1,35 @@
-import { useState, useEffect, useContext, useRef, useCallback } from 'react';
+import { useState, useEffect, useContext, useCallback } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { apiFetch } from '../api/client';
 import { ToastContext } from '../hooks/ToastContext';
 import { Badge, Loader, EmptyState } from '../components/ui/index';
 import Modal from '../components/ui/Modal';
 
 const TABS = [
-  { key: 'active', label: 'Sesi Aktif', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> },
-  { key: 'hosts',  label: 'Host Terhubung', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 12h.01M10 12h.01M14 12h.01"/></svg> },
-  { key: 'users',  label: 'User Router', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
+  {
+    key: 'active',
+    path: 'active-sessions',
+    label: 'Sesi Aktif',
+    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+  },
+  {
+    key: 'hosts',
+    path: 'host-connected',
+    label: 'Host Terhubung',
+    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 12h.01M10 12h.01M14 12h.01"/></svg>
+  },
+  {
+    key: 'users',
+    path: 'user-router',
+    label: 'User Router',
+    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+  },
+  {
+    key: 'bindings',
+    path: 'bindings',
+    label: 'IP Binding',
+    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+  },
 ];
 
 function formatBytes(b) {
@@ -32,17 +54,49 @@ function formatSpeed(val) {
 
 export default function Hotspot() {
   const ctx = useContext(ToastContext);
+  const location = useLocation();
+  const navigate = useNavigate();
+
   const [routers, setRouters] = useState([]);
   const [routerId, setRouterId] = useState('');
-  const [tab, setTab] = useState('active');
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
-  const [counts, setCounts] = useState({ active: 0, hosts: 0, users: 0 });
+  const [counts, setCounts] = useState({ active: 0, hosts: 0, users: 0, bindings: 0 });
+  
+  // Modals state
   const [confirmKick, setConfirmKick] = useState(null);
   const [kicking, setKicking] = useState(false);
+  
+  const [showAddBindingModal, setShowAddBindingModal] = useState(false);
+  const [addingBinding, setAddingBinding] = useState(false);
+  const [newBinding, setNewBinding] = useState({
+    macAddress: '',
+    address: '',
+    toAddress: '',
+    server: 'all',
+    type: 'bypassed',
+    comment: ''
+  });
 
-  useEffect(() => { ctx?.setPageTitle?.('Hotspot Router'); }, [ctx]);
+  const [confirmDeleteBinding, setConfirmDeleteBinding] = useState(null);
+  const [deletingBinding, setDeletingBinding] = useState(false);
+
+  // Sync tab with URL
+  const currentPathSegment = location.pathname.replace('/admin/hotspot', '').replace(/^\//, '');
+  const activeTabObj = TABS.find(t => t.path === currentPathSegment) || TABS[0];
+  const tab = activeTabObj.key;
+
+  useEffect(() => {
+    // If URL is just /admin/hotspot or invalid sub-path, redirect to active-sessions
+    if (!currentPathSegment || !TABS.some(t => t.path === currentPathSegment)) {
+      navigate('/admin/hotspot/active-sessions', { replace: true });
+    }
+  }, [currentPathSegment, navigate]);
+
+  useEffect(() => {
+    ctx?.setPageTitle?.(`Hotspot Router - ${activeTabObj.label}`);
+  }, [ctx, activeTabObj]);
 
   const loadRouters = useCallback(async () => {
     try {
@@ -58,20 +112,14 @@ export default function Hotspot() {
     loadRouters();
   }, [loadRouters]);
 
-  useEffect(() => {
-    if (routerId) {
-      loadTab(tab);
-      loadAllCounts();
-    }
-  }, [routerId, tab]);
-
-  async function loadAllCounts() {
+  const loadAllCounts = useCallback(async () => {
     if (!routerId) return;
     try {
-      const [resActive, resHosts, resUsers] = await Promise.all([
+      const [resActive, resHosts, resUsers, resBindings] = await Promise.all([
         apiFetch(`/hotspot-router/active?router_id=${routerId}`),
         apiFetch(`/hotspot-router/hosts?router_id=${routerId}`),
-        apiFetch(`/hotspot-router/users?router_id=${routerId}`)
+        apiFetch(`/hotspot-router/users?router_id=${routerId}`),
+        apiFetch(`/hotspot-router/bindings?router_id=${routerId}`)
       ]);
       const isRealUser = a => a && a.user && String(a.user).trim() !== '' && String(a.user).trim() !== '—' && String(a.user).trim() !== 'undefined' && String(a.user).trim() !== 'null';
       const validActive = (resActive?.data || []).filter(isRealUser);
@@ -79,13 +127,14 @@ export default function Hotspot() {
         active: validActive.length,
         hosts: resHosts?.success ? (resHosts.data || []).length : 0,
         users: resUsers?.success ? (resUsers.data || []).length : 0,
+        bindings: resBindings?.success ? (resBindings.data || []).length : 0,
       });
     } catch (err) {
       console.warn('Failed to load counts:', err.message);
     }
-  }
+  }, [routerId]);
 
-  async function loadTab(t) {
+  const loadTab = useCallback(async (t) => {
     if (!routerId) return;
     setLoading(true);
     setSearch('');
@@ -93,11 +142,12 @@ export default function Hotspot() {
       let res;
       if (t === 'active') res = await apiFetch(`/hotspot-router/active?router_id=${routerId}`);
       else if (t === 'hosts') res = await apiFetch(`/hotspot-router/hosts?router_id=${routerId}`);
-      else res = await apiFetch(`/hotspot-router/users?router_id=${routerId}`);
+      else if (t === 'users') res = await apiFetch(`/hotspot-router/users?router_id=${routerId}`);
+      else if (t === 'bindings') res = await apiFetch(`/hotspot-router/bindings?router_id=${routerId}`);
+
       if (res?.success) {
         const rawList = res.data || [];
         if (t === 'active') {
-          // Filter out rows without valid usernames/address/MAC to clean up stale ghosts
           const isRealUser = a => a && a.user && String(a.user).trim() !== '' && String(a.user).trim() !== '—' && String(a.user).trim() !== 'undefined' && String(a.user).trim() !== 'null';
           setData(rawList.filter(isRealUser));
         } else {
@@ -109,7 +159,18 @@ export default function Hotspot() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [routerId]);
+
+  useEffect(() => {
+    if (routerId) {
+      loadTab(tab);
+      loadAllCounts();
+    }
+  }, [routerId, tab, loadTab, loadAllCounts]);
+
+  const handleTabClick = (tObj) => {
+    navigate(`/admin/hotspot/${tObj.path}`);
+  };
 
   async function kickSession() {
     if (!confirmKick || kicking) return;
@@ -149,6 +210,55 @@ export default function Hotspot() {
       loadAllCounts();
     } else {
       ctx?.addToast('Gagal', res?.message || 'Gagal menghapus user.', 'error');
+    }
+  }
+
+  async function handleAddBindingSubmit(e) {
+    e.preventDefault();
+    if (!newBinding.macAddress && !newBinding.address) {
+      ctx?.addToast('Peringatan', 'Minimal MAC Address atau IP Address harus diisi.', 'warning');
+      return;
+    }
+    setAddingBinding(true);
+    try {
+      const res = await apiFetch('/hotspot-router/bindings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          router_id: routerId,
+          ...newBinding
+        })
+      });
+      if (res?.success) {
+        ctx?.addToast('Berhasil', 'IP Binding berhasil ditambahkan ke router.', 'success');
+        setShowAddBindingModal(false);
+        setNewBinding({ macAddress: '', address: '', toAddress: '', server: 'all', type: 'bypassed', comment: '' });
+        loadTab('bindings');
+        loadAllCounts();
+      } else {
+        ctx?.addToast('Gagal', res?.message || 'Gagal menambah IP Binding.', 'error');
+      }
+    } finally {
+      setAddingBinding(false);
+    }
+  }
+
+  async function handleDeleteBinding() {
+    if (!confirmDeleteBinding || deletingBinding) return;
+    setDeletingBinding(true);
+    try {
+      const { id } = confirmDeleteBinding;
+      const res = await apiFetch(`/hotspot-router/bindings/${id}?router_id=${routerId}`, { method: 'DELETE' });
+      if (res?.success) {
+        ctx?.addToast('Berhasil', 'IP Binding berhasil dihapus.', 'success');
+        setConfirmDeleteBinding(null);
+        loadTab('bindings');
+        loadAllCounts();
+      } else {
+        ctx?.addToast('Gagal', res?.message || 'Gagal menghapus IP Binding.', 'error');
+      }
+    } finally {
+      setDeletingBinding(false);
     }
   }
 
@@ -229,28 +339,62 @@ export default function Hotspot() {
         </table>
       );
     }
-    // users
+    if (tab === 'users') {
+      return (
+        <table className="data-table">
+          <thead><tr>
+            <th>Username</th><th>Password</th><th>Profile</th><th>Komentar</th><th>Aksi</th>
+          </tr></thead>
+          <tbody>
+            {filtered.map((u, i) => (
+              <tr key={i}>
+                <td style={{ fontWeight: 600 }}>{u.name || '—'}</td>
+                <td className="mono" style={{ fontSize: '0.72rem' }}>
+                  {u.password ? '••••••••' : <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>SSO (Tanpa Pass)</span>}
+                </td>
+                <td>{u.profile || '—'}</td>
+                <td style={{ color: 'var(--text-muted)', maxWidth: 180 }}>{u.comment || '—'}</td>
+                <td>
+                  <button className="btn btn-danger btn-xs" onClick={() => deleteUser(u.id || u['.id'])}>
+                    Hapus
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      );
+    }
+    // bindings
     return (
       <table className="data-table">
         <thead><tr>
-          <th>Username</th><th>Password</th><th>Profile</th><th>Komentar</th><th>Aksi</th>
+          <th>MAC Address</th><th>Address (IP)</th><th>To Address</th><th>Server</th><th>Type</th><th>Komentar</th><th>Aksi</th>
         </tr></thead>
         <tbody>
-          {filtered.map((u, i) => (
-            <tr key={i}>
-              <td style={{ fontWeight: 600 }}>{u.name || '—'}</td>
-              <td className="mono" style={{ fontSize: '0.72rem' }}>
-                {u.password ? '••••••••' : <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>SSO (Tanpa Pass)</span>}
-              </td>
-              <td>{u.profile || '—'}</td>
-              <td style={{ color: 'var(--text-muted)', maxWidth: 180 }}>{u.comment || '—'}</td>
-              <td>
-                <button className="btn btn-danger btn-xs" onClick={() => deleteUser(u.id || u['.id'])}>
-                  Hapus
-                </button>
-              </td>
-            </tr>
-          ))}
+          {filtered.map((b, i) => {
+            const bType = b.type || 'bypassed';
+            const badgeVariant = bType === 'bypassed' ? 'success' : (bType === 'passthrough' ? 'warning' : 'neutral');
+            return (
+              <tr key={i}>
+                <td className="mono" style={{ fontWeight: 600, fontSize: '0.8rem' }}>{b.mac_address || '—'}</td>
+                <td className="mono">{b.address || '—'}</td>
+                <td className="mono">{b.to_address || '—'}</td>
+                <td>{b.server || 'all'}</td>
+                <td>
+                  <Badge variant={badgeVariant}>
+                    {bType}
+                  </Badge>
+                </td>
+                <td style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>{b.comment || '—'}</td>
+                <td>
+                  <button className="btn btn-danger btn-xs" onClick={() => setConfirmDeleteBinding(b)}>
+                    Hapus
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     );
@@ -277,7 +421,7 @@ export default function Hotspot() {
           <button
             key={t.key}
             className={`tab-btn ${tab === t.key ? 'active' : ''}`}
-            onClick={() => setTab(t.key)}
+            onClick={() => handleTabClick(t)}
           >
             {t.icon} {t.label}
             <span className="tab-badge">{counts[t.key] || 0}</span>
@@ -288,27 +432,36 @@ export default function Hotspot() {
       <div className="card">
         <div className="card-header">
           <div className="card-title">
-            {TABS.find(t => t.key === tab)?.icon}
-            {TABS.find(t => t.key === tab)?.label}
+            {activeTabObj.icon}
+            {activeTabObj.label}
             <Badge variant="primary">{filtered.length}</Badge>
           </div>
-          <div className="search-wrapper">
-            <svg className="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input className="search-input" placeholder="Cari..." value={search} onChange={e => setSearch(e.target.value)} />
+
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            {tab === 'bindings' && (
+              <button className="btn btn-primary btn-sm" onClick={() => setShowAddBindingModal(true)}>
+                + Tambah IP Binding
+              </button>
+            )}
+            <div className="search-wrapper">
+              <svg className="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input className="search-input" placeholder="Cari..." value={search} onChange={e => setSearch(e.target.value)} />
+            </div>
           </div>
         </div>
+
         <div className="table-wrapper">
           {loading ? (
             <Loader />
           ) : filtered.length === 0 ? (
-            <EmptyState icon="📡" text={`Tidak ada data ${(TABS.find(t => t.key === tab)?.label || 'sesi').toLowerCase()}.`} />
+            <EmptyState icon="📡" text={`Tidak ada data ${(activeTabObj.label || 'sesi').toLowerCase()}.`} />
           ) : (
             renderTable()
           )}
         </div>
       </div>
 
-      {/* Kick Active Session Modal */}
+      {/* Modal Kick Session */}
       <Modal
         open={!!confirmKick}
         onClose={() => !kicking && setConfirmKick(null)}
@@ -328,6 +481,116 @@ export default function Hotspot() {
         </p>
         <p style={{ color: 'var(--danger)', fontSize: '0.8rem', marginTop: 8 }}>
           ⚠ Perangkat akan didepak dan harus masuk (login) kembali melalui captive portal untuk mengakses internet.
+        </p>
+      </Modal>
+
+      {/* Modal Add IP Binding */}
+      <Modal
+        open={showAddBindingModal}
+        onClose={() => !addingBinding && setShowAddBindingModal(false)}
+        title="Tambah Hotspot IP Binding Baru"
+        footer={
+          <>
+            <button className="btn btn-secondary" onClick={() => setShowAddBindingModal(false)} disabled={addingBinding}>Batal</button>
+            <button className="btn btn-primary" onClick={handleAddBindingSubmit} disabled={addingBinding} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              {addingBinding && <div className="loader-ring" style={{ width: 14, height: 14, borderWidth: 2 }} />}
+              {addingBinding ? 'Menyimpan...' : 'Simpan Binding'}
+            </button>
+          </>
+        }
+      >
+        <form onSubmit={handleAddBindingSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div>
+            <label className="label">MAC Address</label>
+            <input
+              type="text"
+              className="input mono"
+              placeholder="Contoh: 9C:CE:88:1E:3B:F4"
+              value={newBinding.macAddress}
+              onChange={e => setNewBinding({ ...newBinding, macAddress: e.target.value })}
+            />
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Boleh dikosongkan jika hanya mem-binding IP.</span>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div>
+              <label className="label">Address (IP)</label>
+              <input
+                type="text"
+                className="input mono"
+                placeholder="Contoh: 10.10.254.252"
+                value={newBinding.address}
+                onChange={e => setNewBinding({ ...newBinding, address: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="label">To Address</label>
+              <input
+                type="text"
+                className="input mono"
+                placeholder="Kosongkan atau samakan IP"
+                value={newBinding.toAddress}
+                onChange={e => setNewBinding({ ...newBinding, toAddress: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div>
+              <label className="label">Server</label>
+              <select
+                className="select"
+                value={newBinding.server}
+                onChange={e => setNewBinding({ ...newBinding, server: e.target.value })}
+              >
+                <option value="all">all</option>
+                <option value="dhcp-hotspot">dhcp-hotspot</option>
+              </select>
+            </div>
+            <div>
+              <label className="label">Type</label>
+              <select
+                className="select"
+                value={newBinding.type}
+                onChange={e => setNewBinding({ ...newBinding, type: e.target.value })}
+              >
+                <option value="bypassed">bypassed (Meloloskan Internet & Captive)</option>
+                <option value="regular">regular (Wajib Login Hotspot)</option>
+                <option value="passthrough">passthrough (Bypass Login saja)</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="label">Komentar</label>
+            <input
+              type="text"
+              className="input"
+              placeholder="Catatan / Nama Perangkat (opsional)"
+              value={newBinding.comment}
+              onChange={e => setNewBinding({ ...newBinding, comment: e.target.value })}
+            />
+          </div>
+        </form>
+      </Modal>
+
+      {/* Modal Delete Binding */}
+      <Modal
+        open={!!confirmDeleteBinding}
+        onClose={() => !deletingBinding && setConfirmDeleteBinding(null)}
+        title="Hapus Hotspot IP Binding"
+        footer={
+          <>
+            <button className="btn btn-secondary" onClick={() => setConfirmDeleteBinding(null)} disabled={deletingBinding}>Batal</button>
+            <button className="btn btn-danger" onClick={handleDeleteBinding} disabled={deletingBinding} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              {deletingBinding && <div className="loader-ring" style={{ width: 14, height: 14, borderWidth: 2 }} />}
+              {deletingBinding ? 'Menghapus...' : 'Hapus Binding'}
+            </button>
+          </>
+        }
+      >
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+          Yakin ingin menghapus IP Binding untuk MAC <strong className="mono" style={{ color: 'var(--text)' }}>"{confirmDeleteBinding?.mac_address || confirmDeleteBinding?.address}"</strong>?
         </p>
       </Modal>
     </>
