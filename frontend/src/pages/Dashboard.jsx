@@ -45,7 +45,7 @@ export default function Dashboard() {
   const [routers, setRouters] = useState([]);
   const [routerId, setRouterId] = useState('');
   const [summary, setSummary] = useState(null);
-  const [stats, setStats] = useState(null);
+  const [allStats, setAllStats] = useState({});
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -62,6 +62,20 @@ export default function Dashboard() {
       if (rRes?.success && rRes.data.length > 0) {
         setRouters(rRes.data);
         setRouterId(prev => prev || rRes.data[0].id);
+
+        // Fetch stats untuk SEMUA router secara bersamaan
+        const statsMap = {};
+        await Promise.all(
+          rRes.data.map(async (r) => {
+            try {
+              const res = await apiFetch(`/dashboard/${r.id}/stats`);
+              if (res?.success && res.data) {
+                statsMap[r.id] = res.data;
+              }
+            } catch (_) {}
+          })
+        );
+        setAllStats(statsMap);
       }
       if (sRes?.success) setSummary(sRes.data);
     } catch (_) {}
@@ -79,11 +93,7 @@ export default function Dashboard() {
       setLoading(true);
     }
     try {
-      const [statsRes, sessRes] = await Promise.all([
-        apiFetch(`/dashboard/${routerId}/stats`),
-        apiFetch(`/dashboard/${routerId}/sessions`),
-      ]);
-      if (statsRes?.success) setStats(statsRes.data);
+      const sessRes = await apiFetch(`/dashboard/${routerId}/sessions`);
       if (sessRes?.success) {
         const raw = sessRes.data || [];
         setSessions(raw.filter(s => s && s.user && String(s.user).trim() !== '' && String(s.user).trim() !== '—' && String(s.user).trim() !== 'undefined' && String(s.user).trim() !== 'null'));
@@ -145,17 +155,54 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* Router Selector + Info */}
+      {/* Resource Cards for ALL Routers (Simultaneous Display) */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 14, marginBottom: 16 }}>
+        {routers.map(r => {
+          const rStats = allStats[r.id];
+          return (
+            <div key={r.id} className="card">
+              <div className="card-header">
+                <div className="card-title">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                  {r.name} — Sumber Daya
+                </div>
+                <Badge variant={rStats ? "success" : "danger"}>
+                  {rStats ? "Online" : "API Off / Errenous"}
+                </Badge>
+              </div>
+              <div className="card-body">
+                {rStats ? (
+                  <>
+                    <ResourceBar label="CPU Load" value={parseFloat(rStats.cpu_load) || 0} max={100} unit="%" />
+                    <ResourceBar label={`RAM — Free: ${rStats.free_memory_mb} MB`} value={parseFloat(rStats.memory_percent) || 0} max={100} unit="%" color="var(--accent)" />
+                    <ResourceBar label={`HDD — Free: ${rStats.free_hdd_mb} MB`} value={parseFloat(rStats.hdd_percent) || 0} max={100} unit="%" color="var(--success)" />
+                    <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 12, fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                      <span>IP: <strong style={{ color: 'var(--text)' }}>{r.ip_address}</strong></span>
+                      <span>Uptime: <strong style={{ color: 'var(--text)' }}>{rStats.uptime || '—'}</strong></span>
+                      <span>Ver: <strong style={{ color: 'var(--text)' }}>{rStats.version || '—'}</strong></span>
+                    </div>
+                  </>
+                ) : (
+                  <div style={{ fontSize: '0.8rem', color: 'var(--danger)', padding: '12px 0' }}>
+                    ⚠ Gagal koneksi API Mikrotik (Password API tidak cocok).
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Router Selector for Active Sessions */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 14, marginBottom: 16 }}>
-        {/* Router Card */}
         <div className="card">
           <div className="card-header">
             <div className="card-title">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><rect x="2" y="6" width="20" height="12" rx="2"/></svg>
-              Pilih Router
+              Filter Sesi Aktif Per Router
             </div>
             <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-              Refresh: <strong style={{ color: 'var(--primary-light)' }}>{countdown}s</strong>
+              Auto Refresh: <strong style={{ color: 'var(--primary-light)' }}>{countdown}s</strong>
             </span>
           </div>
           <div className="card-body">
@@ -165,7 +212,6 @@ export default function Dashboard() {
               onChange={e => {
                 setRouterId(e.target.value);
                 setSessions([]);
-                setStats(null);
               }}
             >
               {routers.map(r => (
@@ -174,30 +220,8 @@ export default function Dashboard() {
             </select>
           </div>
         </div>
-
-        {/* Resources */}
-        {stats && (
-          <div className="card">
-            <div className="card-header">
-              <div className="card-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-                {stats.router_name || 'Router'} — Sumber Daya
-              </div>
-              <Badge variant="success">Online</Badge>
-            </div>
-            <div className="card-body">
-              <ResourceBar label="CPU Load" value={parseFloat(stats.cpu_load) || 0} max={100} unit="%" />
-              <ResourceBar label={`RAM — Free: ${stats.free_memory_mb} MB`} value={parseFloat(stats.memory_percent) || 0} max={100} unit="%" color="var(--accent)" />
-              <ResourceBar label={`HDD — Free: ${stats.free_hdd_mb} MB`} value={parseFloat(stats.hdd_percent) || 0} max={100} unit="%" color="var(--success)" />
-              <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 12, fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                <span>Uptime: <strong style={{ color: 'var(--text)' }}>{stats.uptime || '—'}</strong></span>
-                <span>Ver: <strong style={{ color: 'var(--text)' }}>{stats.version || '—'}</strong></span>
-                <span>Board: <strong style={{ color: 'var(--text)' }}>{stats.board_name || '—'}</strong></span>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
+
 
       {/* Active Sessions */}
       <div className="card">
