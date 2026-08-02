@@ -153,10 +153,10 @@ const syncUserToActiveRouters = async (user) => {
     try {
         let routersToSync = [];
         if (user.router_id) {
-            const rResult = await query('SELECT * FROM routers WHERE id = $1', [user.router_id]);
+            const rResult = await query('SELECT * FROM routers WHERE id = $1 AND (router_type IS NULL OR router_type != \'external\')', [user.router_id]);
             routersToSync = rResult.rows;
         } else {
-            const rResult = await query('SELECT * FROM routers WHERE is_active = TRUE');
+            const rResult = await query('SELECT * FROM routers WHERE is_active = TRUE AND (router_type IS NULL OR router_type != \'external\')');
             routersToSync = rResult.rows;
         }
 

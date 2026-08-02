@@ -109,16 +109,6 @@ const testConnection = async (req, res) => {
         }
         const router = result.rows[0];
 
-        // Jika router tipe external / vendor, tidak perlu tes API Mikrotik
-        if (router.router_type === 'external') {
-            await query('UPDATE routers SET last_seen = NOW() WHERE id = $1', [req.params.id]);
-            return res.json({
-                success: true,
-                message: `Router Vendor / Eksternal Aktif (Portal-Only). Koneksi API dikelola oleh Vendor.`,
-                data: { identity: 'Vendor Portal (External)', last_seen: new Date().toISOString() }
-            });
-        }
-
         const testResult = await mikrotik.testConnection(router);
 
         // Update last_seen
@@ -126,7 +116,9 @@ const testConnection = async (req, res) => {
 
         res.json({
             success: true,
-            message: `Koneksi ke ${router.ip_address} berhasil!`,
+            message: router.router_type === 'external'
+                ? `Koneksi API ke ${router.ip_address} berhasil! (Mode Eksternal: Resource & Monitoring Only)`
+                : `Koneksi ke ${router.ip_address} berhasil!`,
             data: { identity: testResult.identity, last_seen: new Date().toISOString() }
         });
     } catch (err) {
