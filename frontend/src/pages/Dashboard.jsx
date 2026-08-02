@@ -250,7 +250,7 @@ export default function Dashboard() {
           </button>
         </div>
         <div className="table-wrapper">
-          {loading && sessions.length === 0 && !stats ? (
+          {loading && sessions.length === 0 ? (
             <Loader />
           ) : sessions.length === 0 ? (
             <EmptyState icon="📡" text="Tidak ada sesi aktif saat ini." />
