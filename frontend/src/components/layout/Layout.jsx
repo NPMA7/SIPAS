@@ -12,6 +12,7 @@ export default function Layout() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [pageTitle, setPageTitle] = useState('Dashboard');
+  const [headerAction, setHeaderAction] = useState(null);
   const [badges, setBadges] = useState({});
 
   // Auth guard
@@ -40,7 +41,7 @@ export default function Layout() {
   function closeMobile() { setMobileOpen(false); }
 
   return (
-    <ToastContext.Provider value={{ addToast, setPageTitle }}>
+    <ToastContext.Provider value={{ addToast, setPageTitle, setHeaderAction }}>
       <div className="app-layout">
         {/* Mobile overlay */}
         <div
@@ -66,8 +67,9 @@ export default function Layout() {
                 <line x1="3" y1="18" x2="21" y2="18"/>
               </svg>
             </button>
-            <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', paddingRight: 16 }}>
               <div className="header-title">{pageTitle}</div>
+              {headerAction}
             </div>
           </header>
 

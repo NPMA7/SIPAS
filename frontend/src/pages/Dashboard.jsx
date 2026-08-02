@@ -125,6 +125,18 @@ export default function Dashboard() {
     return () => clearInterval(timer);
   }, [loadRouterData, loadRoutersAndSummary]);
 
+  useEffect(() => {
+    ctx?.setHeaderAction?.(
+      <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--surface)', padding: '4px 12px', borderRadius: 20, border: '1px solid var(--border)' }}>
+        <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981', display: 'inline-block' }} />
+        Auto Refresh: <strong style={{ color: 'var(--primary-light)' }}>{countdown}s</strong>
+      </div>
+    );
+    return () => {
+      ctx?.setHeaderAction?.(null);
+    };
+  }, [countdown, ctx]);
+
   return (
     <>
       {/* Summary Stats */}
@@ -198,21 +210,18 @@ export default function Dashboard() {
         })}
       </div>
 
-      {/* Router Selector for Active Sessions */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 14, marginBottom: 16 }}>
-        <div className="card">
-          <div className="card-header">
-            <div className="card-title">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><rect x="2" y="6" width="20" height="12" rx="2"/></svg>
-              Filter Sesi Aktif Per Router
-            </div>
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-              Auto Refresh: <strong style={{ color: 'var(--primary-light)' }}>{countdown}s</strong>
-            </span>
+      {/* Active Sessions */}
+      <div className="card">
+        <div className="card-header">
+          <div className="card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            Sesi Aktif Sekarang
+            <Badge variant="primary">{sessions.length}</Badge>
           </div>
-          <div className="card-body">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <select
               className="select"
+              style={{ width: 'auto', minWidth: 160 }}
               value={routerId}
               onChange={e => {
                 setRouterId(e.target.value);
@@ -223,36 +232,24 @@ export default function Dashboard() {
                 <option key={r.id} value={r.id}>{r.name} ({r.ip_address})</option>
               ))}
             </select>
+            <button 
+              className="btn btn-secondary btn-sm" 
+              onClick={() => { 
+                loadRoutersAndSummary(); 
+                if (routerId) loadRouterData(true); 
+              }} 
+              disabled={refreshing || loading}
+            >
+              {refreshing ? (
+                <div className="loader-ring" style={{ width: 14, height: 14, borderWidth: 2 }} />
+              ) : (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                  <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/>
+                </svg>
+              )}
+              Refresh
+            </button>
           </div>
-        </div>
-      </div>
-
-
-      {/* Active Sessions */}
-      <div className="card">
-        <div className="card-header">
-          <div className="card-title">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-            Sesi Aktif Sekarang
-            <Badge variant="primary">{sessions.length}</Badge>
-          </div>
-          <button 
-            className="btn btn-secondary btn-sm" 
-            onClick={() => { 
-              loadRoutersAndSummary(); 
-              if (routerId) loadRouterData(true); 
-            }} 
-            disabled={refreshing || loading}
-          >
-            {refreshing ? (
-              <div className="loader-ring" style={{ width: 14, height: 14, borderWidth: 2 }} />
-            ) : (
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/>
-              </svg>
-            )}
-            Refresh
-          </button>
         </div>
         <div className="table-wrapper">
           {loading && sessions.length === 0 ? (
