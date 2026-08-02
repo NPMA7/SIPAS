@@ -24,7 +24,7 @@ const getDashboardStats = async (req, res) => {
         res.json({ success: true, data: { ...data, router_name: router.name, router_id: router.id } });
     } catch (err) {
         console.error('[DashboardController] getDashboardStats:', err.message);
-        res.status(503).json({
+        res.json({
             success: false,
             message: `Gagal mengambil data router: ${err.message}`
         });
@@ -65,8 +65,10 @@ const getActiveSessions = async (req, res) => {
         res.json({ success: true, data: enriched, count: enriched.length });
     } catch (err) {
         console.error('[DashboardController] getActiveSessions:', err.message);
-        res.status(503).json({
+        res.json({
             success: false,
+            data: [],
+            count: 0,
             message: `Gagal mengambil sesi aktif: ${err.message}`
         });
     }
