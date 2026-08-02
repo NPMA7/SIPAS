@@ -23,6 +23,9 @@ add bridge=bridge-hotspot interface=ether2
 add bridge=bridge-hotspot interface=ether3
 add bridge=bridge-hotspot interface=wlan1
 
+#optioal
+#/interface bridge port set [find interface=ether3] pvid=10
+
 # --- LANGKAH 2: WLAN Interface (SSID Wi-Fi) ---
 
 /interface wireless
@@ -31,7 +34,7 @@ set [find name=wlan1] mode=ap-bridge ssid=SIPAS-WiFi band=2ghz-onlyn channel-wid
 # --- LANGKAH 3: DHCP Client (Akses Internet dari ISP) ---
 
 /ip dhcp-client
-add interface=ether1 disabled=no
+add interface=ether1 disabled=no comment="Internet dari ISP"
 
 # --- LANGKAH 4: Buat Interface VLAN pada Parent Bridge ---
 
@@ -40,6 +43,18 @@ add name=vlan10-diskominfo vlan-id=10 interface=bridge-hotspot comment="VLAN 10 
 add name=vlan20-disdik     vlan-id=20 interface=bridge-hotspot comment="VLAN 20 Dinas Pendidikan (Subnet Kelas A)"
 add name=vlan30-dinkes     vlan-id=30 interface=bridge-hotspot comment="VLAN 30 Dinas Kesehatan (Subnet Kelas A)"
 add name=vlan40-bapenda    vlan-id=40 interface=bridge-hotspot comment="VLAN 40 Bapenda (Subnet Kelas A)"
+
+# --- LANGKAH 4B: Bridge VLAN Table & Filtering (Trunk ke Ruijie AP di ether3) ---
+
+/interface bridge vlan
+add bridge=bridge-hotspot vlan-ids=10 tagged=bridge-hotspot,ether3 comment="Trunk VLAN 10 ke Ruijie AP"
+add bridge=bridge-hotspot vlan-ids=20 tagged=bridge-hotspot,ether3 comment="Trunk VLAN 20 ke Ruijie AP"
+add bridge=bridge-hotspot vlan-ids=30 tagged=bridge-hotspot,ether3 comment="Trunk VLAN 30 ke Ruijie AP"
+add bridge=bridge-hotspot vlan-ids=40 tagged=bridge-hotspot,ether3 comment="Trunk VLAN 40 ke Ruijie AP"
+
+/interface bridge
+set [find name=bridge-hotspot] vlan-filtering=yes
+
 
 # --- LANGKAH 5: Konfigurasi IP Gateway per VLAN ---
 

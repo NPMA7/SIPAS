@@ -25,7 +25,7 @@ Setelah proses instalasi selesai, terminal akan menampilkan kredensial VPN bawaa
 ========================================================
 IPsec PSK : IPSec_Secret_Anda
 Username  : vpnuser
-Password  : vpnpassword
+Password  : vpnuser
 ========================================================
 ```
 
@@ -38,19 +38,20 @@ Password  : vpnpassword
 
 Jika Anda ingin mengganti username/password atau IPsec Secret bawaan:
 
-### A. Mengubah Username & Password VPN
+### A. Mengubah Username & Password VPN (Alokasi IP Spesifik)
 Buka file otentikasi PPP di VPS:
 
 ```bash
 sudo nano /etc/ppp/chap-secrets
 ```
 
-Tambahkan akun Mikrotik baru di paling bawah file:
+Tambahkan akun Mikrotik baru di paling bawah file dengan **IP unik untuk masing-masing router** (kolom ke-4) agar tidak bentrok/rebutan IP:
 ```text
 # Username       Server     Password                  IP Address
-"mikrotik"       *          "password_rahasia_anda"   *
-"mikrotik2"       *          "password_rahasia_anda"   *
+"vpnuser1"       *          "vpnuser1"                *
+"vpnuser2"       *          "vpnuser2"                *
 ```
+
 
 ### B. Mengubah IPsec Secret (Pre-Shared Key)
 Buka file rahasia IPsec di VPS:

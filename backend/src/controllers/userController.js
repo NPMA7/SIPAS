@@ -31,7 +31,7 @@ const getUsers = async (req, res) => {
         pi++;
     }
     if (router_id) {
-        conditions.push(`hu.router_id = $${pi}`);
+        conditions.push(`(hu.router_id = $${pi} OR hu.router_id IS NULL)`);
         params.push(parseInt(router_id));
         pi++;
     }

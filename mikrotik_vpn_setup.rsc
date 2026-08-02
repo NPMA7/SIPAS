@@ -8,8 +8,8 @@
 /interface l2tp-client add \
     name=l2tp-to-vps \
     connect-to=103.67.244.193 \
-    user=vpnuser \
-    password=vpnpassword \
+    user=vpnuser1 \
+    password=vpnuser1 \
     use-ipsec=yes \
     ipsec-secret=ATE7GEM3frnPqjhhDpMc \
     profile=default-encryption \
