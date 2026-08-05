@@ -40,6 +40,30 @@ function ResourceBar({ label, value, max, unit = '%', color = 'var(--primary)' }
   );
 }
 
+function AutoRefreshBadge({ onRefresh }) {
+  const [countdown, setCountdown] = useState(30);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCountdown(c => {
+        if (c <= 1) {
+          onRefresh();
+          return 30;
+        }
+        return c - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [onRefresh]);
+
+  return (
+    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--surface)', padding: '4px 12px', borderRadius: 20, border: '1px solid var(--border)' }}>
+      <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981', display: 'inline-block' }} />
+      Auto Refresh: <strong style={{ color: 'var(--primary-light)' }}>{countdown}s</strong>
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const ctx = useContext(ToastContext);
   const [routers, setRouters] = useState([]);
@@ -49,7 +73,6 @@ export default function Dashboard() {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [countdown, setCountdown] = useState(30);
 
   useEffect(() => { ctx?.setPageTitle?.('Dashboard'); }, [ctx]);
 
@@ -107,35 +130,17 @@ export default function Dashboard() {
   useEffect(() => {
     if (routerId) { 
       loadRouterData(false); 
-      setCountdown(30); 
     }
   }, [routerId, loadRouterData]);
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCountdown(c => {
-        if (c <= 1) { 
-          loadRoutersAndSummary();
-          loadRouterData(true); 
-          return 30; 
-        }
-        return c - 1;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [loadRouterData, loadRoutersAndSummary]);
+  const handleAutoRefresh = useCallback(() => {
+    loadRoutersAndSummary();
+    loadRouterData(true);
+  }, [loadRoutersAndSummary, loadRouterData]);
 
   useEffect(() => {
-    ctx?.setHeaderAction?.(
-      <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--surface)', padding: '4px 12px', borderRadius: 20, border: '1px solid var(--border)' }}>
-        <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981', display: 'inline-block' }} />
-        Auto Refresh: <strong style={{ color: 'var(--primary-light)' }}>{countdown}s</strong>
-      </div>
-    );
-    return () => {
-      ctx?.setHeaderAction?.(null);
-    };
-  }, [countdown, ctx]);
+    ctx?.setHeaderAction?.(<AutoRefreshBadge onRefresh={handleAutoRefresh} />);
+  }, [ctx, handleAutoRefresh]);
 
   return (
     <>

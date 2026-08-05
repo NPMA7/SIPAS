@@ -1,13 +1,25 @@
-import { useState, useEffect } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Toast from '../ui/Toast';
 import { useToast } from '../../hooks/useToast';
 import { ToastContext } from '../../hooks/ToastContext';
 import { apiFetch } from '../../api/client';
 
+const TITLE_MAP = {
+  '/admin': 'Dashboard',
+  '/admin/': 'Dashboard',
+  '/admin/users': 'Pengguna Hotspot',
+  '/admin/blocked-sites': 'Situs Diblokir',
+  '/admin/routers': 'Manajemen Router',
+  '/admin/hotspot': 'Hotspot Router',
+  '/admin/queues': 'Simple Queues',
+  '/admin/dhcp': 'DHCP Leases',
+};
+
 export default function Layout() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toasts, addToast } = useToast();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -30,6 +42,29 @@ export default function Layout() {
     }).catch(() => {});
   }, []);
 
+  // Update page title & reset header action on route change
+  useEffect(() => {
+    const matchedTitle = TITLE_MAP[location.pathname];
+    if (matchedTitle) {
+      setPageTitle(matchedTitle);
+    }
+    setHeaderAction(null);
+  }, [location.pathname]);
+
+  const handleSetPageTitle = useCallback((title) => {
+    setPageTitle(title);
+  }, []);
+
+  const handleSetHeaderAction = useCallback((action) => {
+    setHeaderAction(action);
+  }, []);
+
+  const contextValue = useMemo(() => ({
+    addToast,
+    setPageTitle: handleSetPageTitle,
+    setHeaderAction: handleSetHeaderAction,
+  }), [addToast, handleSetPageTitle, handleSetHeaderAction]);
+
   function toggleSidebar() {
     if (window.innerWidth <= 900) {
       setMobileOpen(v => !v);
@@ -41,7 +76,7 @@ export default function Layout() {
   function closeMobile() { setMobileOpen(false); }
 
   return (
-    <ToastContext.Provider value={{ addToast, setPageTitle, setHeaderAction }}>
+    <ToastContext.Provider value={contextValue}>
       <div className="app-layout">
         {/* Mobile overlay */}
         <div
