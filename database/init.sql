@@ -152,7 +152,7 @@ INSERT INTO routers (name, ip_address, api_port, api_username, api_password, loc
 ON CONFLICT DO NOTHING;
 
 -- ============================================================
--- SEED DATA: 3 Sample Hotspot Users
+-- SEED DATA: Sample Hotspot Users
 -- ============================================================
 INSERT INTO hotspot_users (username, password, full_name, bandwidth_limit, website_block, router_id, notes) VALUES
 (
@@ -160,7 +160,7 @@ INSERT INTO hotspot_users (username, password, full_name, bandwidth_limit, websi
     'user1',
     'Budi Santoso',
     '10M/10M',
-    FALSE,
+    '',
     1,
     'User normal tanpa pembatasan khusus'
 ),
@@ -169,8 +169,9 @@ INSERT INTO hotspot_users (username, password, full_name, bandwidth_limit, websi
     'user2',
     'Siti Rahayu',
     '5M/5M',
-    TRUE,
+    'npma',
     1,
     'User dengan bandwidth terbatas 5Mbps download / 5Mbps upload'
-),
+)
 ON CONFLICT (username) DO NOTHING;
+
