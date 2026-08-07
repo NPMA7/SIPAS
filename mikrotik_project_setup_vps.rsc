@@ -24,12 +24,10 @@ add name=hsprof-captive hotspot-address=10.10.0.1 dns-name=hotspot.net login-by=
 /ip hotspot
 add name=hotspot1 interface=bridge-hotspot address-pool=none profile=hsprof-captive idle-timeout=00:02:00 keepalive-timeout=00:02:00 disabled=no
 
-# --- LANGKAH 5: Walled Garden Akses Bebas ke Portal VPS (Bypass Sebelum Login) ---
+# --- LANGKAH 5: Walled Garden Akses Bebas ke Portal Cloudflare Domain (Bypass Sebelum Login) ---
 /ip hotspot walled-garden
-add server=hotspot1 dst-host=103.67.244.193
-
-/ip hotspot walled-garden ip
-add server=hotspot1 dst-address=103.67.244.193
+add server=hotspot1 dst-host=sipas.npma.my.id
+add server=hotspot1 dst-host=*.npma.my.id
 
 # --- LANGKAH 6: Firewall Rules Dasar Hotspot & Akses VPN Subnet ---
 /ip firewall filter
