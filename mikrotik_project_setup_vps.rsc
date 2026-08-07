@@ -1,11 +1,11 @@
 # =============================================================================
-#     MIKROTIK SIPAS INTEGRATION SCRIPT FOR VPS 
+#     MIKROTIK SIPAS INTEGRATION SCRIPT (mikrotik_project_setup_vps.rsc)
 # =============================================================================
-# Script ini sudah disesuaikan untuk deployment VPS dengan IP Public: 103.67.244.193
-# dan Subnet VPN L2TP: 192.168.42.0/24
+# Script ini disesuaikan untuk Mikrotik Utama Diskominfo dengan Portal SIPAS
+# via Cloudflare Tunnel Domain: sipas.npma.my.id
 # =============================================================================
 
-# --- LANGKAH 1: IP Service API port 8728 (Akses Web Admin Backend VPS) ---
+# --- LANGKAH 1: IP Service API port 8728 (Akses Web Admin Backend) ---
 /ip service
 set api port=8728 address=0.0.0.0/0 disabled=no
 set www disabled=no
@@ -29,14 +29,13 @@ add name=hotspot1 interface=bridge-hotspot address-pool=none profile=hsprof-capt
 add server=hotspot1 dst-host=sipas.npma.my.id
 add server=hotspot1 dst-host=*.npma.my.id
 
-# --- LANGKAH 6: Firewall Rules Dasar Hotspot & Akses VPN Subnet ---
+# --- LANGKAH 6: Firewall Rules Dasar Hotspot & Akses Subnet ---
 /ip firewall filter
 add chain=input action=accept connection-state=established,related
 add chain=forward action=accept connection-state=established,related
 add chain=input action=drop connection-state=invalid
 add chain=forward action=drop connection-state=invalid
 add chain=input action=accept protocol=icmp
-add chain=input action=accept src-address=192.168.42.0/24 comment="Akses VPN Server VPS"
 add chain=input action=accept in-interface=bridge-hotspot protocol=udp dst-port=53
 add chain=input action=accept in-interface=bridge-hotspot protocol=tcp dst-port=53
 add chain=input action=accept in-interface=bridge-hotspot protocol=udp dst-port=67
@@ -54,11 +53,8 @@ add chain=hs-unauth protocol=tcp dst-port=443 action=reject reject-with=tcp-rese
 /ip dns static
 add name=hotspot.net address=10.10.0.1
 
-# --- LANGKAH 7: Optional ---
-# /ip firewall filter 
-# add chain=forward protocol=udp dst-port=443 action=drop comment="Block QUIC UDP 443" place-before=0
+# --- LANGKAH 7: Backup Final ---
+/system backup save name=hotspot-sipas-setup-backup
+:log info "Konfigurasi Hotspot SIPAS berhasil dipasang!"
 
-# --- LANGKAH 8: Backup Final ---
-/system backup save name=hotspot-vps-setup-backup
-:log info "Konfigurasi Hotspot untuk VPS berhasil dipasang!"
 
