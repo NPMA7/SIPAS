@@ -18,7 +18,7 @@ set default idle-timeout=00:02:00 keepalive-timeout=00:02:00 shared-users=1
 
 # --- LANGKAH 3: Hotspot Server Profile ---
 /ip hotspot profile
-add name=hsprof-captive hotspot-address=10.10.0.1 dns-name=hotspot.net login-by=http-chap,http-pap html-directory=hotspot http-cookie-lifetime=3d split-user-domain=no use-radius=no
+add name=hsprof-captive hotspot-address=10.10.0.1 dns-name=sipas.hostpot.net login-by=http-chap,http-pap html-directory=hotspot http-cookie-lifetime=3d split-user-domain=no use-radius=no
 
 # --- LANGKAH 4: Hotspot Server pada bridge-hotspot ---
 /ip hotspot
@@ -51,7 +51,7 @@ add chain=hs-unauth protocol=tcp dst-port=443 action=reject reject-with=tcp-rese
 
 # --- LANGKAH 6.2: IP DNS Static ---
 /ip dns static
-add name=hotspot.net address=10.10.0.1
+add name=sipas.hostpot.net address=10.10.0.1
 
 # --- LANGKAH 7: Backup Final ---
 /system backup save name=hotspot-sipas-setup-backup

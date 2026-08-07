@@ -52,7 +52,7 @@ add chain=srcnat out-interface=ether1 action=masquerade
 set servers=8.8.8.8,1.1.1.1 allow-remote-requests=yes
 
 /ip dns static
-add name=hotspot.net address=10.10.0.1 comment="Domain Portal SIPAS"
+add name=sipas.hostpot.net address=10.10.0.1 comment="Domain Portal SIPAS"
 
 # --- LANGKAH 8: System Identity ---
 
