@@ -103,7 +103,10 @@ const getUsers = async (req, res) => {
 const getUserById = async (req, res) => {
     try {
         const result = await query(
-            `SELECT hu.*, r.name as router_name, r.ip_address as router_ip
+            `SELECT hu.id, hu.username, hu.full_name, hu.email, hu.phone,
+                    hu.bandwidth_limit, hu.max_devices, hu.website_block, hu.is_active, hu.auth_provider, hu.nip,
+                    hu.jabatan, hu.instansi, hu.router_id, r.name as router_name, r.ip_address as router_ip,
+                    hu.notes, hu.created_at, hu.updated_at
              FROM hotspot_users hu
              LEFT JOIN routers r ON hu.router_id = r.id
              WHERE hu.id = $1`,
@@ -112,7 +115,18 @@ const getUserById = async (req, res) => {
         if (result.rows.length === 0) {
             return res.status(404).json({ success: false, message: 'User tidak ditemukan.' });
         }
-        res.json({ success: true, data: result.rows[0] });
+        let user = result.rows[0];
+        if (req.admin && req.admin.role === 'visitor') {
+            const { maskSensitiveText } = require('../middleware/adminAuth');
+            user = {
+                ...user,
+                username: maskSensitiveText(user.username, 2, 2),
+                nip: user.nip ? maskSensitiveText(user.nip, 4, 3) : null,
+                phone: user.phone ? maskSensitiveText(user.phone, 3, 2) : null,
+                email: user.email ? maskSensitiveText(user.email, 2, 4) : null,
+            };
+        }
+        res.json({ success: true, data: user });
     } catch (err) {
         res.status(500).json({ success: false, message: 'Gagal mengambil data user.' });
     }

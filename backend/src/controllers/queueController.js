@@ -17,7 +17,23 @@ const getQueues = async (req, res) => {
 
         const queues = await mikrotik.getSimpleQueues(rResult.rows[0]);
 
-        res.json({ success: true, data: queues, count: queues.length });
+        const isVisitor = req.admin && req.admin.role === 'visitor';
+        const { maskSensitiveText } = require('../middleware/adminAuth');
+
+        const processedQueues = queues.map(q => {
+            let name = q.name || '';
+            if (isVisitor && name.startsWith('hotspot-') && name.length > 12) {
+                const nipPart = name.replace('hotspot-', '');
+                name = `hotspot-${maskSensitiveText(nipPart, 4, 3)}`;
+            }
+            return {
+                ...q,
+                name,
+                target: isVisitor && q.target ? maskSensitiveText(q.target, 6, 4) : q.target,
+            };
+        });
+
+        res.json({ success: true, data: processedQueues, count: processedQueues.length });
     } catch (err) {
         console.error('[QueueController] getQueues:', err.message);
         res.status(503).json({

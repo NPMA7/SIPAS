@@ -9,9 +9,15 @@ const getRouters = async (req, res) => {
              FROM routers ORDER BY id ASC`
         );
         // Hitung jumlah user per router
+        const isVisitor = req.admin && req.admin.role === 'visitor';
+        const { maskSensitiveText } = require('../middleware/adminAuth');
+
         for (const r of result.rows) {
             const cnt = await query('SELECT COUNT(*) FROM hotspot_users WHERE router_id = $1', [r.id]);
             r.user_count = parseInt(cnt.rows[0].count);
+            if (isVisitor) {
+                r.api_username = r.api_username ? maskSensitiveText(r.api_username, 1, 1) : r.api_username;
+            }
         }
         res.json({ success: true, data: result.rows });
     } catch (err) {
@@ -30,7 +36,15 @@ const getRouterById = async (req, res) => {
         if (result.rows.length === 0) {
             return res.status(404).json({ success: false, message: 'Router tidak ditemukan.' });
         }
-        res.json({ success: true, data: result.rows[0] });
+        let router = result.rows[0];
+        if (req.admin && req.admin.role === 'visitor') {
+            const { maskSensitiveText } = require('../middleware/adminAuth');
+            router = {
+                ...router,
+                api_username: router.api_username ? maskSensitiveText(router.api_username, 1, 1) : router.api_username,
+            };
+        }
+        res.json({ success: true, data: router });
     } catch (err) {
         res.status(500).json({ success: false, message: 'Gagal mengambil data router.' });
     }

@@ -29,6 +29,8 @@ const getActiveSessions = async (req, res) => {
             return {
                 ...s,
                 user: isVisitor ? maskSensitiveText(rawUser, 2, 2) : rawUser,
+                address: isVisitor && s.address ? maskSensitiveText(s.address, 6, 2) : s.address,
+                mac: isVisitor && (s.mac || s['mac-address']) ? maskSensitiveText(s.mac || s['mac-address'], 5, 2) : (s.mac || s['mac-address']),
                 bandwidth_limit: dbUser?.bandwidth_limit || 'N/A',
                 website_block:   dbUser?.website_block   || '',
                 full_name:       dbUser?.full_name       || (isVisitor ? maskSensitiveText(rawUser, 2, 2) : rawUser),
@@ -77,8 +79,17 @@ const getHosts = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Router tidak ditemukan.' });
         }
 
+        const isVisitor = req.admin && req.admin.role === 'visitor';
+        const { maskSensitiveText } = require('../middleware/adminAuth');
+
         const hosts = await mikrotik.getHotspotHosts(rResult.rows[0]);
-        res.json({ success: true, data: hosts });
+        const processedHosts = hosts.map(h => ({
+            ...h,
+            address: isVisitor && h.address ? maskSensitiveText(h.address, 6, 2) : h.address,
+            'mac-address': isVisitor && (h['mac-address'] || h.mac_address) ? maskSensitiveText(h['mac-address'] || h.mac_address, 5, 2) : (h['mac-address'] || h.mac_address),
+            mac_address: isVisitor && (h['mac-address'] || h.mac_address) ? maskSensitiveText(h['mac-address'] || h.mac_address, 5, 2) : (h['mac-address'] || h.mac_address),
+        }));
+        res.json({ success: true, data: processedHosts });
     } catch (err) {
         console.error('[HotspotRouterController] getHosts:', err.message);
         res.status(500).json({ success: false, message: err.message || 'Gagal mengambil host terhubung.' });
@@ -138,8 +149,17 @@ const getRouterUsers = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Router tidak ditemukan.' });
         }
 
+        const isVisitor = req.admin && req.admin.role === 'visitor';
+        const { maskSensitiveText } = require('../middleware/adminAuth');
+
         const users = await mikrotik.getRouterHotspotUsers(rResult.rows[0]);
-        const filteredUsers = users.filter(u => u.name !== 'default-trial');
+        const filteredUsers = users
+            .filter(u => u.name !== 'default-trial')
+            .map(u => ({
+                ...u,
+                name: isVisitor ? maskSensitiveText(u.name, 2, 2) : u.name,
+                password: isVisitor ? '••••••••' : (u.password ? '••••••••' : ''),
+            }));
         res.json({ success: true, data: filteredUsers });
     } catch (err) {
         console.error('[HotspotRouterController] getRouterUsers:', err.message);

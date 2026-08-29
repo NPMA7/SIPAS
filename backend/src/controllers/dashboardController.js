@@ -16,7 +16,26 @@ const getDashboardStats = async (req, res) => {
         }
         const router = rResult.rows[0];
 
-        const data = await mikrotik.getDashboardData(router);
+        let data = await mikrotik.getDashboardData(router);
+
+        const isVisitor = req.admin && req.admin.role === 'visitor';
+        const { maskSensitiveText } = require('../middleware/adminAuth');
+
+        if (isVisitor && data) {
+            if (data.system) {
+                data.system = {
+                    ...data.system,
+                    serial: data.system.serial ? maskSensitiveText(data.system.serial, 4, 3) : undefined,
+                    version: data.system.version ? `${data.system.version.split('.')[0]}.x` : undefined,
+                };
+            }
+            if (data.resource) {
+                data.resource = {
+                    ...data.resource,
+                    version: data.resource.version ? `${data.resource.version.split('.')[0]}.x` : undefined,
+                };
+            }
+        }
 
         // Update last_seen
         await query('UPDATE routers SET last_seen = NOW() WHERE id = $1', [router.id]);
@@ -63,6 +82,8 @@ const getActiveSessions = async (req, res) => {
             return {
                 ...s,
                 user: isVisitor ? maskSensitiveText(rawUser, 2, 2) : rawUser,
+                address: isVisitor && s.address ? maskSensitiveText(s.address, 6, 2) : s.address,
+                mac: isVisitor && (s.mac || s['mac-address']) ? maskSensitiveText(s.mac || s['mac-address'], 5, 2) : (s.mac || s['mac-address']),
                 bandwidth_limit: dbUser?.bandwidth_limit || 'N/A',
                 website_block:   dbUser?.website_block   || '',
                 full_name:       dbUser?.full_name       || (isVisitor ? maskSensitiveText(rawUser, 2, 2) : rawUser),
