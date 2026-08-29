@@ -67,7 +67,7 @@ add chain=dstnat in-interface=bridge-hotspot protocol=udp dst-port=53 action=red
 add chain=dstnat in-interface=bridge-hotspot protocol=tcp dst-port=53 action=redirect comment="DNS TCP Redirect"
 
 /ip firewall filter
-add chain=hs-unauth protocol=tcp dst-port=443 action=reject reject-with=tcp-reset comment="Instant TCP RST for HTTPS to trigger automatic browser popup" place-before=0
+add chain=hs-unauth protocol=tcp dst-port=443 action=reject reject-with=tcp-reset comment="Instant TCP RST for HTTPS to trigger automatic browser popup"
 
 # --- LANGKAH 9: IP DNS Static ---
 /ip dns static

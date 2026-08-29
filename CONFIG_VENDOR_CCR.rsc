@@ -48,6 +48,6 @@ add dst-address=10.100.100.10 protocol=tcp dst-port=80 action=accept comment="By
 
 # --- 6. FAST TCP RESET UNTUK POP-UP OTOMATIS DI HP / LAPTOP ---
 /ip firewall filter
-add chain=hs-unauth protocol=tcp dst-port=443 action=reject reject-with=tcp-reset comment="Instant TCP RST for HTTPS Popup Trigger" place-before=0
+add chain=hs-unauth protocol=tcp dst-port=443 action=reject reject-with=tcp-reset comment="Instant TCP RST for HTTPS Popup Trigger"
 
 :log info "Konfigurasi Hotspot & Integrasi SIPAS pada Mikrotik CCR berhasil diterapkan!"
