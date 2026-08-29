@@ -7,13 +7,17 @@ const { query } = require('../config/db');
  */
 const getAllAdminUsers = async (req, res) => {
     try {
-        const result = await query(`
-            SELECT id, username, full_name, email, role, is_active, created_at, updated_at
-            FROM admin_users
-            ORDER BY 
-                CASE WHEN role = 'superadmin' THEN 1 WHEN role = 'operator' THEN 2 ELSE 3 END,
-                id ASC
-        `);
+        const isSuper = req.admin && req.admin.role === 'superadmin';
+        const queryText = isSuper
+            ? `SELECT id, username, full_name, email, role, is_active, created_at, updated_at
+               FROM admin_users
+               ORDER BY CASE WHEN role = 'superadmin' THEN 1 WHEN role = 'operator' THEN 2 ELSE 3 END, id ASC`
+            : `SELECT id, username, full_name, email, role, is_active, created_at, updated_at
+               FROM admin_users
+               WHERE role != 'superadmin'
+               ORDER BY CASE WHEN role = 'operator' THEN 1 ELSE 2 END, id ASC`;
+
+        const result = await query(queryText);
         res.json({ success: true, data: result.rows });
     } catch (err) {
         console.error('[AdminUsersController] getAllAdminUsers error:', err.message);

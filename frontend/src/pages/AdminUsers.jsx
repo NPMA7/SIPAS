@@ -249,16 +249,18 @@ export default function AdminUsers() {
           value={stats.total}
           variant="primary"
         />
-        <StatCard
-          icon={
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="22" height="22">
-              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-            </svg>
-          }
-          label="Super Administrator"
-          value={stats.superadmins}
-          variant="warning"
-        />
+        {isSuperAdmin && (
+          <StatCard
+            icon={
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="22" height="22">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+              </svg>
+            }
+            label="Super Administrator"
+            value={stats.superadmins}
+            variant="warning"
+          />
+        )}
         <StatCard
           icon={
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="22" height="22">
@@ -298,14 +300,14 @@ export default function AdminUsers() {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             {/* Search */}
-            <div className="search-box" style={{ minWidth: 200 }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+            <div className="search-wrapper">
+              <svg className="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
                 <circle cx="11" cy="11" r="8" />
                 <line x1="21" y1="21" x2="16.65" y2="16.65" />
               </svg>
               <input
                 type="text"
-                className="input input-sm"
+                className="search-input"
                 placeholder="Cari username / nama..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -320,7 +322,7 @@ export default function AdminUsers() {
               style={{ width: 'auto' }}
             >
               <option value="all">Semua Role</option>
-              <option value="superadmin">Superadmin</option>
+              {isSuperAdmin && <option value="superadmin">Superadmin</option>}
               <option value="operator">Operator</option>
               <option value="visitor">Visitor (Read-Only)</option>
             </select>
