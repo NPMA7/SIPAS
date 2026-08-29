@@ -1045,6 +1045,31 @@ const setupPortalUser = async (
           try { await conn.write("/ip/firewall/filter/add", args); } catch (_) {}
         }
 
+        // B.2. Pastikan filter rule TLS-Host (SNI) ada untuk setiap domain (Blokir HTTPS instan di RouterOS v7)
+        for (const domain of cfg.domains) {
+          const tlsFilterExists = allFilters.some(
+            (rule) =>
+              rule.chain === "forward" &&
+              rule["src-address-list"] === cfg.userList &&
+              rule["tls-host"] === `*${domain}*`,
+          );
+          if (!tlsFilterExists) {
+            const args = [
+              `=chain=forward`,
+              `=src-address-list=${cfg.userList}`,
+              `=protocol=tcp`,
+              `=dst-port=443`,
+              `=tls-host=*${domain}*`,
+              `=action=drop`,
+              `=comment=Block ${siteKey} TLS ${domain}`,
+            ];
+            if (allFilters && allFilters.length > 0 && allFilters[0][".id"]) {
+              args.push(`=place-before=${allFilters[0][".id"]}`);
+            }
+            try { await conn.write("/ip/firewall/filter/add", args); } catch (_) {}
+          }
+        }
+
         // C. Pastikan L7 Protocol terdaftar
         try {
           const allL7s = await conn.write("/ip/firewall/layer7-protocol/print");
