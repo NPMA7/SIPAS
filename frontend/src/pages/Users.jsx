@@ -333,8 +333,7 @@ export default function Users() {
             alignItems: 'center',
             gap: 8
           }}>
-            <span>👁️</span>
-            <span><strong>Mode Visitor (Read-Only)</strong>: Akses dibatasi hanya untuk melihat. Data sensitif seperti NIP, nomor telepon, dan email disamarkan.</span>
+            <span><strong>Mode Visitor (Read-Only)</strong></span>
           </div>
         )}
 
