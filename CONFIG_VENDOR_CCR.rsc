@@ -1,8 +1,9 @@
 # =============================================================================
 #     MIKROTIK CCR FULL HOTSPOT & SIPAS SETUP SCRIPT (UNTUK VENDOR)
 # =============================================================================
-# Script ini untuk mengaktifkan Hotspot Server pada Mikrotik CCR eksisting 
-# yang sudah memiliki VLAN / IP Network, lalu mengintegrasikannya ke SIPAS.
+# Konfigurasi:
+#   - Dedicated Server Mini PC (ether2) : 10.100.100.10
+#   - Domain Captive Portal             : https://sipas.npma.my.id/
 # =============================================================================
 
 # --- 1. AKTIFKAN API ROUTEROS & BUAT USER API BACKEND ---
@@ -32,7 +33,7 @@ set [find default=yes] idle-timeout=00:05:00 keepalive-timeout=00:02:00 shared-u
 # --- 4. BYPASS IP SERVER MINI PC DARI CAPTIVE PORTAL (WAJIB) ---
 # Agar Mini PC bebas akses internet/Cloudflare tanpa terhalang login captive portal
 /ip hotspot ip-binding
-add address=10.100.254.190 type=bypassed comment="Mini PC SIPAS Server - Bypass Hotspot"
+add address=10.100.100.10 type=bypassed comment="Mini PC SIPAS Server - Bypass Hotspot"
 
 # --- 5. WALLED GARDEN (BYPASS AKSES DOMAIN PORTAL SEBELUM LOGIN) ---
 # Membuka akses bagi klien yang belum login agar bisa membuka domain portal HTTPS
@@ -42,8 +43,8 @@ add dst-host=*.npma.my.id comment="Subdomain SIPAS"
 add dst-host=*.cloudflare.com comment="CDN Cloudflare"
 
 /ip hotspot walled-garden ip
-add dst-address=10.100.254.190 dst-port=3000 action=accept comment="Bypass Portal Port 3000"
-add dst-address=10.100.254.190 dst-port=80 action=accept comment="Bypass Portal Port 80"
+add dst-address=10.100.100.10 dst-port=3000 action=accept comment="Bypass Portal Port 3000"
+add dst-address=10.100.100.10 dst-port=80 action=accept comment="Bypass Portal Port 80"
 
 # --- 6. FAST TCP RESET UNTUK POP-UP OTOMATIS DI HP / LAPTOP ---
 /ip firewall filter

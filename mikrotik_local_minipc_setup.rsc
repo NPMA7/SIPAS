@@ -3,8 +3,8 @@
 # =============================================================================
 # Topologi & Segmentasi Subnet Terpisah:
 #   - ether1 : Internet / ISP WAN (DHCP Client)
-#   - ether2 : Dedicated Server Mini PC SIPAS (IP Isolasi: 10.100.254.0/24)
-#              (Mikrotik Gateway: 10.100.254.1 | Mini PC: 10.100.254.190)
+#   - ether2 : Dedicated Server Mini PC SIPAS (IP Isolasi: 10.100.100.0/24)
+#              (Mikrotik Gateway: 10.100.100.1 | Mini PC: 10.100.100.10)
 #   - ether3-ether5 / wlan1 : Client Hotspot / AP (Subnet: 10.10.0.0/16)
 #                             (Gateway Hotspot: 10.10.0.1)
 # =============================================================================
@@ -21,7 +21,7 @@ add bridge=bridge-hotspot interface=ether5 comment="Access Point / Client"
 # --- LANGKAH 2: IP Address Interface (Segmentasi Terpisah) ---
 /ip address
 # 2.1 IP Interface ether2 (Segmen Khusus Server Mini PC)
-add address=10.100.254.1/24 interface=ether2 comment="Gateway Dedicated Server Mini PC (Isolasi)"
+add address=10.100.100.1/24 interface=ether2 comment="Gateway Dedicated Server Mini PC (Isolasi)"
 
 # 2.2 IP Interface Bridge Hotspot (Segmen Khusus Client/User)
 add address=10.10.0.1/16 interface=bridge-hotspot comment="Gateway Hotspot Klien Kelas A"
@@ -49,7 +49,7 @@ set servers=8.8.8.8,1.1.1.1 allow-remote-requests=yes
 
 /ip dns static
 add name=hotspot.net address=10.10.0.1 comment="Domain Gateway Hotspot"
-add name=sipas.local address=10.100.254.190 comment="Domain Mini PC Server SIPAS"
+add name=sipas.local address=10.100.100.10 comment="Domain Mini PC Server SIPAS"
 
 # --- LANGKAH 6: IP Service API untuk Backend Mini PC ---
 /ip service
@@ -79,9 +79,9 @@ add server=hotspot1 dst-host=*.cloudflare.com comment="Bypass Cloudflare CDN"
 add server=hotspot1 dst-host=sipas.local comment="Bypass Domain Lokal"
 
 /ip hotspot walled-garden ip
-add dst-address=10.100.254.190 dst-port=3000 action=accept comment="Akses Web Portal SIPAS Mini PC (Port 3000)"
-add dst-address=10.100.254.190 dst-port=80 action=accept comment="Akses Web Portal SIPAS Mini PC (Port 80)"
-add dst-address=10.100.254.190 action=accept comment="Akses Penuh ke Server Mini PC"
+add dst-address=10.100.100.10 dst-port=3000 action=accept comment="Akses Web Portal SIPAS Mini PC (Port 3000)"
+add dst-address=10.100.100.10 dst-port=80 action=accept comment="Akses Web Portal SIPAS Mini PC (Port 80)"
+add dst-address=10.100.100.10 action=accept comment="Akses Penuh ke Server Mini PC"
 
 # --- LANGKAH 9: NAT DNS Redirect & TCP RST untuk Pop-Up Otomatis ---
 /ip firewall nat
@@ -95,4 +95,4 @@ add chain=hs-unauth protocol=tcp dst-port=443 action=reject reject-with=tcp-rese
 /system identity
 set name=SIPAS-Mikrotik-Local
 
-:log info "Konfigurasi Mikrotik Local (ether2 Isolasi Server) berhasil dipasang!"
+:log info "Konfigurasi Mikrotik Local (ether2 IP 10.100.100.1/24) berhasil dipasang!"

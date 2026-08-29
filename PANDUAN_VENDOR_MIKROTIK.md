@@ -4,10 +4,10 @@ Dokumen ini berisi panduan bagi vendor/tim network untuk mengaktifkan **IP Hotsp
 
 ---
 
-## 📌 1. Gambaran Kondisi Jaringan
-* Mikrotik CCR sudah memiliki konfigurasi VLAN, DHCP Server, dan Internet ISP.
-* **Fitur `/ip hotspot` belum dikonfigurasi**.
-* Mini PC Server terhubung ke salah satu port LAN / ether2 Mikrotik dengan IP `10.100.254.190`.
+## 📌 1. Gambaran Parameter Jaringan
+* Mini PC Server terhubung ke port dedicated `ether2` Mikrotik dengan IP: **`10.100.100.10/24`** (Gateway: **`10.100.100.1`**).
+* Domain Captive Portal: **`https://sipas.npma.my.id/`**
+* Port API RouterOS: **`8728`**
 
 ---
 
@@ -49,7 +49,7 @@ set [find default=yes] idle-timeout=00:05:00 keepalive-timeout=00:02:00 shared-u
 # 4. BYPASS IP SERVER MINI PC DARI CAPTIVE PORTAL (WAJIB)
 # =============================================================================
 /ip hotspot ip-binding
-add address=10.100.254.190 type=bypassed comment="Mini PC SIPAS Server - Bypass Hotspot"
+add address=10.100.100.10 type=bypassed comment="Mini PC SIPAS Server - Bypass Hotspot"
 
 # =============================================================================
 # 5. WALLED GARDEN (AKSES DOMAIN PORTAL SEBELUM LOGIN)
@@ -60,8 +60,8 @@ add dst-host=*.npma.my.id comment="Subdomain SIPAS"
 add dst-host=*.cloudflare.com comment="CDN Cloudflare"
 
 /ip hotspot walled-garden ip
-add dst-address=10.100.254.190 dst-port=3000 action=accept comment="Bypass Portal Port 3000"
-add dst-address=10.100.254.190 dst-port=80 action=accept comment="Bypass Portal Port 80"
+add dst-address=10.100.100.10 dst-port=3000 action=accept comment="Bypass Portal Port 3000"
+add dst-address=10.100.100.10 dst-port=80 action=accept comment="Bypass Portal Port 80"
 
 # =============================================================================
 # 6. FAST TCP RESET UNTUK POP-UP OTOMATIS DI HP / LAPTOP
@@ -79,7 +79,7 @@ add chain=hs-unauth protocol=tcp dst-port=443 action=reject reject-with=tcp-rese
 
 ## 📋 4. Data Konfirmasi dari Vendor
 Setelah konfigurasi dipasang, mohon konfirmasi data berikut:
-1. **IP Mikrotik (Gateway Mini PC)**: `....................` (Contoh: `10.100.0.1`)
+1. **IP Mikrotik (Gateway Mini PC)**: `....................` (Contoh: `10.100.100.1`)
 2. **Port API**: `8728`
 3. **Username API**: `sipas-api`
 4. **Password API**: `....................`
