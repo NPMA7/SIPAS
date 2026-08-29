@@ -293,7 +293,7 @@ export default function Dashboard() {
                       <span style={{ color: '#10b981', fontWeight: 600, marginRight: 8 }}>
                         ↓ {formatSpeed(s.tx_rate || s['tx-rate'])}
                       </span>
-                      <span style={{ color: '#8b5cf6', fontWeight: 600 }}>
+                      <span style={{ color: '#38bdf8', fontWeight: 600 }}>
                         ↑ {formatSpeed(s.rx_rate || s['rx-rate'])}
                       </span>
                     </td>

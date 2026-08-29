@@ -13,6 +13,9 @@ const getActiveSessions = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Router tidak ditemukan.' });
         }
 
+        const isVisitor = req.admin && req.admin.role === 'visitor';
+        const { maskSensitiveText } = require('../middleware/adminAuth');
+
         const active = await mikrotik.getActiveHotspotUsers(rResult.rows[0]);
         const enriched = await Promise.all(active.map(async (s) => {
             const userResult = await query(
@@ -20,12 +23,16 @@ const getActiveSessions = async (req, res) => {
                 [s.user]
             );
             const dbUser = userResult.rows[0];
+            const rawUser = s.user;
+            const rawNip = dbUser?.nip || '';
+
             return {
                 ...s,
+                user: isVisitor ? maskSensitiveText(rawUser, 2, 2) : rawUser,
                 bandwidth_limit: dbUser?.bandwidth_limit || 'N/A',
                 website_block:   dbUser?.website_block   || '',
-                full_name:       dbUser?.full_name       || s.user,
-                nip:             dbUser?.nip             || '',
+                full_name:       dbUser?.full_name       || (isVisitor ? maskSensitiveText(rawUser, 2, 2) : rawUser),
+                nip:             isVisitor && rawNip ? maskSensitiveText(rawNip, 4, 3) : rawNip,
                 jabatan:         dbUser?.jabatan         || '',
                 instansi:        dbUser?.instansi        || '',
             };

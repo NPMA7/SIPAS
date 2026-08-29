@@ -227,11 +227,13 @@ export default function Sidebar({ collapsed, mobileOpen, onToggle, onCloseMobile
 
       {/* Footer */}
       <div className="sidebar-footer">
-        <div className="sidebar-user" title={`${admin?.username || 'Admin'} (Super Admin)`}>
+        <div className="sidebar-user" title={`${admin?.username || 'Admin'} (${admin?.role === 'superadmin' ? 'Superadmin' : admin?.role === 'visitor' ? 'Visitor' : 'Operator'})`}>
           <div className="user-avatar">{initial}</div>
           <div className="user-info">
             <div className="user-name">{admin?.username || 'Admin'}</div>
-            <div className="user-role">Super Admin</div>
+            <div className="user-role">
+              {admin?.role === 'superadmin' ? 'Super Administrator' : admin?.role === 'visitor' ? 'Visitor (Read-Only)' : 'Operator Hotspot'}
+            </div>
           </div>
         </div>
         <button className="btn-logout" onClick={logout} title="Keluar">

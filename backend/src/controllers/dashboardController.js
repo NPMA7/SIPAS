@@ -47,6 +47,9 @@ const getActiveSessions = async (req, res) => {
 
         const sessions = await mikrotik.getActiveHotspotUsers(rResult.rows[0]);
 
+        const isVisitor = req.admin && req.admin.role === 'visitor';
+        const { maskSensitiveText } = require('../middleware/adminAuth');
+
         // Enrich dengan data dari DB (Cocokkan dengan username atau NIP)
         const enriched = await Promise.all(sessions.map(async (s) => {
             const userResult = await query(
@@ -54,12 +57,16 @@ const getActiveSessions = async (req, res) => {
                 [s.user]
             );
             const dbUser = userResult.rows[0];
+            const rawUser = s.user;
+            const rawNip = dbUser?.nip || '';
+
             return {
                 ...s,
+                user: isVisitor ? maskSensitiveText(rawUser, 2, 2) : rawUser,
                 bandwidth_limit: dbUser?.bandwidth_limit || 'N/A',
                 website_block:   dbUser?.website_block   || '',
-                full_name:       dbUser?.full_name       || s.user,
-                nip:             dbUser?.nip             || '',
+                full_name:       dbUser?.full_name       || (isVisitor ? maskSensitiveText(rawUser, 2, 2) : rawUser),
+                nip:             isVisitor && rawNip ? maskSensitiveText(rawNip, 4, 3) : rawNip,
                 jabatan:         dbUser?.jabatan         || '',
                 instansi:        dbUser?.instansi        || '',
             };
