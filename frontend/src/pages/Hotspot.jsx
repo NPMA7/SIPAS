@@ -88,14 +88,14 @@ export default function Hotspot() {
   const [deletingBinding, setDeletingBinding] = useState(false);
 
   // Sync tab with URL
-  const currentPathSegment = location.pathname.replace('/admin/hotspot', '').replace(/^\//, '');
+  const currentPathSegment = location.pathname.replace(/^\/(manage\/)?admin\/hotspot/, '').replace(/^\//, '');
   const activeTabObj = TABS.find(t => t.path === currentPathSegment) || TABS[0];
   const tab = activeTabObj.key;
 
   useEffect(() => {
-    // If URL is just /admin/hotspot or invalid sub-path, redirect to active-sessions
+    // If URL is just /manage/admin/hotspot or invalid sub-path, redirect to active-sessions
     if (!currentPathSegment || !TABS.some(t => t.path === currentPathSegment)) {
-      navigate('/admin/hotspot/active-sessions', { replace: true });
+      navigate('/manage/admin/hotspot/active-sessions', { replace: true });
     }
   }, [currentPathSegment, navigate]);
 
@@ -174,7 +174,7 @@ export default function Hotspot() {
   }, [routerId, tab, loadTab, loadAllCounts]);
 
   const handleTabClick = (tObj) => {
-    navigate(`/admin/hotspot/${tObj.path}`);
+    navigate(`/manage/admin/hotspot/${tObj.path}`);
   };
 
   async function kickSession() {

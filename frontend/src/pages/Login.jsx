@@ -10,7 +10,7 @@ export default function Login() {
   const [showPwd, setShowPwd] = useState(false);
 
   useEffect(() => {
-    if (localStorage.getItem('hotspot_token')) navigate('/admin');
+    if (localStorage.getItem('hotspot_token')) navigate('/manage/admin');
   }, [navigate]);
 
   async function handleSubmit(e) {
@@ -27,7 +27,7 @@ export default function Login() {
       if (data.success) {
         localStorage.setItem('hotspot_token', data.token);
         localStorage.setItem('hotspot_admin', JSON.stringify(data.admin));
-        navigate('/admin');
+        navigate('/manage/admin');
       } else {
         setError(data.message || 'Login gagal.');
       }

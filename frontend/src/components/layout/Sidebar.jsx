@@ -7,7 +7,7 @@ const NAV = [
     group: 'Monitoring',
     items: [
       {
-        to: '/admin',
+        to: '/manage/admin',
         end: true,
         label: 'Dashboard',
         icon: (
@@ -23,7 +23,7 @@ const NAV = [
     group: 'Manajemen',
     items: [
       {
-        to: '/admin/user-hotspot',
+        to: '/manage/admin/user-hotspot',
         label: 'Pengguna Hotspot',
         icon: (
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
@@ -34,7 +34,7 @@ const NAV = [
         ),
       },
       {
-        to: '/admin/blocked-sites',
+        to: '/manage/admin/blocked-sites',
         label: 'Situs Diblokir',
         icon: (
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
@@ -45,7 +45,7 @@ const NAV = [
       },
      
       {
-        to: '/admin/hotspot',
+        to: '/manage/admin/hotspot',
         label: 'Hotspot Router',
         icon: (
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
@@ -57,7 +57,7 @@ const NAV = [
         ),
       },
       {
-        to: '/admin/queues',
+        to: '/manage/admin/queues',
         label: 'Simple Queues',
         icon: (
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
@@ -66,7 +66,7 @@ const NAV = [
         ),
       },
       {
-        to: '/admin/dhcp-leases',
+        to: '/manage/admin/dhcp-leases',
         label: 'DHCP Leases',
         icon: (
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
@@ -78,7 +78,7 @@ const NAV = [
         ),
       },
        {
-        to: '/admin/routers',
+        to: '/manage/admin/routers',
         label: 'Manajemen Router',
         icon: (
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
@@ -88,7 +88,7 @@ const NAV = [
         ),
       },
       {
-        to: '/admin/manage-users',
+        to: '/manage/admin/manage-users',
         label: 'Pengelola Web',
         superAdminOnly: true,
         icon: (
@@ -132,7 +132,7 @@ export default function Sidebar({ collapsed, mobileOpen, onToggle, onCloseMobile
   function logout() {
     localStorage.removeItem('hotspot_token');
     localStorage.removeItem('hotspot_admin');
-    navigate('/admin/login');
+    navigate('/manage/admin/login');
   }
 
   const initial = admin?.username?.[0]?.toUpperCase() || 'A';

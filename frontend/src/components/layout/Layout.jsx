@@ -7,17 +7,25 @@ import { ToastContext } from '../../hooks/ToastContext';
 import { apiFetch } from '../../api/client';
 
 const TITLE_MAP = {
+  '/manage/admin': 'Dashboard',
+  '/manage/admin/': 'Dashboard',
+  '/manage/admin/users': 'Pengguna Hotspot',
+  '/manage/admin/user-hotspot': 'Pengguna Hotspot',
+  '/manage/admin/blocked-sites': 'Situs Diblokir',
+  '/manage/admin/routers': 'Manajemen Router',
+  '/manage/admin/hotspot': 'Hotspot Router',
+  '/manage/admin/queues': 'Simple Queues',
+  '/manage/admin/dhcp': 'DHCP Leases',
+  '/manage/admin/dhcp-leases': 'DHCP Leases',
+  '/manage/admin/admins': 'Pengelola Web',
+  '/manage/admin/manage-users': 'Pengelola Web',
   '/admin': 'Dashboard',
-  '/admin/': 'Dashboard',
-  '/admin/users': 'Pengguna Hotspot',
   '/admin/user-hotspot': 'Pengguna Hotspot',
   '/admin/blocked-sites': 'Situs Diblokir',
   '/admin/routers': 'Manajemen Router',
   '/admin/hotspot': 'Hotspot Router',
   '/admin/queues': 'Simple Queues',
-  '/admin/dhcp': 'DHCP Leases',
   '/admin/dhcp-leases': 'DHCP Leases',
-  '/admin/admins': 'Pengelola Web',
   '/admin/manage-users': 'Pengelola Web',
 };
 
@@ -34,7 +42,7 @@ export default function Layout() {
   // Auth guard
   useEffect(() => {
     const token = localStorage.getItem('hotspot_token');
-    if (!token) navigate('/admin/login');
+    if (!token) navigate('/manage/admin/login');
   }, [navigate]);
 
   // Load badge counts

@@ -224,7 +224,7 @@ export default function PortalLogin() {
         <div style={styles.footer}>
           <p>Butuh bantuan? Hubungi administrator jaringan</p>
           {/* <p style={{ marginTop: 6 }}>
-            Admin? <a href="/admin/login" style={{ color: 'var(--primary-light)' }}>Masuk ke Dashboard</a>
+            Admin? <a href="/manage/admin/login" style={{ color: 'var(--primary-light)' }}>Masuk ke Dashboard</a>
           </p> */}
         </div>
       </div>

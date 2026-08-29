@@ -24,7 +24,7 @@ export async function apiFetch(path, options = {}) {
 
     if (res.status === 401) {
       localStorage.removeItem('hotspot_token');
-      window.location.href = '/admin/login';
+      window.location.href = '/manage/admin/login';
       return null;
     }
 
