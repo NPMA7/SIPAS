@@ -1143,20 +1143,41 @@ const setupPortalUser = async (
         );
 
         if (isBlocked) {
-          const hasCurrentIp = allAddressLists.some((entry) => entry.list === cfg.userList && entry.address === ip);
-          if (!hasCurrentIp) {
-            try {
-              await conn.write("/ip/firewall/address-list/add", [
-                `=list=${cfg.userList}`,
-                `=address=${ip}`,
-                `=comment=${targetComment}`,
-              ]);
-            } catch (_) {}
-            await clearConnectionsForIp(conn, ip);
+          // 1. Ambil semua IP sesi aktif milik user ini dari Mikrotik (untuk multi-device s/d 4 device)
+          let userActiveIps = [ip].filter(Boolean);
+          try {
+            const activeSessions = await conn.write("/ip/hotspot/active/print", [
+              `?user=${username}`
+            ]);
+            if (activeSessions && Array.isArray(activeSessions)) {
+              activeSessions.forEach((s) => {
+                if (s.address && !userActiveIps.includes(s.address)) {
+                  userActiveIps.push(s.address);
+                }
+              });
+            }
+          } catch (_) {}
+
+          // 2. Pastikan SEMUA IP aktif milik user ini terdaftar di address-list
+          for (const activeIp of userActiveIps) {
+            const ipExists = allAddressLists.some(
+              (entry) => entry.list === cfg.userList && entry.address === activeIp
+            );
+            if (!ipExists) {
+              try {
+                await conn.write("/ip/firewall/address-list/add", [
+                  `=list=${cfg.userList}`,
+                  `=address=${activeIp}`,
+                  `=comment=${targetComment}`,
+                ]);
+              } catch (_) {}
+              await clearConnectionsForIp(conn, activeIp);
+            }
           }
-          // Bersihkan sisa IP lama milik user ini jika ada pergantian IP DHCP
+
+          // 3. Bersihkan IP yang sudah tidak lagi aktif di Hotspot untuk user ini
           for (const entry of existingUserBlock) {
-            if (entry.address !== ip) {
+            if (!userActiveIps.includes(entry.address)) {
               try {
                 await conn.write("/ip/firewall/address-list/remove", [`=.id=${entry[".id"]}`]);
                 await clearConnectionsForIp(conn, entry.address);
