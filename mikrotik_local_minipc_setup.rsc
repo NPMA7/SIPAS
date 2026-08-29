@@ -5,18 +5,25 @@
 #   - ether1 : Internet / ISP WAN (DHCP Client)
 #   - ether2 : Dedicated Server Mini PC SIPAS (IP Isolasi: 10.100.100.0/24)
 #              (Mikrotik Gateway: 10.100.100.1 | Mini PC: 10.100.100.10)
-#   - ether3-ether5 / wlan1 : Client Hotspot / AP (Subnet: 10.10.0.0/16)
+#   - ether3-ether8 / wlan1 : Client Hotspot / AP (Subnet: 10.10.0.0/16)
 #                             (Gateway Hotspot: 10.10.0.1)
 # =============================================================================
 
 # --- LANGKAH 1: Bridge Hotspot KHUSUS Client (ether2 TIDAK masuk bridge) ---
 /interface bridge
-add name=bridge-hotspot comment="Bridge Hotspot Klien (ether3-ether5)"
+add name=bridge-hotspot comment="Bridge Hotspot Klien"
 
-/interface bridge port
-add bridge=bridge-hotspot interface=ether3 comment="Access Point / Client"
-add bridge=bridge-hotspot interface=ether4 comment="Access Point / Client"
-add bridge=bridge-hotspot interface=ether5 comment="Access Point / Client"
+# Tambahkan port yang tersedia secara dinamis (Aman untuk Mikrotik 3/4/5/8 port)
+:if ([:len [/interface find name=ether3]] > 0) do={ /interface bridge port add bridge=bridge-hotspot interface=ether3 comment="Client/AP" }
+:if ([:len [/interface find name=ether4]] > 0) do={ /interface bridge port add bridge=bridge-hotspot interface=ether4 comment="Client/AP" }
+:if ([:len [/interface find name=ether5]] > 0) do={ /interface bridge port add bridge=bridge-hotspot interface=ether5 comment="Client/AP" }
+:if ([:len [/interface find name=ether6]] > 0) do={ /interface bridge port add bridge=bridge-hotspot interface=ether6 comment="Client/AP" }
+:if ([:len [/interface find name=ether7]] > 0) do={ /interface bridge port add bridge=bridge-hotspot interface=ether7 comment="Client/AP" }
+:if ([:len [/interface find name=ether8]] > 0) do={ /interface bridge port add bridge=bridge-hotspot interface=ether8 comment="Client/AP" }
+:if ([:len [/interface find name=wlan1]] > 0) do={ 
+    /interface wireless set [find name=wlan1] mode=ap-bridge ssid=SIPAS-WiFi disabled=no
+    /interface bridge port add bridge=bridge-hotspot interface=wlan1 comment="Wi-Fi AP" 
+}
 
 # --- LANGKAH 2: IP Address Interface (Segmentasi Terpisah) ---
 /ip address
