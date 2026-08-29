@@ -85,8 +85,8 @@ const patchWriteWithTimeout = (conn) => {
     return new Promise((resolve, reject) => {
       let timer = setTimeout(() => {
         timer = null;
-        reject(new Error("Mikrotik API Write Timeout (5s)"));
-      }, 5000);
+        reject(new Error("Mikrotik API Write Timeout (15s)"));
+      }, 15000);
 
       originalWrite(...args)
         .then((result) => {
@@ -922,16 +922,22 @@ const setupPortalUser = async (
         console.warn("[setupPortalUser] IP Binding cleanup error:", bindingErr.message);
       }
 
-      // 1.6. Otorisasi instan ke /ip/hotspot/active via RouterOS API
+      // 1.6. Otorisasi instan ke /ip/hotspot/active via RouterOS API (Hanya jika belum aktif)
       try {
-        const activeArgs = [
-          `=user=${username}`,
-          `=password=${password}`,
-        ];
-        if (ip) activeArgs.push(`=ip=${ip}`);
-        if (mac) activeArgs.push(`=mac-address=${mac}`);
-        await conn.write("/ip/hotspot/active/login", activeArgs);
-        console.log(`[setupPortalUser] Active user login successful via API for ${username}`);
+        const allActive = await conn.write("/ip/hotspot/active/print");
+        const isAlreadyActive = (allActive || []).some(
+          a => (ip && a.address === ip) || (mac && (a.mac || a["mac-address"])?.toLowerCase() === mac?.toLowerCase())
+        );
+        if (!isAlreadyActive) {
+          const activeArgs = [
+            `=user=${username}`,
+            `=password=${password}`,
+          ];
+          if (ip) activeArgs.push(`=ip=${ip}`);
+          if (mac) activeArgs.push(`=mac-address=${mac}`);
+          await conn.write("/ip/hotspot/active/login", activeArgs);
+          console.log(`[setupPortalUser] Active user login successful via API for ${username}`);
+        }
       } catch (activeErr) {
         console.warn("[setupPortalUser] Active login via API notice:", activeErr.message);
       }
