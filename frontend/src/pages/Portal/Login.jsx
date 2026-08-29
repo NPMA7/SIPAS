@@ -1,6 +1,18 @@
 import { useState, useEffect } from 'react';
 import SipasLogo from '../../components/ui/SipasLogo';
 
+function hexToRgba(hex, opacity) {
+  if (!hex || !hex.startsWith('#')) return `rgba(17, 24, 39, ${opacity})`;
+  let c = hex.substring(1);
+  if (c.length === 3) c = c.split('').map(x => x + x).join('');
+  const num = parseInt(c, 16);
+  if (isNaN(num)) return `rgba(17, 24, 39, ${opacity})`;
+  const r = (num >> 16) & 255;
+  const g = (num >> 8) & 255;
+  const b = num & 255;
+  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+}
+
 export default function PortalLogin() {
   const [params, setParams] = useState({ ip: '', mac: '', linkLogin: '', linkLoginOnly: '', dst: '', error: '' });
   const [form, setForm] = useState({ username: '', password: '' });
@@ -16,6 +28,7 @@ export default function PortalLogin() {
     bg_image: null,
     bg_blur: 0,
     bg_overlay_opacity: 60,
+    card_bg_color: '#111827',
     card_opacity: 95,
     primary_color: '#2563eb',
     logo_type: 'default',
@@ -198,7 +211,7 @@ export default function PortalLogin() {
 
         <div style={{
           ...styles.card,
-          backgroundColor: `rgba(17, 24, 39, ${cardOpacity})`,
+          backgroundColor: hexToRgba(settings.card_bg_color || '#111827', cardOpacity),
           backdropFilter: cardOpacity < 1 ? 'blur(16px)' : 'none',
         }}>
           {/* Network Info */}

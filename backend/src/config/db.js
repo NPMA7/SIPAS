@@ -49,6 +49,7 @@ pool.on('connect', () => {
                 bg_image TEXT,
                 bg_blur INTEGER DEFAULT 0,
                 bg_overlay_opacity INTEGER DEFAULT 60,
+                card_bg_color VARCHAR(30) DEFAULT '#111827',
                 card_opacity INTEGER DEFAULT 95,
                 primary_color VARCHAR(30) DEFAULT '#2563eb',
                 logo_type VARCHAR(20) DEFAULT 'default',
@@ -56,6 +57,7 @@ pool.on('connect', () => {
                 footer_text VARCHAR(255) DEFAULT 'Butuh bantuan? Hubungi administrator jaringan',
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
+            ALTER TABLE portal_settings ADD COLUMN IF NOT EXISTS card_bg_color VARCHAR(30) DEFAULT '#111827';
             INSERT INTO portal_settings (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
         `);
 

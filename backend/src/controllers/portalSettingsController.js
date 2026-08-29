@@ -8,6 +8,7 @@ const DEFAULT_SETTINGS = {
     bg_image: null,
     bg_blur: 0,
     bg_overlay_opacity: 60,
+    card_bg_color: '#111827',
     card_opacity: 95,
     primary_color: '#2563eb',
     logo_type: 'default',
@@ -45,6 +46,7 @@ const updateSettings = async (req, res) => {
         bg_image,
         bg_blur,
         bg_overlay_opacity,
+        card_bg_color,
         card_opacity,
         primary_color,
         logo_type,
@@ -56,11 +58,11 @@ const updateSettings = async (req, res) => {
         const result = await query(`
             INSERT INTO portal_settings (
                 id, portal_title, portal_subtitle, bg_type, bg_color, bg_image,
-                bg_blur, bg_overlay_opacity, card_opacity, primary_color,
+                bg_blur, bg_overlay_opacity, card_bg_color, card_opacity, primary_color,
                 logo_type, logo_custom, footer_text, updated_at
             )
             VALUES (
-                1, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW()
+                1, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW()
             )
             ON CONFLICT (id) DO UPDATE SET
                 portal_title = EXCLUDED.portal_title,
@@ -70,6 +72,7 @@ const updateSettings = async (req, res) => {
                 bg_image = EXCLUDED.bg_image,
                 bg_blur = EXCLUDED.bg_blur,
                 bg_overlay_opacity = EXCLUDED.bg_overlay_opacity,
+                card_bg_color = EXCLUDED.card_bg_color,
                 card_opacity = EXCLUDED.card_opacity,
                 primary_color = EXCLUDED.primary_color,
                 logo_type = EXCLUDED.logo_type,
@@ -85,6 +88,7 @@ const updateSettings = async (req, res) => {
             bg_image || null,
             Number.isInteger(Number(bg_blur)) ? Number(bg_blur) : 0,
             Number.isInteger(Number(bg_overlay_opacity)) ? Number(bg_overlay_opacity) : 60,
+            card_bg_color || '#111827',
             Number.isInteger(Number(card_opacity)) ? Number(card_opacity) : 95,
             primary_color || '#2563eb',
             logo_type || 'default',
@@ -118,11 +122,12 @@ const resetSettings = async (req, res) => {
                 bg_image = $5,
                 bg_blur = $6,
                 bg_overlay_opacity = $7,
-                card_opacity = $8,
-                primary_color = $9,
-                logo_type = $10,
-                logo_custom = $11,
-                footer_text = $12,
+                card_bg_color = $8,
+                card_opacity = $9,
+                primary_color = $10,
+                logo_type = $11,
+                logo_custom = $12,
+                footer_text = $13,
                 updated_at = NOW()
             WHERE id = 1
             RETURNING *;
@@ -134,6 +139,7 @@ const resetSettings = async (req, res) => {
             DEFAULT_SETTINGS.bg_image,
             DEFAULT_SETTINGS.bg_blur,
             DEFAULT_SETTINGS.bg_overlay_opacity,
+            DEFAULT_SETTINGS.card_bg_color,
             DEFAULT_SETTINGS.card_opacity,
             DEFAULT_SETTINGS.primary_color,
             DEFAULT_SETTINGS.logo_type,

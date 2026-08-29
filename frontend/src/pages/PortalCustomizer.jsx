@@ -3,12 +3,31 @@ import { apiFetch, apiPut, apiPost } from '../api/client';
 import { ToastContext } from '../hooks/ToastContext';
 import SipasLogo from '../components/ui/SipasLogo';
 
+function hexToRgba(hex, opacity) {
+  if (!hex || !hex.startsWith('#')) return `rgba(17, 24, 39, ${opacity})`;
+  let c = hex.substring(1);
+  if (c.length === 3) c = c.split('').map(x => x + x).join('');
+  const num = parseInt(c, 16);
+  if (isNaN(num)) return `rgba(17, 24, 39, ${opacity})`;
+  const r = (num >> 16) & 255;
+  const g = (num >> 8) & 255;
+  const b = num & 255;
+  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+}
+
 const COLOR_PRESETS = [
   { label: 'Deep Navy', value: '#0a0e1a' },
   { label: 'Midnight Blue', value: '#030712' },
   { label: 'Charcoal Slate', value: '#0f172a' },
   { label: 'Dark Emerald', value: '#041d18' },
-  { label: 'Pure Dark', value: '#000000' },
+];
+
+const CARD_COLOR_PRESETS = [
+  { label: 'Dark Slate', value: '#111827' },
+  { label: 'Midnight', value: '#030712' },
+  { label: 'Deep Navy', value: '#0a0e1a' },
+  { label: 'Charcoal', value: '#0f172a' },
+  { label: 'Emerald', value: '#041d18' },
 ];
 
 const BUTTON_PRESETS = [
@@ -16,8 +35,6 @@ const BUTTON_PRESETS = [
   { label: 'Sky Blue', value: '#0284c7' },
   { label: 'Cyan Ocean', value: '#0891b2' },
   { label: 'Emerald Green', value: '#059669' },
-  { label: 'Amber Gold', value: '#d97706' },
-  { label: 'Slate Steel', value: '#475569' },
 ];
 
 export default function PortalCustomizer() {
@@ -45,6 +62,7 @@ export default function PortalCustomizer() {
     bg_image: null,
     bg_blur: 0,
     bg_overlay_opacity: 60,
+    card_bg_color: '#111827',
     card_opacity: 95,
     primary_color: '#2563eb',
     logo_type: 'default',
@@ -86,8 +104,8 @@ export default function PortalCustomizer() {
       return;
     }
 
-    if (file.size > 3.5 * 1024 * 1024) {
-      addToast('Ukuran gambar maksimal 3.5 MB.', 'warning');
+    if (file.size > 2 * 1024 * 1024) {
+      addToast('Ukuran gambar maksimal 2 MB.', 'warning');
       return;
     }
 
@@ -113,8 +131,8 @@ export default function PortalCustomizer() {
       return;
     }
 
-    if (file.size > 2 * 1024 * 1024) {
-      addToast('Ukuran logo maksimal 2 MB.', 'warning');
+    if (file.size > 1 * 1024 * 1024) {
+      addToast('Ukuran logo maksimal 1 MB.', 'warning');
       return;
     }
 
@@ -151,21 +169,24 @@ export default function PortalCustomizer() {
     }
   };
 
-  const handleReset = async () => {
+  const [showResetModal, setShowResetModal] = useState(false);
+
+  const handleResetClick = () => {
     if (isVisitor) {
       addToast('Mode Visitor: Aksi ditolak.', 'warning');
       return;
     }
-    if (!window.confirm('Kembalikan semua pengaturan tampilan portal ke default bawaan SIPAS?')) {
-      return;
-    }
+    setShowResetModal(true);
+  };
 
+  const confirmReset = async () => {
     try {
       setSaving(true);
       const res = await apiPost('/portal-settings/reset', {});
       if (res?.success) {
         addToast('Pengaturan portal berhasil direset ke default.', 'success');
         if (res.data) setForm(res.data);
+        setShowResetModal(false);
       } else {
         addToast(res?.message || 'Gagal mereset pengaturan.', 'danger');
       }
@@ -222,7 +243,7 @@ export default function PortalCustomizer() {
               <button
                 type="button"
                 className="btn btn-ghost btn-sm"
-                onClick={handleReset}
+                onClick={handleResetClick}
                 disabled={saving || loading}
               >
                 Reset Default
@@ -241,13 +262,7 @@ export default function PortalCustomizer() {
       </div>
 
       {/* Row 1: Top Section - Settings (Left) & Live Preview (Right) */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
-        gap: 20,
-        alignItems: 'stretch',
-        marginBottom: 20,
-      }}>
+      <div className="portal-customizer-grid" style={{ marginBottom: 20 }}>
         {/* Left: Background & Branding Cards */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           
@@ -354,7 +369,7 @@ export default function PortalCustomizer() {
                       style={{ padding: '6px 10px' }}
                     />
                     <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                      Format didukung: JPG, PNG, WebP (maks. 3.5 MB). Disarankan resolusi 1920x1080.
+                      Format didukung: JPG, PNG, WebP (maks. 2 MB).
                     </span>
                   </div>
 
@@ -465,7 +480,7 @@ export default function PortalCustomizer() {
                       style={{ padding: '6px 10px' }}
                     />
                     <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                      Upload logo transparan (PNG/SVG disarankan).
+                      Upload logo transparan (PNG/SVG disarankan, maks. 1 MB).
                     </span>
                     {form.logo_custom && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8, padding: 8, background: 'rgba(255,255,255,0.03)', borderRadius: 6 }}>
@@ -634,7 +649,7 @@ export default function PortalCustomizer() {
                 {/* Card Simulation */}
                 <div
                   style={{
-                    backgroundColor: `rgba(17, 24, 39, ${cardOpacity})`,
+                    backgroundColor: hexToRgba(form.card_bg_color || '#111827', cardOpacity),
                     backdropFilter: cardOpacity < 1 ? 'blur(12px)' : 'none',
                     border: '1px solid rgba(255,255,255,0.08)',
                     borderRadius: 12,
@@ -721,26 +736,91 @@ export default function PortalCustomizer() {
       </div>
 
       {/* Row 2: Bottom Section - Button Settings (Left) & Tips/Endpoint (Right) */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
-        gap: 20,
-        alignItems: 'stretch',
-      }}>
-        {/* Left: Card 3 - Warna Tombol & Transparansi Kartu */}
+      <div className="portal-customizer-grid">
+        {/* Left: Card 3 - Warna Kartu & Tombol Form Login */}
         <div className="card" style={{ display: 'flex', flexDirection: 'column', height: '100%', margin: 0 }}>
           <div className="card-header">
             <div className="card-title">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="12" y1="8" x2="12" y2="16"/>
-                <line x1="8" y1="12" x2="16" y2="12"/>
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <line x1="3" y1="9" x2="21" y2="9"/>
+                <line x1="9" y1="21" x2="9" y2="9"/>
               </svg>
-              Warna Tombol & Transparansi Kartu
+              Warna Kartu & Tombol Form Login
             </div>
           </div>
 
           <div className="card-body" style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 16 }}>
+            {/* Form Card Background Color */}
+            <div>
+              <label className="form-label" style={{ marginBottom: 6 }}>Warna Latar Kartu Form</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                <input
+                  type="color"
+                  value={form.card_bg_color || '#111827'}
+                  onChange={(e) => setForm(f => ({ ...f, card_bg_color: e.target.value }))}
+                  style={{
+                    width: 44,
+                    height: 38,
+                    padding: 0,
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-sm)',
+                    cursor: 'pointer',
+                    background: 'transparent',
+                  }}
+                />
+                <input
+                  type="text"
+                  className="input input-sm mono"
+                  value={form.card_bg_color || '#111827'}
+                  onChange={(e) => setForm(f => ({ ...f, card_bg_color: e.target.value }))}
+                  placeholder="#111827"
+                  style={{ flex: 1 }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {CARD_COLOR_PRESETS.map((p) => (
+                  <button
+                    key={p.value}
+                    type="button"
+                    onClick={() => setForm(f => ({ ...f, card_bg_color: p.value }))}
+                    style={{
+                      padding: '4px 10px',
+                      borderRadius: 6,
+                      fontSize: '0.74rem',
+                      background: p.value,
+                      color: '#ffffff',
+                      border: form.card_bg_color === p.value ? '2px solid var(--primary-light)' : '1px solid var(--border)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Card Opacity Slider */}
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                <label className="form-label" style={{ margin: 0 }}>Kepadatan (Opasitas) Kartu Login</label>
+                <span className="mono" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{form.card_opacity}%</span>
+              </div>
+              <input
+                type="range"
+                min="40"
+                max="100"
+                step="5"
+                value={form.card_opacity}
+                onChange={(e) => setForm(f => ({ ...f, card_opacity: parseInt(e.target.value) }))}
+                style={{ width: '100%' }}
+              />
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                Nilai lebih rendah memberi efek glassmorphism transparan yang elegan.
+              </span>
+            </div>
+
             {/* Primary Button Color */}
             <div>
               <label className="form-label" style={{ marginBottom: 6 }}>Warna Tombol Utama</label>
@@ -790,96 +870,197 @@ export default function PortalCustomizer() {
                 ))}
               </div>
             </div>
-
-            {/* Card Opacity Slider */}
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                <label className="form-label" style={{ margin: 0 }}>Kepadatan (Opasitas) Kartu Login</label>
-                <span className="mono" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{form.card_opacity}%</span>
-              </div>
-              <input
-                type="range"
-                min="40"
-                max="100"
-                step="5"
-                value={form.card_opacity}
-                onChange={(e) => setForm(f => ({ ...f, card_opacity: parseInt(e.target.value) }))}
-                style={{ width: '100%' }}
-              />
-              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                Nilai lebih rendah memberi efek glassmorphism transparan yang elegan.
-              </span>
-            </div>
           </div>
         </div>
 
-        {/* Right: Card 2 - Tips & Panduan Tampilan dan Endpoint Portal */}
+        {/* Right: Card 2 - Panduan & Arsitektur Sistem Portal SIPAS */}
         <div className="card" style={{ display: 'flex', flexDirection: 'column', height: '100%', margin: 0 }}>
-          <div className="card-header">
+          <div className="card-header" style={{ justifyContent: 'space-between' }}>
             <div className="card-title">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="12" y1="16" x2="12" y2="12"/>
-                <line x1="12" y1="8" x2="12.01" y2="8"/>
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                <line x1="8" y1="21" x2="16" y2="21"/>
+                <line x1="12" y1="17" x2="12" y2="21"/>
               </svg>
-              Tips & Panduan Tampilan dan Endpoint Portal
+              Panduan & Arsitektur Sistem Portal SIPAS
             </div>
+            <span style={{ fontSize: '0.7rem', color: 'var(--success)', fontWeight: 600 }}>
+              ● Sistem Terintegrasi
+            </span>
           </div>
 
-          <div className="card-body" style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 14 }}>
-            {/* URL Portal Bar */}
+          <div className="card-body" style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 12, padding: 16 }}>
+            {/* Bagian 1: 4 Tahap Alur Integrasi Hotspot */}
             <div>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>
-                URL Halaman Login Captive Portal:
-              </span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <input
-                  type="text"
-                  readOnly
-                  className="input input-sm mono"
-                  value="https://sipas.npma.my.id/"
-                  style={{ flex: 1, background: 'rgba(0,0,0,0.2)', color: 'var(--primary-light)' }}
-                />
-                <button
-                  type="button"
-                  className="btn btn-secondary btn-sm"
-                  onClick={() => {
-                    navigator.clipboard.writeText('https://sipas.npma.my.id/');
-                    addToast('URL Captive Portal berhasil disalin!', 'success');
-                  }}
-                  title="Salin URL"
-                >
-                  Salin
-                </button>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <span style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                  🔄 Alur Kerja & Mekanisme Otentikasi Hotspot:
+                </span>
+                <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+                  MikroTik RouterOS ➔ SIPAS Engine
+                </span>
+              </div>
+
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(4, 1fr)',
+                gap: 8,
+              }}>
+                <div style={{
+                  padding: '8px 10px',
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 8,
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                    <span style={{ fontSize: '0.9rem' }}>📶</span>
+                    <strong style={{ fontSize: '0.72rem', color: 'var(--text-main)' }}>1. Intersepsi</strong>
+                  </div>
+                  <p style={{ fontSize: '0.66rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
+                    MikroTik menangkap HTTP request klien baru & redirect ke portal SIPAS dengan parameter IP & MAC.
+                  </p>
+                </div>
+
+                <div style={{
+                  padding: '8px 10px',
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 8,
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                    <span style={{ fontSize: '0.9rem' }}>🎨</span>
+                    <strong style={{ fontSize: '0.72rem', color: 'var(--text-main)' }}>2. UI Dinamis</strong>
+                  </div>
+                  <p style={{ fontSize: '0.66rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
+                    SIPAS menyajikan antarmuka login responsif sesuai tema kustomisasi & mendeteksi identitas klien.
+                  </p>
+                </div>
+
+                <div style={{
+                  padding: '8px 10px',
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 8,
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                    <span style={{ fontSize: '0.9rem' }}>🛡️</span>
+                    <strong style={{ fontSize: '0.72rem', color: 'var(--text-main)' }}>3. Verifikasi</strong>
+                  </div>
+                  <p style={{ fontSize: '0.66rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
+                    Backend memvalidasi akun, sisa kuota (FUP), masa aktif (uptime), dan batas multi-device.
+                  </p>
+                </div>
+
+                <div style={{
+                  padding: '8px 10px',
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 8,
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                    <span style={{ fontSize: '0.9rem' }}>🚀</span>
+                    <strong style={{ fontSize: '0.72rem', color: 'var(--text-main)' }}>4. Otorisasi</strong>
+                  </div>
+                  <p style={{ fontSize: '0.66rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
+                    MikroTik membuka akses internet & menerapkan limit kecepatan bandwidth (Simple Queue) otomatis.
+                  </p>
+                </div>
               </div>
             </div>
 
-            {/* Tips Section */}
+            {/* Bagian 2: Panduan Pengalaman Login Klien */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: 8,
+            }}>
+              <div style={{
+                padding: '8px 10px',
+                background: 'rgba(37, 99, 235, 0.06)',
+                border: '1px solid rgba(37, 99, 235, 0.2)',
+                borderRadius: 8,
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 8,
+              }}>
+                <span style={{ fontSize: '1.1rem', marginTop: 1 }}>🔑</span>
+                <div>
+                  <strong style={{ fontSize: '0.73rem', color: 'var(--text-main)', display: 'block' }}>1. Masukkan Kredensial</strong>
+                  <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', lineHeight: 1.35, display: 'block' }}>
+                    Pengguna mengetikkan Username & Password hotspot yang telah terdaftar di sistem.
+                  </span>
+                </div>
+              </div>
+
+              <div style={{
+                padding: '8px 10px',
+                background: 'rgba(16, 185, 129, 0.06)',
+                border: '1px solid rgba(16, 185, 129, 0.2)',
+                borderRadius: 8,
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 8,
+              }}>
+                <span style={{ fontSize: '1.1rem', marginTop: 1 }}>⚡</span>
+                <div>
+                  <strong style={{ fontSize: '0.73rem', color: 'var(--text-main)', display: 'block' }}>2. Autentikasi Instan</strong>
+                  <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', lineHeight: 1.35, display: 'block' }}>
+                    SIPAS memvalidasi sisa kuota, masa aktif, & batas perangkat secara real-time.
+                  </span>
+                </div>
+              </div>
+
+              <div style={{
+                padding: '8px 10px',
+                background: 'rgba(245, 158, 11, 0.06)',
+                border: '1px solid rgba(245, 158, 11, 0.2)',
+                borderRadius: 8,
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 8,
+              }}>
+                <span style={{ fontSize: '1.1rem', marginTop: 1 }}>🌐</span>
+                <div>
+                  <strong style={{ fontSize: '0.73rem', color: 'var(--text-main)', display: 'block' }}>3. Terhubung ke Internet</strong>
+                  <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', lineHeight: 1.35, display: 'block' }}>
+                    Status berubah jadi 'Tersambung' dan internet langsung aktif berkecepatan penuh.
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Bagian 3: Tips Desain & Keterbacaan Visual */}
             <div style={{
               borderTop: '1px solid var(--border)',
-              paddingTop: 10,
-              display: 'flex',
-              flexDirection: 'column',
+              paddingTop: 8,
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, 1fr)',
               gap: 8,
-              fontSize: '0.76rem',
+              fontSize: '0.72rem',
               color: 'var(--text-secondary)',
             }}>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
                 <span>💡</span>
                 <div>
-                  <strong style={{ color: 'var(--text-main)' }}>Keterbacaan Teks:</strong> Gunakan <em>Overlay Gelap</em> (60%-80%) jika gambar latar Anda terang.
+                  <strong style={{ color: 'var(--text-main)' }}>Keterbacaan Teks:</strong> Gunakan <em>Overlay Gelap</em> (60%-80%) jika gambar latar Anda terang agar form tetap kontras.
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
                 <span>📐</span>
                 <div>
-                  <strong style={{ color: 'var(--text-main)' }}>Rasio Gambar:</strong> Disarankan gambar 16:9 (1920x1080) di bawah 2MB untuk loading cepat.
+                  <strong style={{ color: 'var(--text-main)' }}>Rasio & Resolusi:</strong> Disarankan gambar 16:9 (1920x1080) di bawah 2MB untuk performa loading secepat kilat.
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
                 <span>✨</span>
                 <div>
-                  <strong style={{ color: 'var(--text-main)' }}>Efek Kaca:</strong> Atur <em>Kepadatan Kartu</em> ke 80%-90% untuk efek transparan modern.
+                  <strong style={{ color: 'var(--text-main)' }}>Modern Glassmorphism:</strong> Atur <em>Kepadatan Kartu</em> ke 80%-90% untuk efek kaca transparan yang profesional.
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
+                <span>🛡️</span>
+                <div>
+                  <strong style={{ color: 'var(--text-main)' }}>Format Logo:</strong> Upload logo format PNG transparan atau SVG agar logo berpadu menyatu sempurna dengan latar belakang.
                 </div>
               </div>
             </div>
@@ -888,6 +1069,131 @@ export default function PortalCustomizer() {
         </div>
 
       </div>
+
+      {/* Custom Confirmation Modal for Reset Default */}
+      {showResetModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: 16,
+          }}
+          onClick={() => setShowResetModal(false)}
+        >
+          <div
+            className="card"
+            style={{
+              width: '100%',
+              maxWidth: 460,
+              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.6)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              backgroundColor: '#0d1322',
+              animation: 'modalSlideIn 0.2s ease-out',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="card-header" style={{ justifyContent: 'space-between', borderBottom: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: 8,
+                  background: 'rgba(239, 68, 68, 0.15)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--danger)',
+                }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/>
+                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                  </svg>
+                </div>
+                <div>
+                  <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)' }}>
+                    Reset Pengaturan Portal?
+                  </h4>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                    Kembalikan ke tampilan default bawaan SIPAS
+                  </span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                onClick={() => setShowResetModal(false)}
+                style={{ padding: '2px 8px', fontSize: '1.1rem', color: 'var(--text-muted)' }}
+              >
+                &times;
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="card-body" style={{ padding: '16px 20px', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+              <p style={{ margin: '0 0 10px', lineHeight: 1.5 }}>
+                Tindakan ini akan mengembalikan semua tema visual halaman captive portal ke setelan standar:
+              </p>
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.03)',
+                padding: '10px 14px',
+                borderRadius: 8,
+                border: '1px solid var(--border)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 6,
+                fontSize: '0.76rem',
+                color: 'var(--text-secondary)',
+              }}>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <span>🎨</span> <span>Latar belakang & kartu kembali ke tema Deep Navy & Slate.</span>
+                </div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <span>🛡️</span> <span>Logo kembali ke <strong>Logo Default SIPAS</strong>.</span>
+                </div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <span>🔵</span> <span>Warna tombol kembali ke warna biru primer.</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer Actions */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: 8,
+              padding: '12px 20px',
+              borderTop: '1px solid var(--border)',
+              background: 'rgba(0, 0, 0, 0.2)',
+            }}>
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={() => setShowResetModal(false)}
+                disabled={saving}
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                className="btn btn-danger btn-sm"
+                onClick={confirmReset}
+                disabled={saving}
+              >
+                {saving ? 'Mereset...' : 'Ya, Reset ke Default'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
