@@ -13,11 +13,11 @@ const ROLE_CONFIG = {
     desc: 'Akses penuh ke seluruh sistem & manajemen pengelola web',
   },
   operator: {
-    label: 'Operator',
+    label: 'Operator SIPAS',
     variant: 'info',
     badgeStyle: { background: 'rgba(2, 132, 199, 0.18)', color: '#38bdf8', border: '1px solid rgba(2, 132, 199, 0.35)' },
     avatarBg: '#0284c7',
-    desc: 'Mengelola router, user hotspot, antrean bandwidth, dan situs',
+    desc: 'Mengelola router, pengguna SIPAS, antrean bandwidth, dan situs',
   },
   visitor: {
     label: 'Visitor',
@@ -268,7 +268,7 @@ export default function AdminUsers() {
               <polyline points="22 4 12 14.01 9 11.01" />
             </svg>
           }
-          label="Operator Hotspot"
+          label="Operator SIPAS"
           value={stats.operators}
           variant="info"
         />
@@ -323,7 +323,7 @@ export default function AdminUsers() {
             >
               <option value="all">Semua Role</option>
               {isSuperAdmin && <option value="superadmin">Superadmin</option>}
-              <option value="operator">Operator</option>
+              <option value="operator">Operator SIPAS</option>
               <option value="visitor">Visitor (Read-Only)</option>
             </select>
 
@@ -541,7 +541,7 @@ export default function AdminUsers() {
               onChange={(e) => setForm({ ...form, role: e.target.value })}
             >
               <option value="superadmin">Superadmin (Akses Penuh & Kelola Pengelola)</option>
-              <option value="operator">Operator (Kelola Hotspot, Router, & User)</option>
+              <option value="operator">Operator SIPAS (Kelola SIPAS, Router, & User)</option>
               <option value="visitor">Visitor (Read-Only & Data Sensitif Disamarkan)</option>
             </select>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
@@ -609,7 +609,7 @@ export default function AdminUsers() {
               onChange={(e) => setForm({ ...form, role: e.target.value })}
             >
               <option value="superadmin">Superadmin (Akses Penuh & Kelola Pengelola)</option>
-              <option value="operator">Operator (Kelola Hotspot, Router, & User)</option>
+              <option value="operator">Operator SIPAS (Kelola SIPAS, Router, & User)</option>
               <option value="visitor">Visitor (Read-Only & Data Sensitif Disamarkan)</option>
             </select>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
