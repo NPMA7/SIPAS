@@ -9,19 +9,13 @@ const ROLE_CONFIG = {
     label: 'Superadmin',
     variant: 'primary',
     badgeStyle: { background: 'linear-gradient(135deg, #8b5cf6, #ec4899)', color: '#fff', border: 'none' },
-    desc: 'Akses penuh ke seluruh sistem & manajemen pengelola',
-  },
-  admin: {
-    label: 'Admin',
-    variant: 'info',
-    badgeStyle: { background: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa', border: '1px solid rgba(59, 130, 246, 0.3)' },
-    desc: 'Mengelola router, hotspot, user, dan blokir situs',
+    desc: 'Akses penuh ke seluruh sistem & manajemen pengelola web',
   },
   operator: {
     label: 'Operator',
-    variant: 'neutral',
-    badgeStyle: { background: 'rgba(20, 184, 166, 0.15)', color: '#2dd4bf', border: '1px solid rgba(20, 184, 166, 0.3)' },
-    desc: 'Monitoring lalu lintas dan status hotspot',
+    variant: 'info',
+    badgeStyle: { background: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa', border: '1px solid rgba(59, 130, 246, 0.3)' },
+    desc: 'Mengelola router, user hotspot, antrean bandwidth, dan situs',
   },
   visitor: {
     label: 'Visitor',
@@ -38,6 +32,16 @@ export default function AdminUsers() {
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
 
+  // Current logged in admin info
+  const currentAdmin = useMemo(() => {
+    try {
+      return JSON.parse(localStorage.getItem('hotspot_admin') || '{}');
+    } catch {
+      return {};
+    }
+  }, []);
+  const isSuperAdmin = currentAdmin?.role === 'superadmin';
+
   // Modals
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -45,13 +49,13 @@ export default function AdminUsers() {
   const [selectedAdmin, setSelectedAdmin] = useState(null);
   const [saving, setSaving] = useState(false);
 
-  // Form State
+  // Form State (Default role: operator)
   const [form, setForm] = useState({
     username: '',
     full_name: '',
     email: '',
     password: '',
-    role: 'admin',
+    role: 'operator',
     is_active: true,
   });
 
@@ -62,7 +66,7 @@ export default function AdminUsers() {
       if (res?.success) {
         setAdmins(res.data || []);
       } else {
-        addToast(res?.message || 'Gagal memuat data admin.', 'danger');
+        addToast(res?.message || 'Gagal memuat data pengelola.', 'danger');
       }
     } catch (err) {
       addToast(err.message || 'Gagal terhubung ke server.', 'danger');
@@ -91,37 +95,53 @@ export default function AdminUsers() {
   const stats = useMemo(() => {
     const total = admins.length;
     const superadmins = admins.filter((a) => a.role === 'superadmin').length;
-    const active = admins.filter((a) => a.is_active).length;
+    const operators = admins.filter((a) => a.role === 'operator').length;
     const visitors = admins.filter((a) => a.role === 'visitor').length;
-    return { total, superadmins, active, visitors };
+    return { total, superadmins, operators, visitors };
   }, [admins]);
 
   const openAdd = () => {
+    if (!isSuperAdmin) {
+      addToast('Hanya Superadmin yang dapat menambahkan pengelola baru.', 'warning');
+      return;
+    }
     setForm({
       username: '',
       full_name: '',
       email: '',
       password: '',
-      role: 'admin',
+      role: 'operator',
       is_active: true,
     });
     setShowAddModal(true);
   };
 
   const openEdit = (admin) => {
+    if (!isSuperAdmin) {
+      addToast('Hanya Superadmin yang dapat mengubah data pengelola.', 'warning');
+      return;
+    }
     setSelectedAdmin(admin);
     setForm({
       username: admin.username,
       full_name: admin.full_name || '',
       email: admin.email || '',
       password: '',
-      role: admin.role || 'admin',
+      role: admin.role || 'operator',
       is_active: admin.is_active ?? true,
     });
     setShowEditModal(true);
   };
 
   const openDelete = (admin) => {
+    if (!isSuperAdmin) {
+      addToast('Hanya Superadmin yang dapat menghapus pengelola.', 'warning');
+      return;
+    }
+    if (admin.role === 'superadmin') {
+      addToast('Akun Superadmin tidak dapat dihapus melalui antarmuka web.', 'danger');
+      return;
+    }
     setSelectedAdmin(admin);
     setShowDeleteModal(true);
   };
@@ -141,14 +161,14 @@ export default function AdminUsers() {
       setSaving(true);
       const res = await apiPost('/admin-users', form);
       if (res?.success) {
-        addToast(res.message || 'Admin pengelola berhasil ditambahkan!', 'success');
+        addToast(res.message || 'Pengelola berhasil ditambahkan!', 'success');
         setShowAddModal(false);
         loadAdmins();
       } else {
-        addToast(res?.message || 'Gagal menambahkan admin.', 'danger');
+        addToast(res?.message || 'Gagal menambahkan pengelola.', 'danger');
       }
     } catch (err) {
-      addToast(err.message || 'Gagal menambahkan admin.', 'danger');
+      addToast(err.message || 'Gagal menambahkan pengelola.', 'danger');
     } finally {
       setSaving(false);
     }
@@ -176,14 +196,14 @@ export default function AdminUsers() {
       setSaving(true);
       const res = await apiPut(`/admin-users/${selectedAdmin.id}`, payload);
       if (res?.success) {
-        addToast(res.message || 'Data admin berhasil diperbarui!', 'success');
+        addToast(res.message || 'Data pengelola berhasil diperbarui!', 'success');
         setShowEditModal(false);
         loadAdmins();
       } else {
-        addToast(res?.message || 'Gagal memperbarui admin.', 'danger');
+        addToast(res?.message || 'Gagal memperbarui pengelola.', 'danger');
       }
     } catch (err) {
-      addToast(err.message || 'Gagal memperbarui admin.', 'danger');
+      addToast(err.message || 'Gagal memperbarui pengelola.', 'danger');
     } finally {
       setSaving(false);
     }
@@ -195,15 +215,15 @@ export default function AdminUsers() {
       setSaving(true);
       const res = await apiDelete(`/admin-users/${selectedAdmin.id}`);
       if (res?.success) {
-        addToast(res.message || 'Admin berhasil dihapus.', 'success');
+        addToast(res.message || 'Pengelola berhasil dihapus.', 'success');
         setShowDeleteModal(false);
         setSelectedAdmin(null);
         loadAdmins();
       } else {
-        addToast(res?.message || 'Gagal menghapus admin.', 'danger');
+        addToast(res?.message || 'Gagal menghapus pengelola.', 'danger');
       }
     } catch (err) {
-      addToast(err.message || 'Gagal menghapus admin.', 'danger');
+      addToast(err.message || 'Gagal menghapus pengelola.', 'danger');
     } finally {
       setSaving(false);
     }
@@ -243,9 +263,21 @@ export default function AdminUsers() {
               <polyline points="22 4 12 14.01 9 11.01" />
             </svg>
           }
-          label="Pengelola Aktif"
-          value={stats.active}
-          variant="success"
+          label="Operator Hotspot"
+          value={stats.operators}
+          variant="info"
+        />
+        <StatCard
+          icon={
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="22" height="22">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+          }
+          label="Visitor (Read-Only)"
+          value={stats.visitors}
+          variant="neutral"
         />
       </div>
 
@@ -277,7 +309,7 @@ export default function AdminUsers() {
               />
             </div>
 
-            {/* Role Filter */}
+            {/* Role Filter (Only 3 roles) */}
             <select
               className="select select-sm"
               value={roleFilter}
@@ -286,19 +318,20 @@ export default function AdminUsers() {
             >
               <option value="all">Semua Role</option>
               <option value="superadmin">Superadmin</option>
-              <option value="admin">Admin</option>
               <option value="operator">Operator</option>
               <option value="visitor">Visitor (Read-Only)</option>
             </select>
 
-            {/* Tambah Button */}
-            <button className="btn btn-primary btn-sm" onClick={openAdd}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
-              Tambah Pengelola
-            </button>
+            {/* Tambah Button: Only Superadmin */}
+            {isSuperAdmin && (
+              <button className="btn btn-primary btn-sm" onClick={openAdd}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                Tambah Pengelola
+              </button>
+            )}
           </div>
         </div>
 
@@ -307,7 +340,7 @@ export default function AdminUsers() {
           {loading ? (
             <Loader />
           ) : filteredAdmins.length === 0 ? (
-            <EmptyState icon="👤" text="Tidak ada data admin pengelola ditemukan." />
+            <EmptyState icon="👤" text="Tidak ada data pengelola ditemukan." />
           ) : (
             <table className="data-table">
               <thead>
@@ -323,8 +356,8 @@ export default function AdminUsers() {
               </thead>
               <tbody>
                 {filteredAdmins.map((a) => {
-                  const roleCfg = ROLE_CONFIG[a.role] || ROLE_CONFIG.admin;
-                  const initial = (a.full_name || a.username)?.[0]?.toUpperCase() || 'A';
+                  const roleCfg = ROLE_CONFIG[a.role] || ROLE_CONFIG.operator;
+                  const initial = (a.full_name || a.username)?.[0]?.toUpperCase() || 'P';
                   return (
                     <tr key={a.id}>
                       <td>
@@ -390,30 +423,35 @@ export default function AdminUsers() {
                       </td>
                       <td style={{ textAlign: 'right' }}>
                         <div style={{ display: 'inline-flex', gap: 6 }}>
-                          <button
-                            className="btn btn-ghost btn-icon-sm"
-                            title="Edit Pengelola"
-                            onClick={() => openEdit(a)}
-                          >
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                            </svg>
-                          </button>
-                          {a.role !== 'superadmin' ? (
+                          {isSuperAdmin && (
                             <button
-                              className="btn btn-danger btn-icon-sm"
-                              title="Hapus Pengelola"
-                              onClick={() => openDelete(a)}
+                              className="btn btn-ghost btn-icon-sm"
+                              title="Edit Pengelola"
+                              onClick={() => openEdit(a)}
                             >
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                                <polyline points="3 6 5 6 21 6" />
-                                <path d="M19 6l-1 14H6L5 6" />
-                                <path d="M10 11v6" />
-                                <path d="M14 11v6" />
-                                <path d="M9 6V4h6v2" />
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                               </svg>
                             </button>
+                          )}
+
+                          {a.role !== 'superadmin' ? (
+                            isSuperAdmin && (
+                              <button
+                                className="btn btn-danger btn-icon-sm"
+                                title="Hapus Pengelola"
+                                onClick={() => openDelete(a)}
+                              >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                                  <polyline points="3 6 5 6 21 6" />
+                                  <path d="M19 6l-1 14H6L5 6" />
+                                  <path d="M10 11v6" />
+                                  <path d="M14 11v6" />
+                                  <path d="M9 6V4h6v2" />
+                                </svg>
+                              </button>
+                            )
                           ) : (
                             <span
                               style={{
@@ -425,7 +463,7 @@ export default function AdminUsers() {
                                 color: 'var(--text-muted)',
                                 opacity: 0.5,
                               }}
-                              title="Superadmin diproteksi"
+                              title="Superadmin diproteksi (Hanya dapat dihapus langsung lewat Database)"
                             >
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
                                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
@@ -444,7 +482,7 @@ export default function AdminUsers() {
         </div>
       </div>
 
-      {/* MODAL TAMBAH ADMIN */}
+      {/* MODAL TAMBAH PENGELOLA (Khusus Superadmin) */}
       <Modal open={showAddModal} title="Tambah Pengelola Web Baru" onClose={() => setShowAddModal(false)}>
         <form onSubmit={handleCreate}>
           <div className="form-group">
@@ -452,7 +490,7 @@ export default function AdminUsers() {
             <input
               type="text"
               className="input"
-              placeholder="misal: admin_sipas"
+              placeholder="misal: operator_sipas"
               value={form.username}
               onChange={(e) => setForm({ ...form, username: e.target.value })}
               required
@@ -476,7 +514,7 @@ export default function AdminUsers() {
             <input
               type="email"
               className="input"
-              placeholder="admin@npma.my.id"
+              placeholder="operator@npma.my.id"
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
             />
@@ -502,9 +540,8 @@ export default function AdminUsers() {
               value={form.role}
               onChange={(e) => setForm({ ...form, role: e.target.value })}
             >
-              <option value="superadmin">Superadmin (Akses Penuh & Kelola Admin)</option>
-              <option value="admin">Admin (Kelola Hotspot, Router, & User)</option>
-              <option value="operator">Operator (Monitoring Lalu Lintas & Status)</option>
+              <option value="superadmin">Superadmin (Akses Penuh & Kelola Pengelola)</option>
+              <option value="operator">Operator (Kelola Hotspot, Router, & User)</option>
               <option value="visitor">Visitor (Read-Only & Data Sensitif Disamarkan)</option>
             </select>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
@@ -534,7 +571,7 @@ export default function AdminUsers() {
         </form>
       </Modal>
 
-      {/* MODAL EDIT ADMIN */}
+      {/* MODAL EDIT PENGELOLA (Khusus Superadmin) */}
       <Modal open={showEditModal} title={`Edit Pengelola: @${selectedAdmin?.username || ''}`} onClose={() => setShowEditModal(false)}>
         <form onSubmit={handleUpdate}>
           <div className="form-group">
@@ -571,9 +608,8 @@ export default function AdminUsers() {
               value={form.role}
               onChange={(e) => setForm({ ...form, role: e.target.value })}
             >
-              <option value="superadmin">Superadmin (Akses Penuh & Kelola Admin)</option>
-              <option value="admin">Admin (Kelola Hotspot, Router, & User)</option>
-              <option value="operator">Operator (Monitoring Lalu Lintas & Status)</option>
+              <option value="superadmin">Superadmin (Akses Penuh & Kelola Pengelola)</option>
+              <option value="operator">Operator (Kelola Hotspot, Router, & User)</option>
               <option value="visitor">Visitor (Read-Only & Data Sensitif Disamarkan)</option>
             </select>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
@@ -619,11 +655,11 @@ export default function AdminUsers() {
         </form>
       </Modal>
 
-      {/* MODAL KONFIRMASI HAPUS */}
+      {/* MODAL KONFIRMASI HAPUS (Khusus Superadmin) */}
       <Modal open={showDeleteModal} title="Konfirmasi Hapus Pengelola" onClose={() => setShowDeleteModal(false)}>
         <div style={{ padding: '8px 0' }}>
           <p style={{ marginBottom: 12 }}>
-            Apakah Anda yakin ingin menghapus akun pengelola <strong>@{selectedAdmin?.username}</strong> ({selectedAdmin?.full_name || 'Admin'})?
+            Apakah Anda yakin ingin menghapus akun pengelola <strong>@{selectedAdmin?.username}</strong> ({selectedAdmin?.full_name || 'Pengelola'})?
           </p>
           <div
             style={{

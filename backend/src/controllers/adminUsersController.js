@@ -11,7 +11,7 @@ const getAllAdminUsers = async (req, res) => {
             SELECT id, username, full_name, email, role, is_active, created_at, updated_at
             FROM admin_users
             ORDER BY 
-                CASE WHEN role = 'superadmin' THEN 1 WHEN role = 'admin' THEN 2 ELSE 3 END,
+                CASE WHEN role = 'superadmin' THEN 1 WHEN role = 'operator' THEN 2 ELSE 3 END,
                 id ASC
         `);
         res.json({ success: true, data: result.rows });
@@ -23,10 +23,10 @@ const getAllAdminUsers = async (req, res) => {
 
 /**
  * POST /api/admin-users
- * Membuat admin pengelola baru
+ * Membuat admin pengelola baru (Khusus Superadmin)
  */
 const createAdminUser = async (req, res) => {
-    const { username, password, full_name, email, role = 'admin', is_active = true } = req.body;
+    const { username, password, full_name, email, role = 'operator', is_active = true } = req.body;
 
     if (!username || !password) {
         return res.status(400).json({ success: false, message: 'Username dan password wajib diisi.' });
@@ -36,8 +36,8 @@ const createAdminUser = async (req, res) => {
         return res.status(400).json({ success: false, message: 'Password minimal 6 karakter.' });
     }
 
-    const validRoles = ['superadmin', 'admin', 'operator', 'visitor'];
-    const assignedRole = validRoles.includes(role.toLowerCase()) ? role.toLowerCase() : 'admin';
+    const validRoles = ['superadmin', 'operator', 'visitor'];
+    const assignedRole = validRoles.includes(role.toLowerCase()) ? role.toLowerCase() : 'operator';
 
     try {
         const cleanUsername = username.toLowerCase().trim();
@@ -55,18 +55,18 @@ const createAdminUser = async (req, res) => {
 
         res.status(201).json({
             success: true,
-            message: 'Admin pengelola berhasil ditambahkan.',
+            message: 'Pengelola berhasil ditambahkan.',
             data: result.rows[0]
         });
     } catch (err) {
         console.error('[AdminUsersController] createAdminUser error:', err.message);
-        res.status(500).json({ success: false, message: err.message || 'Gagal menambahkan admin.' });
+        res.status(500).json({ success: false, message: err.message || 'Gagal menambahkan pengelola.' });
     }
 };
 
 /**
  * PUT /api/admin-users/:id
- * Mengubah data admin, role, status aktif, atau reset password
+ * Mengubah data pengelola, role, status aktif, atau reset password (Khusus Superadmin)
  */
 const updateAdminUser = async (req, res) => {
     const { id } = req.params;
@@ -75,7 +75,7 @@ const updateAdminUser = async (req, res) => {
     try {
         const existing = await query('SELECT * FROM admin_users WHERE id = $1', [id]);
         if (existing.rows.length === 0) {
-            return res.status(404).json({ success: false, message: 'Admin tidak ditemukan.' });
+            return res.status(404).json({ success: false, message: 'Pengelola tidak ditemukan.' });
         }
 
         const targetAdmin = existing.rows[0];
@@ -91,7 +91,7 @@ const updateAdminUser = async (req, res) => {
             }
         }
 
-        const validRoles = ['superadmin', 'admin', 'operator', 'visitor'];
+        const validRoles = ['superadmin', 'operator', 'visitor'];
         const assignedRole = role && validRoles.includes(role.toLowerCase()) ? role.toLowerCase() : targetAdmin.role;
         const updatedIsActive = is_active !== undefined ? Boolean(is_active) : targetAdmin.is_active;
 
