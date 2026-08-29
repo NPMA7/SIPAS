@@ -26,7 +26,8 @@ export default function App() {
           <Route path="hotspot/*" element={<Hotspot />} />
           <Route path="queues" element={<Queues />} />
           <Route path="dhcp" element={<DhcpLeases />} />
-          <Route path="admins" element={<AdminUsers />} />
+          <Route path="manage-users" element={<AdminUsers />} />
+          <Route path="admins" element={<Navigate to="/admin/manage-users" replace />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

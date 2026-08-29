@@ -16,6 +16,7 @@ const TITLE_MAP = {
   '/admin/queues': 'Simple Queues',
   '/admin/dhcp': 'DHCP Leases',
   '/admin/admins': 'Pengelola Web',
+  '/admin/manage-users': 'Pengelola Web',
 };
 
 export default function Layout() {

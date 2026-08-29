@@ -23,6 +23,12 @@ const ROLE_CONFIG = {
     badgeStyle: { background: 'rgba(20, 184, 166, 0.15)', color: '#2dd4bf', border: '1px solid rgba(20, 184, 166, 0.3)' },
     desc: 'Monitoring lalu lintas dan status hotspot',
   },
+  visitor: {
+    label: 'Visitor',
+    variant: 'neutral',
+    badgeStyle: { background: 'rgba(156, 163, 175, 0.15)', color: '#9ca3af', border: '1px solid rgba(156, 163, 175, 0.3)' },
+    desc: 'Akses Read-Only (hanya melihat) & data sensitif disamarkan',
+  },
 };
 
 export default function AdminUsers() {
@@ -86,7 +92,8 @@ export default function AdminUsers() {
     const total = admins.length;
     const superadmins = admins.filter((a) => a.role === 'superadmin').length;
     const active = admins.filter((a) => a.is_active).length;
-    return { total, superadmins, active };
+    const visitors = admins.filter((a) => a.role === 'visitor').length;
+    return { total, superadmins, active, visitors };
   }, [admins]);
 
   const openAdd = () => {
@@ -107,7 +114,7 @@ export default function AdminUsers() {
       username: admin.username,
       full_name: admin.full_name || '',
       email: admin.email || '',
-      password: '', // Kosongkan, hanya diisi jika ingin reset password
+      password: '',
       role: admin.role || 'admin',
       is_active: admin.is_active ?? true,
     });
@@ -190,6 +197,7 @@ export default function AdminUsers() {
       if (res?.success) {
         addToast(res.message || 'Admin berhasil dihapus.', 'success');
         setShowDeleteModal(false);
+        setSelectedAdmin(null);
         loadAdmins();
       } else {
         addToast(res?.message || 'Gagal menghapus admin.', 'danger');
@@ -280,6 +288,7 @@ export default function AdminUsers() {
               <option value="superadmin">Superadmin</option>
               <option value="admin">Admin</option>
               <option value="operator">Operator</option>
+              <option value="visitor">Visitor (Read-Only)</option>
             </select>
 
             {/* Tambah Button */}
@@ -328,6 +337,8 @@ export default function AdminUsers() {
                               background:
                                 a.role === 'superadmin'
                                   ? 'linear-gradient(135deg, #8b5cf6, #ec4899)'
+                                  : a.role === 'visitor'
+                                  ? 'linear-gradient(135deg, #64748b, #94a3b8)'
                                   : 'linear-gradient(135deg, #3b82f6, #06b6d4)',
                               color: '#fff',
                               display: 'flex',
@@ -414,213 +425,209 @@ export default function AdminUsers() {
       </div>
 
       {/* MODAL TAMBAH ADMIN */}
-      {showAddModal && (
-        <Modal title="Tambah Pengelola Web Baru" onClose={() => setShowAddModal(false)}>
-          <form onSubmit={handleCreate}>
-            <div className="form-group">
-              <label className="form-label">Username <span style={{ color: 'var(--color-danger)' }}>*</span></label>
-              <input
-                type="text"
-                className="input"
-                placeholder="misal: admin_sipas"
-                value={form.username}
-                onChange={(e) => setForm({ ...form, username: e.target.value })}
-                required
-                autoFocus
-              />
-            </div>
+      <Modal open={showAddModal} title="Tambah Pengelola Web Baru" onClose={() => setShowAddModal(false)}>
+        <form onSubmit={handleCreate}>
+          <div className="form-group">
+            <label className="form-label">Username <span style={{ color: 'var(--color-danger)' }}>*</span></label>
+            <input
+              type="text"
+              className="input"
+              placeholder="misal: admin_sipas"
+              value={form.username}
+              onChange={(e) => setForm({ ...form, username: e.target.value })}
+              required
+              autoFocus
+            />
+          </div>
 
-            <div className="form-group">
-              <label className="form-label">Nama Lengkap</label>
-              <input
-                type="text"
-                className="input"
-                placeholder="misal: Bagian IT Diskominfo"
-                value={form.full_name}
-                onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-              />
-            </div>
+          <div className="form-group">
+            <label className="form-label">Nama Lengkap</label>
+            <input
+              type="text"
+              className="input"
+              placeholder="misal: Bagian IT Diskominfo"
+              value={form.full_name}
+              onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+            />
+          </div>
 
-            <div className="form-group">
-              <label className="form-label">Email</label>
-              <input
-                type="email"
-                className="input"
-                placeholder="admin@npma.my.id"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-              />
-            </div>
+          <div className="form-group">
+            <label className="form-label">Email</label>
+            <input
+              type="email"
+              className="input"
+              placeholder="admin@npma.my.id"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+            />
+          </div>
 
-            <div className="form-group">
-              <label className="form-label">Password <span style={{ color: 'var(--color-danger)' }}>*</span></label>
-              <input
-                type="password"
-                className="input"
-                placeholder="Minimal 6 karakter"
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                required
-                minLength={6}
-              />
-            </div>
+          <div className="form-group">
+            <label className="form-label">Password <span style={{ color: 'var(--color-danger)' }}>*</span></label>
+            <input
+              type="password"
+              className="input"
+              placeholder="Minimal 6 karakter"
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+              required
+              minLength={6}
+            />
+          </div>
 
-            <div className="form-group">
-              <label className="form-label">Role Hak Akses</label>
-              <select
-                className="select"
-                value={form.role}
-                onChange={(e) => setForm({ ...form, role: e.target.value })}
-              >
-                <option value="superadmin">Superadmin (Akses Penuh & Kelola Admin)</option>
-                <option value="admin">Admin (Kelola Hotspot, Router, & User)</option>
-                <option value="operator">Operator (Monitoring Lalu Lintas & Status)</option>
-              </select>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
-                {ROLE_CONFIG[form.role]?.desc}
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-                <input
-                  type="checkbox"
-                  checked={form.is_active}
-                  onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
-                />
-                <span style={{ fontSize: '0.88rem' }}>Status Akun Aktif (Bisa Login ke Web Admin)</span>
-              </label>
-            </div>
-
-            <div className="modal-actions">
-              <button type="button" className="btn btn-secondary" onClick={() => setShowAddModal(false)}>
-                Batal
-              </button>
-              <button type="submit" className="btn btn-primary" disabled={saving}>
-                {saving ? 'Menyimpan...' : 'Simpan Pengelola'}
-              </button>
-            </div>
-          </form>
-        </Modal>
-      )}
-
-      {/* MODAL EDIT ADMIN */}
-      {showEditModal && selectedAdmin && (
-        <Modal title={`Edit Pengelola: @${selectedAdmin.username}`} onClose={() => setShowEditModal(false)}>
-          <form onSubmit={handleUpdate}>
-            <div className="form-group">
-              <label className="form-label">Username</label>
-              <input type="text" className="input" value={form.username} disabled style={{ opacity: 0.7 }} />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Nama Lengkap</label>
-              <input
-                type="text"
-                className="input"
-                placeholder="Nama Lengkap"
-                value={form.full_name}
-                onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Email</label>
-              <input
-                type="email"
-                className="input"
-                placeholder="Email"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Role Hak Akses</label>
-              <select
-                className="select"
-                value={form.role}
-                onChange={(e) => setForm({ ...form, role: e.target.value })}
-              >
-                <option value="superadmin">Superadmin (Akses Penuh & Kelola Admin)</option>
-                <option value="admin">Admin (Kelola Hotspot, Router, & User)</option>
-                <option value="operator">Operator (Monitoring Lalu Lintas & Status)</option>
-              </select>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
-                {ROLE_CONFIG[form.role]?.desc}
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">
-                Reset Password Baru{' '}
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 400 }}>
-                  (Kosongkan jika tidak ingin mengubah password)
-                </span>
-              </label>
-              <input
-                type="password"
-                className="input"
-                placeholder="Password baru (opsional, min 6 karakter)"
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-              />
-            </div>
-
-            <div className="form-group">
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-                <input
-                  type="checkbox"
-                  checked={form.is_active}
-                  onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
-                />
-                <span style={{ fontSize: '0.88rem' }}>Status Akun Aktif (Bisa Login ke Web Admin)</span>
-              </label>
-            </div>
-
-            <div className="modal-actions">
-              <button type="button" className="btn btn-secondary" onClick={() => setShowEditModal(false)}>
-                Batal
-              </button>
-              <button type="submit" className="btn btn-primary" disabled={saving}>
-                {saving ? 'Menyimpan...' : 'Perbarui Pengelola'}
-              </button>
-            </div>
-          </form>
-        </Modal>
-      )}
-
-      {/* MODAL KONFIRMASI HAPUS */}
-      {showDeleteModal && selectedAdmin && (
-        <Modal title="Konfirmasi Hapus Pengelola" onClose={() => setShowDeleteModal(false)}>
-          <div style={{ padding: '8px 0' }}>
-            <p style={{ marginBottom: 12 }}>
-              Apakah Anda yakin ingin menghapus akun pengelola <strong>@{selectedAdmin.username}</strong> ({selectedAdmin.full_name || 'Admin'})?
-            </p>
-            <div
-              style={{
-                background: 'rgba(239, 68, 68, 0.1)',
-                border: '1px solid rgba(239, 68, 68, 0.3)',
-                borderRadius: 8,
-                padding: '10px 14px',
-                fontSize: '0.82rem',
-                color: '#f87171',
-                marginBottom: 16,
-              }}
+          <div className="form-group">
+            <label className="form-label">Role Hak Akses</label>
+            <select
+              className="select"
+              value={form.role}
+              onChange={(e) => setForm({ ...form, role: e.target.value })}
             >
-              ⚠️ Akun ini tidak akan bisa login lagi ke Dashboard Admin SIPAS setelah dihapus.
+              <option value="superadmin">Superadmin (Akses Penuh & Kelola Admin)</option>
+              <option value="admin">Admin (Kelola Hotspot, Router, & User)</option>
+              <option value="operator">Operator (Monitoring Lalu Lintas & Status)</option>
+              <option value="visitor">Visitor (Read-Only & Data Sensitif Disamarkan)</option>
+            </select>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
+              {ROLE_CONFIG[form.role]?.desc}
             </div>
           </div>
+
+          <div className="form-group">
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={form.is_active}
+                onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
+              />
+              <span style={{ fontSize: '0.88rem' }}>Status Akun Aktif (Bisa Login ke Web Admin)</span>
+            </label>
+          </div>
+
           <div className="modal-actions">
-            <button className="btn btn-secondary" onClick={() => setShowDeleteModal(false)}>
+            <button type="button" className="btn btn-secondary" onClick={() => setShowAddModal(false)}>
               Batal
             </button>
-            <button className="btn btn-danger" onClick={handleDelete} disabled={saving}>
-              {saving ? 'Menghapus...' : 'Hapus Sekarang'}
+            <button type="submit" className="btn btn-primary" disabled={saving}>
+              {saving ? 'Menyimpan...' : 'Simpan Pengelola'}
             </button>
           </div>
-        </Modal>
-      )}
+        </form>
+      </Modal>
+
+      {/* MODAL EDIT ADMIN */}
+      <Modal open={showEditModal} title={`Edit Pengelola: @${selectedAdmin?.username || ''}`} onClose={() => setShowEditModal(false)}>
+        <form onSubmit={handleUpdate}>
+          <div className="form-group">
+            <label className="form-label">Username</label>
+            <input type="text" className="input" value={form.username} disabled style={{ opacity: 0.7 }} />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Nama Lengkap</label>
+            <input
+              type="text"
+              className="input"
+              placeholder="Nama Lengkap"
+              value={form.full_name}
+              onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Email</label>
+            <input
+              type="email"
+              className="input"
+              placeholder="Email"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Role Hak Akses</label>
+            <select
+              className="select"
+              value={form.role}
+              onChange={(e) => setForm({ ...form, role: e.target.value })}
+            >
+              <option value="superadmin">Superadmin (Akses Penuh & Kelola Admin)</option>
+              <option value="admin">Admin (Kelola Hotspot, Router, & User)</option>
+              <option value="operator">Operator (Monitoring Lalu Lintas & Status)</option>
+              <option value="visitor">Visitor (Read-Only & Data Sensitif Disamarkan)</option>
+            </select>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
+              {ROLE_CONFIG[form.role]?.desc}
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">
+              Reset Password Baru{' '}
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 400 }}>
+                (Kosongkan jika tidak ingin mengubah password)
+              </span>
+            </label>
+            <input
+              type="password"
+              className="input"
+              placeholder="Password baru (opsional, min 6 karakter)"
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+            />
+          </div>
+
+          <div className="form-group">
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={form.is_active}
+                onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
+              />
+              <span style={{ fontSize: '0.88rem' }}>Status Akun Aktif (Bisa Login ke Web Admin)</span>
+            </label>
+          </div>
+
+          <div className="modal-actions">
+            <button type="button" className="btn btn-secondary" onClick={() => setShowEditModal(false)}>
+              Batal
+            </button>
+            <button type="submit" className="btn btn-primary" disabled={saving}>
+              {saving ? 'Menyimpan...' : 'Perbarui Pengelola'}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* MODAL KONFIRMASI HAPUS */}
+      <Modal open={showDeleteModal} title="Konfirmasi Hapus Pengelola" onClose={() => setShowDeleteModal(false)}>
+        <div style={{ padding: '8px 0' }}>
+          <p style={{ marginBottom: 12 }}>
+            Apakah Anda yakin ingin menghapus akun pengelola <strong>@{selectedAdmin?.username}</strong> ({selectedAdmin?.full_name || 'Admin'})?
+          </p>
+          <div
+            style={{
+              background: 'rgba(239, 68, 68, 0.1)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              borderRadius: 8,
+              padding: '10px 14px',
+              fontSize: '0.82rem',
+              color: '#f87171',
+              marginBottom: 16,
+            }}
+          >
+            ⚠️ Akun ini tidak akan bisa login lagi ke Dashboard Admin SIPAS setelah dihapus.
+          </div>
+        </div>
+        <div className="modal-actions">
+          <button className="btn btn-secondary" onClick={() => setShowDeleteModal(false)}>
+            Batal
+          </button>
+          <button className="btn btn-danger" onClick={handleDelete} disabled={saving}>
+            {saving ? 'Menghapus...' : 'Hapus Sekarang'}
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 }

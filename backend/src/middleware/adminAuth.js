@@ -35,6 +35,33 @@ const requireSuperAdmin = (req, res, next) => {
     next();
 };
 
+/**
+ * Middleware untuk memblokir aksi perubahan data (write/delete) bagi role visitor
+ */
+const preventVisitorMutation = (req, res, next) => {
+    if (req.admin && req.admin.role === 'visitor') {
+        return res.status(403).json({
+            success: false,
+            message: 'Aksi ditolak. Akun dengan role Visitor hanya memiliki akses Read-Only.'
+        });
+    }
+    next();
+};
+
+/**
+ * Helper fungsi untuk menyamarkan data sensitif jika role adalah visitor
+ */
+const maskSensitiveText = (text, keepStart = 3, keepEnd = 3) => {
+    if (!text || typeof text !== 'string') return text;
+    const trimmed = text.trim();
+    if (trimmed.length <= keepStart + keepEnd) {
+        return trimmed.length > 2 ? `${trimmed[0]}***${trimmed[trimmed.length - 1]}` : '***';
+    }
+    return `${trimmed.substring(0, keepStart)}****${trimmed.substring(trimmed.length - keepEnd)}`;
+};
+
 module.exports = adminAuth;
 module.exports.adminAuth = adminAuth;
 module.exports.requireSuperAdmin = requireSuperAdmin;
+module.exports.preventVisitorMutation = preventVisitorMutation;
+module.exports.maskSensitiveText = maskSensitiveText;

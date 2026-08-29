@@ -6,7 +6,7 @@ import { Badge, Loader, EmptyState } from '../components/ui/index';
 
 const BW_PRESETS = ['1M/512K', '2M/1M', '5M/2M', '10M/10M', '20M/20M', '50M/50M', '100M/100M'];
 
-function UserCard({ user, routers, blockedSites = [], onEdit, onDelete, onBwChange }) {
+function UserCard({ user, routers, blockedSites = [], isVisitor = false, onEdit, onDelete, onBwChange }) {
   const primaryTitle = user.full_name || user.username;
   const initial = primaryTitle?.[0]?.toUpperCase() || '?';
   const blocks = (user.website_block || '')
@@ -55,29 +55,31 @@ function UserCard({ user, routers, blockedSites = [], onEdit, onDelete, onBwChan
           {user.is_active ? 'Aktif' : 'Nonaktif'}
         </Badge>
       </div>
-      <div className="user-card-actions">
-        <button
-          className="btn btn-ghost btn-icon-sm"
-          title="Edit user"
-          onClick={() => onEdit(user)}
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15">
-            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-          </svg>
-        </button>
-        <button
-          className="btn btn-danger btn-icon-sm"
-          title="Hapus user"
-          onClick={() => onDelete(user)}
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15">
-            <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
-            <path d="M10 11v6"/><path d="M14 11v6"/>
-            <path d="M9 6V4h6v2"/>
-          </svg>
-        </button>
-      </div>
+      {!isVisitor && (
+        <div className="user-card-actions">
+          <button
+            className="btn btn-ghost btn-icon-sm"
+            title="Edit user"
+            onClick={() => onEdit(user)}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+          </button>
+          <button
+            className="btn btn-danger btn-icon-sm"
+            title="Hapus user"
+            onClick={() => onDelete(user)}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15">
+              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
+              <path d="M10 11v6"/><path d="M14 11v6"/>
+              <path d="M9 6V4h6v2"/>
+            </svg>
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -91,6 +93,11 @@ const EMPTY_FORM = {
 
 export default function Users() {
   const ctx = useContext(ToastContext);
+  const currentAdmin = (() => {
+    try { return JSON.parse(localStorage.getItem('hotspot_admin') || '{}'); } catch { return {}; }
+  })();
+  const isVisitor = currentAdmin.role === 'visitor';
+
   const [users, setUsers] = useState([]);
   const [routers, setRouters] = useState([]);
   const [blockedSites, setBlockedSites] = useState([]);
@@ -302,29 +309,51 @@ export default function Users() {
               {routers.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
             </select>
             
-            <label className="btn btn-secondary btn-sm" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, margin: 0 }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="17 8 12 3 7 8"/>
-                <line x1="12" y1="3" x2="12" y2="15"/>
-              </svg>
-              Import CSV
-              <input
-                type="file"
-                accept=".csv"
-                style={{ display: 'none' }}
-                onChange={handleCSVImport}
-              />
-            </label>
+            {!isVisitor && (
+              <>
+                <label className="btn btn-secondary btn-sm" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, margin: 0 }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/>
+                    <line x1="12" y1="3" x2="12" y2="15"/>
+                  </svg>
+                  Import CSV
+                  <input
+                    type="file"
+                    accept=".csv"
+                    style={{ display: 'none' }}
+                    onChange={handleCSVImport}
+                  />
+                </label>
 
-            <button className="btn btn-primary btn-sm" onClick={openAdd}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-              </svg>
-              Tambah User
-            </button>
+                <button className="btn btn-primary btn-sm" onClick={openAdd}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                  Tambah User
+                </button>
+              </>
+            )}
           </div>
         </div>
+
+        {isVisitor && (
+          <div style={{
+            background: 'rgba(59, 130, 246, 0.1)',
+            border: '1px solid rgba(59, 130, 246, 0.25)',
+            borderRadius: 8,
+            padding: '10px 16px',
+            marginBottom: 16,
+            fontSize: '0.82rem',
+            color: '#93c5fd',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8
+          }}>
+            <span>👁️</span>
+            <span><strong>Mode Visitor (Read-Only)</strong>: Akses dibatasi hanya untuk melihat. Data sensitif seperti NIP, nomor telepon, dan email disamarkan.</span>
+          </div>
+        )}
 
         {loading ? (
           <Loader />
@@ -338,6 +367,7 @@ export default function Users() {
                 user={u}
                 routers={routers}
                 blockedSites={blockedSites}
+                isVisitor={isVisitor}
                 onEdit={openEdit}
                 onDelete={setConfirmDel}
               />

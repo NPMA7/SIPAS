@@ -70,9 +70,22 @@ const getUsers = async (req, res) => {
         );
 
 
+        let rows = result.rows;
+        if (req.admin && req.admin.role === 'visitor') {
+            const { maskSensitiveText } = require('../middleware/adminAuth');
+            rows = rows.map(u => ({
+                ...u,
+                username: maskSensitiveText(u.username, 2, 2),
+                nip: u.nip ? maskSensitiveText(u.nip, 4, 3) : null,
+                password: '••••••',
+                phone: u.phone ? maskSensitiveText(u.phone, 3, 2) : null,
+                email: u.email ? maskSensitiveText(u.email, 2, 4) : null,
+            }));
+        }
+
         res.json({
             success: true,
-            data:  result.rows,
+            data:  rows,
             pagination: {
                 total,
                 page:  parseInt(page),

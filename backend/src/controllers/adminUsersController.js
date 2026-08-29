@@ -36,7 +36,7 @@ const createAdminUser = async (req, res) => {
         return res.status(400).json({ success: false, message: 'Password minimal 6 karakter.' });
     }
 
-    const validRoles = ['superadmin', 'admin', 'operator'];
+    const validRoles = ['superadmin', 'admin', 'operator', 'visitor'];
     const assignedRole = validRoles.includes(role.toLowerCase()) ? role.toLowerCase() : 'admin';
 
     try {
@@ -91,7 +91,7 @@ const updateAdminUser = async (req, res) => {
             }
         }
 
-        const validRoles = ['superadmin', 'admin', 'operator'];
+        const validRoles = ['superadmin', 'admin', 'operator', 'visitor'];
         const assignedRole = role && validRoles.includes(role.toLowerCase()) ? role.toLowerCase() : targetAdmin.role;
         const updatedIsActive = is_active !== undefined ? Boolean(is_active) : targetAdmin.is_active;
 
