@@ -47,10 +47,10 @@ const getActiveSessions = async (req, res) => {
 
         const sessions = await mikrotik.getActiveHotspotUsers(rResult.rows[0]);
 
-        // Enrich dengan data dari DB
+        // Enrich dengan data dari DB (Cocokkan dengan username atau NIP)
         const enriched = await Promise.all(sessions.map(async (s) => {
             const userResult = await query(
-                'SELECT bandwidth_limit, website_block, full_name FROM hotspot_users WHERE username = $1',
+                'SELECT bandwidth_limit, website_block, full_name, nip, jabatan, instansi FROM hotspot_users WHERE username = $1 OR nip = $1',
                 [s.user]
             );
             const dbUser = userResult.rows[0];
@@ -59,6 +59,9 @@ const getActiveSessions = async (req, res) => {
                 bandwidth_limit: dbUser?.bandwidth_limit || 'N/A',
                 website_block:   dbUser?.website_block   || '',
                 full_name:       dbUser?.full_name       || s.user,
+                nip:             dbUser?.nip             || '',
+                jabatan:         dbUser?.jabatan         || '',
+                instansi:        dbUser?.instansi        || '',
             };
         }));
 

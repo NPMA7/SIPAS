@@ -14,7 +14,23 @@ const getActiveSessions = async (req, res) => {
         }
 
         const active = await mikrotik.getActiveHotspotUsers(rResult.rows[0]);
-        res.json({ success: true, data: active });
+        const enriched = await Promise.all(active.map(async (s) => {
+            const userResult = await query(
+                'SELECT bandwidth_limit, website_block, full_name, nip, jabatan, instansi FROM hotspot_users WHERE username = $1 OR nip = $1',
+                [s.user]
+            );
+            const dbUser = userResult.rows[0];
+            return {
+                ...s,
+                bandwidth_limit: dbUser?.bandwidth_limit || 'N/A',
+                website_block:   dbUser?.website_block   || '',
+                full_name:       dbUser?.full_name       || s.user,
+                nip:             dbUser?.nip             || '',
+                jabatan:         dbUser?.jabatan         || '',
+                instansi:        dbUser?.instansi        || '',
+            };
+        }));
+        res.json({ success: true, data: enriched });
     } catch (err) {
         console.error('[HotspotRouterController] getActiveSessions:', err.message);
         res.status(500).json({ success: false, message: err.message || 'Gagal mengambil sesi aktif.' });

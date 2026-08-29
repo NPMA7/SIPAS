@@ -276,7 +276,16 @@ export default function Dashboard() {
               <tbody>
                 {sessions.map((s, i) => (
                   <tr key={i}>
-                    <td style={{ fontWeight: 600 }}>{s.user || '—'}</td>
+                    <td>
+                      <div style={{ fontWeight: 600, color: 'var(--text-main)' }}>
+                        {s.full_name || s.user || '—'}
+                      </div>
+                      {s.full_name && s.full_name !== s.user && (
+                        <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 400, marginTop: 2 }}>
+                          {s.user}
+                        </div>
+                      )}
+                    </td>
                     <td className="mono">{s.address || '—'}</td>
                     <td className="mono" style={{ fontSize: '0.72rem' }}>{s.mac || s['mac-address'] || '—'}</td>
                     <td>{s.uptime || '—'}</td>
