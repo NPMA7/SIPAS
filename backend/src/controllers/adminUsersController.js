@@ -154,15 +154,12 @@ const deleteAdminUser = async (req, res) => {
             });
         }
 
-        // Proteksi: Tidak bisa menghapus superadmin terakhir
+        // Proteksi: Tidak bisa menghapus akun dengan role Superadmin melalui web
         if (targetAdmin.role === 'superadmin') {
-            const superCount = await query("SELECT COUNT(*) FROM admin_users WHERE role = 'superadmin'");
-            if (parseInt(superCount.rows[0].count, 10) <= 1) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Tidak dapat menghapus Superadmin terakhir pada sistem.'
-                });
-            }
+            return res.status(400).json({
+                success: false,
+                message: 'Akun dengan role Superadmin tidak dapat dihapus.'
+            });
         }
 
         await query('DELETE FROM admin_users WHERE id = $1', [id]);

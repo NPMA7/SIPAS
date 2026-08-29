@@ -10,11 +10,13 @@ const TITLE_MAP = {
   '/admin': 'Dashboard',
   '/admin/': 'Dashboard',
   '/admin/users': 'Pengguna Hotspot',
+  '/admin/user-hotspot': 'Pengguna Hotspot',
   '/admin/blocked-sites': 'Situs Diblokir',
   '/admin/routers': 'Manajemen Router',
   '/admin/hotspot': 'Hotspot Router',
   '/admin/queues': 'Simple Queues',
   '/admin/dhcp': 'DHCP Leases',
+  '/admin/dhcp-leases': 'DHCP Leases',
   '/admin/admins': 'Pengelola Web',
   '/admin/manage-users': 'Pengelola Web',
 };

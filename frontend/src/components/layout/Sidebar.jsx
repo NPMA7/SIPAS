@@ -23,7 +23,7 @@ const NAV = [
     group: 'Manajemen',
     items: [
       {
-        to: '/admin/users',
+        to: '/admin/user-hotspot',
         label: 'Pengguna Hotspot',
         icon: (
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
@@ -66,7 +66,7 @@ const NAV = [
         ),
       },
       {
-        to: '/admin/dhcp',
+        to: '/admin/dhcp-leases',
         label: 'DHCP Leases',
         icon: (
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">

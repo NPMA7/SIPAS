@@ -20,12 +20,14 @@ export default function App() {
         <Route path="/admin/login" element={<Login />} />
         <Route path="/admin" element={<Layout />}>
           <Route index element={<Dashboard />} />
-          <Route path="users" element={<Users />} />
+          <Route path="user-hotspot" element={<Users />} />
+          <Route path="users" element={<Navigate to="/admin/user-hotspot" replace />} />
           <Route path="blocked-sites" element={<BlockedSites />} />
           <Route path="routers" element={<Routers />} />
           <Route path="hotspot/*" element={<Hotspot />} />
           <Route path="queues" element={<Queues />} />
-          <Route path="dhcp" element={<DhcpLeases />} />
+          <Route path="dhcp-leases" element={<DhcpLeases />} />
+          <Route path="dhcp" element={<Navigate to="/admin/dhcp-leases" replace />} />
           <Route path="manage-users" element={<AdminUsers />} />
           <Route path="admins" element={<Navigate to="/admin/manage-users" replace />} />
         </Route>

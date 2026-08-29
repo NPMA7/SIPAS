@@ -310,29 +310,12 @@ export default function Users() {
             </select>
             
             {!isVisitor && (
-              <>
-                <label className="btn btn-secondary btn-sm" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, margin: 0 }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                    <polyline points="17 8 12 3 7 8"/>
-                    <line x1="12" y1="3" x2="12" y2="15"/>
-                  </svg>
-                  Import CSV
-                  <input
-                    type="file"
-                    accept=".csv"
-                    style={{ display: 'none' }}
-                    onChange={handleCSVImport}
-                  />
-                </label>
-
-                <button className="btn btn-primary btn-sm" onClick={openAdd}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                  </svg>
-                  Tambah User
-                </button>
-              </>
+              <button className="btn btn-primary btn-sm" onClick={openAdd}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                Tambah User
+              </button>
             )}
           </div>
         </div>
