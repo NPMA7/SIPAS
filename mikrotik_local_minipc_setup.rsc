@@ -89,7 +89,7 @@ add chain=dstnat in-interface=bridge-hotspot protocol=udp dst-port=53 action=red
 add chain=dstnat in-interface=bridge-hotspot protocol=tcp dst-port=53 action=redirect comment="DNS TCP Redirect"
 
 /ip firewall filter
-add chain=hs-unauth protocol=tcp dst-port=443 action=reject reject-with=tcp-reset comment="Instant TCP RST for HTTPS Popup Trigger"
+add chain=hs-unauth protocol=tcp dst-port=443 action=reject reject-with=tcp-reset comment="Instant TCP RST for HTTPS Popup Trigger" place-before=0
 
 # --- LANGKAH 10: System Identity ---
 /system identity
