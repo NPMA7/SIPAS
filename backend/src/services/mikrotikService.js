@@ -1835,6 +1835,109 @@ const purgeBlockedSiteFromMikrotik = async (routerConfig, siteKey) => {
   });
 };
 
+/**
+ * Rekonsiliasi berkala untuk memastikan:
+ * 1. IP yang sudah tidak aktif/terputus dihapus dari Address Lists (hotspot-blocked-*)
+ * 2. Simple Queue untuk setiap user multi-device tetap ada dan menargetkan semua IP aktif user tersebut
+ * 3. Script on-logout terpasang di MikroTik Hotspot User Profile
+ */
+const reconcileRouterState = async (routerConfig) => {
+  return withConnection(routerConfig, async (conn) => {
+    try {
+      // A. Pastikan script on-logout di MikroTik Hotspot Profile terpasang untuk pembersihan otomatis saat Wi-Fi putus
+      const profiles = await conn.write("/ip/hotspot/user/profile/print");
+      const defProf = (profiles || []).find((p) => p.default === "true" || p.name === "default");
+      const expectedOnLogout = ':local ip $address; /ip firewall address-list remove [find address=$ip and list~"hotspot-blocked"]';
+      if (defProf && (!defProf["on-logout"] || !defProf["on-logout"].includes("hotspot-blocked"))) {
+        try {
+          await conn.write("/ip/hotspot/user/profile/set", [
+            `=.id=${defProf[".id"]}`,
+            `=on-logout=${expectedOnLogout}`,
+          ]);
+        } catch (_) {}
+      }
+
+      // B. Ambil semua sesi aktif dan address lists saat ini
+      const activeSessions = await conn.write("/ip/hotspot/active/print");
+      const activeIps = new Set((activeSessions || []).map((s) => s.address).filter(Boolean));
+
+      const addressLists = await conn.write("/ip/firewall/address-list/print");
+      for (const entry of addressLists || []) {
+        if (entry.list && entry.list.startsWith("hotspot-blocked-")) {
+          if (!activeIps.has(entry.address)) {
+            try {
+              await conn.write("/ip/firewall/address-list/remove", [`=.id=${entry[".id"]}`]);
+            } catch (_) {}
+          }
+        }
+      }
+
+      // C. Rekonsiliasi Simple Queue untuk semua user yang sedang online
+      const allQueues = await conn.write("/queue/simple/print");
+      const { query: dbQuery } = require("../config/db");
+      const dbUsersRes = await dbQuery("SELECT * FROM hotspot_users WHERE is_active = true");
+      const dbUsers = dbUsersRes.rows;
+
+      const activeUsersMap = new Map();
+      for (const s of activeSessions || []) {
+        if (!s.user || !s.address) continue;
+        if (!activeUsersMap.has(s.user)) {
+          activeUsersMap.set(s.user, []);
+        }
+        activeUsersMap.get(s.user).push(s.address);
+      }
+
+      // 1. Pastikan setiap user aktif memiliki Simple Queue dengan target semua IP aktifnya
+      for (const [username, ips] of activeUsersMap.entries()) {
+        const u = dbUsers.find(
+          (user) =>
+            user.username?.toLowerCase() === username.toLowerCase() ||
+            user.nip?.toLowerCase() === username.toLowerCase()
+        );
+        if (u && u.bandwidth_limit) {
+          const queueName = `hotspot-${username}`;
+          const targetStr = ips.join(",");
+          const existingQueue = (allQueues || []).find((q) => q.name === queueName);
+
+          if (existingQueue) {
+            if (existingQueue.target !== targetStr) {
+              try {
+                await conn.write("/queue/simple/set", [
+                  `=.id=${existingQueue[".id"]}`,
+                  `=target=${targetStr}`,
+                  `=max-limit=${u.bandwidth_limit.toUpperCase()}`,
+                ]);
+              } catch (_) {}
+            }
+          } else {
+            try {
+              await conn.write("/queue/simple/add", [
+                `=name=${queueName}`,
+                `=target=${targetStr}`,
+                `=max-limit=${u.bandwidth_limit.toUpperCase()}`,
+              ]);
+            } catch (_) {}
+          }
+        }
+      }
+
+      // 2. Hapus queue user hotspot yang sudah tidak lagi memiliki sesi aktif
+      for (const q of allQueues || []) {
+        if (q.name && q.name.startsWith("hotspot-") && !q.name.startsWith("hotspot-blocked-")) {
+          const qUser = q.name.replace("hotspot-", "");
+          if (!activeUsersMap.has(qUser)) {
+            try {
+              await conn.write("/queue/simple/remove", [`=.id=${q[".id"]}`]);
+            } catch (_) {}
+          }
+        }
+      }
+    } catch (rErr) {
+      console.warn("[reconcileRouterState] Warning:", rErr.message);
+    }
+  });
+};
+
 module.exports = {
   getDashboardData,
   getSystemInfo,
@@ -1868,5 +1971,6 @@ module.exports = {
   getHotspotBindings,
   addHotspotBinding,
   removeHotspotBinding,
+  reconcileRouterState,
 };
 

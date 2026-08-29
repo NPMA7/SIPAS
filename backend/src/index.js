@@ -93,13 +93,13 @@ setInterval(async () => {
     try {
         const routersResult = await query('SELECT * FROM routers WHERE is_active = true');
         for (const router of routersResult.rows) {
-            // Jalankan getActiveHotspotUsers yang otomatis melakukan pembersihan
-            await mikrotik.getActiveHotspotUsers(router).catch(() => {});
+            // Jalankan rekonsiliasi router otomatis (Queue, Address List, & on-logout hook)
+            await mikrotik.reconcileRouterState(router).catch(() => {});
         }
     } catch (err) {
         // Abaikan error berkala
     }
-}, 15000);
+}, 10000);
 
 // ── Start Server ─────────────────────────────────────────────
 const PORT = process.env.PORT || 3001;
