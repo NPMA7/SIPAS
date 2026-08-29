@@ -17,6 +17,8 @@ const TITLE_MAP = {
   '/manage/admin/queues': 'Simple Queues',
   '/manage/admin/dhcp': 'DHCP Leases',
   '/manage/admin/dhcp-leases': 'DHCP Leases',
+  '/manage/admin/portal-settings': 'Kustomisasi Portal',
+  '/manage/admin/portal-customizer': 'Kustomisasi Portal',
   '/manage/admin/admins': 'Pengelola Web',
   '/manage/admin/manage-users': 'Pengelola Web',
   '/admin': 'Dashboard',

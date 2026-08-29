@@ -104,6 +104,16 @@ const NAV = [
     group: 'Sistem',
     items: [
       {
+        to: '/manage/admin/portal-settings',
+        label: 'Kustomisasi Portal',
+        icon: (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+            <path d="M12 20h9"/>
+            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+          </svg>
+        ),
+      },
+      {
         to: '/',
         label: 'Captive Portal',
         external: true,

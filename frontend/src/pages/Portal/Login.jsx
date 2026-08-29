@@ -8,6 +8,20 @@ export default function PortalLogin() {
   const [status, setStatus] = useState('waiting'); // waiting, authenticating, connected, failed
   const [alert, setAlert] = useState(null);
   const [showPwd, setShowPwd] = useState(false);
+  const [settings, setSettings] = useState({
+    portal_title: 'Portal SIPAS',
+    portal_subtitle: 'Sistem Integrasi Portal & Autentikasi Satu-Pintu',
+    bg_type: 'color',
+    bg_color: '#0a0e1a',
+    bg_image: null,
+    bg_blur: 0,
+    bg_overlay_opacity: 60,
+    card_opacity: 95,
+    primary_color: '#2563eb',
+    logo_type: 'default',
+    logo_custom: null,
+    footer_text: 'Butuh bantuan? Hubungi administrator jaringan',
+  });
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -22,6 +36,16 @@ export default function PortalLogin() {
     if (urlParams.get('error')) {
       setAlert({ type: 'error', msg: urlParams.get('error') });
     }
+
+    // Fetch portal settings
+    fetch('/api/portal-settings')
+      .then(res => res.json())
+      .then(data => {
+        if (data?.success && data?.data) {
+          setSettings(prev => ({ ...prev, ...data.data }));
+        }
+      })
+      .catch(() => {});
   }, []);
 
   async function handleSubmit(e) {
@@ -64,7 +88,6 @@ export default function PortalLogin() {
         setTimeout(() => {
           let targetDst = params.dst;
 
-          // Jika dst utama tidak ada, coba ambil dari parameter linkLogin jika ada
           if (!targetDst && params.linkLogin) {
             try {
               const linkUrl = new URL(params.linkLogin);
@@ -74,8 +97,6 @@ export default function PortalLogin() {
 
           const rawDst = decodeURIComponent(targetDst || '');
 
-          // Jika targetDst kosong, berupa placeholder $(dst), IP router, domain hotspot, atau URL captive test (generate_204, gstatic, msftconnecttest, etc.)
-          // maka arahkan ke google.com sebagai halaman tujuan utama.
           if (
             !targetDst ||
             rawDst.includes('$(dst)') ||
@@ -91,8 +112,6 @@ export default function PortalLogin() {
             targetDst = 'https://www.google.com';
           }
 
-          // User IP/MAC sudah diautentikasi dan dibuka akses internetnya oleh Backend VPS via RouterOS API (/ip/hotspot/active).
-          // Langsung arahkan browser ke target URL (https://www.google.com) tanpa POST ke hotspot.net agar tidak memicu layar peringatan "Dangerous site" Chrome.
           window.location.replace(targetDst);
         }, 500);
       } else {
@@ -107,22 +126,81 @@ export default function PortalLogin() {
     }
   }
 
+  // Dynamic Background style
+  const isImageBg = settings.bg_type === 'image' && settings.bg_image;
+  const overlayOpacity = (settings.bg_overlay_opacity ?? 60) / 100;
+  const cardOpacity = (settings.card_opacity ?? 95) / 100;
+  const primaryColor = settings.primary_color || '#2563eb';
+
   return (
-    <div style={styles.page}>
-      <div style={styles.bg} />
-      <div style={styles.orb1} />
-      <div style={styles.orb2} />
+    <div style={{
+      ...styles.page,
+      background: isImageBg ? '#060911' : (settings.bg_color || 'var(--bg-body)'),
+    }}>
+      {/* Background Image Container */}
+      {isImageBg && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundImage: `url(${settings.bg_image})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+            filter: settings.bg_blur > 0 ? `blur(${settings.bg_blur}px)` : 'none',
+            transform: settings.bg_blur > 0 ? 'scale(1.05)' : 'none',
+            zIndex: 0,
+          }}
+        />
+      )}
+
+      {/* Background Overlay */}
+      {isImageBg && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: '#000000',
+            opacity: overlayOpacity,
+            zIndex: 0,
+          }}
+        />
+      )}
+
+      {/* Decorative ambient lights if color mode */}
+      {!isImageBg && (
+        <>
+          <div style={styles.orb1} />
+          <div style={styles.orb2} />
+        </>
+      )}
 
       <div style={styles.wrapper}>
         <div style={styles.header}>
           <div style={styles.logo}>
-            <SipasLogo size={64} />
+            {settings.logo_type === 'custom' && settings.logo_custom ? (
+              <img
+                src={settings.logo_custom}
+                alt="Portal Logo"
+                style={{ maxHeight: 72, maxWidth: 180, objectFit: 'contain', marginBottom: 6 }}
+              />
+            ) : (
+              <SipasLogo size={64} />
+            )}
           </div>
-          <h1 style={styles.title}>Portal <span style={{ color: 'var(--primary-light)' }}>SIPAS</span></h1>
-          <p style={styles.subTitle}>Sistem Integrasi Portal & Autentikasi Satu-Pintu</p>
+          <h1 style={styles.title}>
+            {settings.portal_title || 'Portal SIPAS'}
+          </h1>
+          <p style={styles.subTitle}>
+            {settings.portal_subtitle || 'Sistem Integrasi Portal & Autentikasi Satu-Pintu'}
+          </p>
         </div>
 
-        <div style={styles.card}>
+        <div style={{
+          ...styles.card,
+          backgroundColor: `rgba(17, 24, 39, ${cardOpacity})`,
+          backdropFilter: cardOpacity < 1 ? 'blur(16px)' : 'none',
+        }}>
           {/* Network Info */}
           <div style={styles.netInfo}>
             <div style={styles.netItem}>
@@ -212,8 +290,17 @@ export default function PortalLogin() {
 
             <button
               type="submit"
-              className="btn btn-primary"
-              style={{ width: '100%', padding: '12px', marginTop: 10, fontSize: '0.9rem' }}
+              className="btn"
+              style={{
+                width: '100%',
+                padding: '12px',
+                marginTop: 10,
+                fontSize: '0.9rem',
+                backgroundColor: primaryColor,
+                borderColor: primaryColor,
+                color: '#ffffff',
+                fontWeight: 600,
+              }}
               disabled={loading}
             >
               {loading ? <><div className="loader-ring" style={{ width: 16, height: 16, borderWidth: 2 }} /> Menyambungkan...</> : 'Masuk ke Internet'}
@@ -222,10 +309,7 @@ export default function PortalLogin() {
         </div>
 
         <div style={styles.footer}>
-          <p>Butuh bantuan? Hubungi administrator jaringan</p>
-          {/* <p style={{ marginTop: 6 }}>
-            Admin? <a href="/manage/admin/login" style={{ color: 'var(--primary-light)' }}>Masuk ke Dashboard</a>
-          </p> */}
+          <p>{settings.footer_text || 'Butuh bantuan? Hubungi administrator jaringan'}</p>
         </div>
       </div>
     </div>
@@ -235,17 +319,12 @@ export default function PortalLogin() {
 const styles = {
   page: {
     minHeight: '100vh',
-    background: 'var(--bg-body)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 16,
     position: 'relative',
     overflow: 'hidden',
-  },
-  bg: {
-    position: 'fixed', inset: 0, zIndex: 0,
-    background: 'var(--bg-body)',
   },
   orb1: { position: 'fixed', top: '-15%', left: '-10%', width: 500, height: 500, background: 'rgba(37,99,235,0.04)', borderRadius: '50%', filter: 'blur(80px)', zIndex: 0 },
   orb2: { position: 'fixed', bottom: '-20%', right: '-10%', width: 600, height: 600, background: 'rgba(2,132,199,0.03)', borderRadius: '50%', filter: 'blur(100px)', zIndex: 0 },
@@ -255,13 +334,13 @@ const styles = {
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     margin: '0 auto 12px',
   },
-  title: { fontSize: '1.4rem', fontWeight: 800, marginBottom: 4 },
+  title: { fontSize: '1.4rem', fontWeight: 800, marginBottom: 4, color: 'var(--text-main)' },
   subTitle: { fontSize: '0.8rem', color: 'var(--text-secondary)' },
   card: {
-    background: 'var(--bg-card)',
     border: '1px solid var(--border)',
     borderRadius: 'var(--radius-lg)',
     padding: '24px 20px',
+    boxShadow: 'var(--shadow-card)',
   },
   netInfo: {
     display: 'flex',

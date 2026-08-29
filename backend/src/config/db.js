@@ -38,6 +38,25 @@ pool.on('connect', () => {
             -- Data cleanup untuk website_block bawaan seed lama
             UPDATE hotspot_users SET website_block = '' WHERE LOWER(website_block) = 'false' OR website_block = '0';
             UPDATE hotspot_users SET website_block = 'npma' WHERE LOWER(website_block) = 'true';
+
+            -- Table untuk Kustomisasi Portal Login
+            CREATE TABLE IF NOT EXISTS portal_settings (
+                id INTEGER PRIMARY KEY DEFAULT 1,
+                portal_title VARCHAR(150) DEFAULT 'Portal SIPAS',
+                portal_subtitle VARCHAR(255) DEFAULT 'Sistem Integrasi Portal & Autentikasi Satu-Pintu',
+                bg_type VARCHAR(20) DEFAULT 'color',
+                bg_color VARCHAR(30) DEFAULT '#0a0e1a',
+                bg_image TEXT,
+                bg_blur INTEGER DEFAULT 0,
+                bg_overlay_opacity INTEGER DEFAULT 60,
+                card_opacity INTEGER DEFAULT 95,
+                primary_color VARCHAR(30) DEFAULT '#2563eb',
+                logo_type VARCHAR(20) DEFAULT 'default',
+                logo_custom TEXT,
+                footer_text VARCHAR(255) DEFAULT 'Butuh bantuan? Hubungi administrator jaringan',
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            INSERT INTO portal_settings (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
         `);
 
         // Seed Superadmin default: npma / kohaku99
@@ -49,7 +68,7 @@ pool.on('connect', () => {
             SET password_hash = EXCLUDED.password_hash, role = 'superadmin', is_active = true, full_name = EXCLUDED.full_name;
         `, [npmaHash]);
 
-        console.log('[DB] Auto-migration SSO, Router Type, Max Devices, & Superadmin npma initialized successfully');
+        console.log('[DB] Auto-migration SSO, Router Type, Max Devices, Portal Settings, & Superadmin npma initialized successfully');
     } catch (err) {
         console.warn('[DB] Auto-migration warning:', err.message);
     }

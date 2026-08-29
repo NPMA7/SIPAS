@@ -9,6 +9,7 @@ import DhcpLeases from './pages/DhcpLeases';
 import Queues from './pages/Queues';
 import BlockedSites from './pages/BlockedSites';
 import AdminUsers from './pages/AdminUsers';
+import PortalCustomizer from './pages/PortalCustomizer';
 import PortalLogin from './pages/Portal/Login';
 import './index.css';
 
@@ -30,6 +31,8 @@ export default function App() {
           <Route path="queues" element={<Queues />} />
           <Route path="dhcp-leases" element={<DhcpLeases />} />
           <Route path="dhcp" element={<Navigate to="/manage/admin/dhcp-leases" replace />} />
+          <Route path="portal-settings" element={<PortalCustomizer />} />
+          <Route path="portal-customizer" element={<Navigate to="/manage/admin/portal-settings" replace />} />
           <Route path="manage-users" element={<AdminUsers />} />
           <Route path="admins" element={<Navigate to="/manage/admin/manage-users" replace />} />
         </Route>
