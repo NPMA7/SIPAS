@@ -20,7 +20,7 @@ process.on('unhandledRejection', (reason, promise) => {
 // ── Security Middleware ──────────────────────────────────────
 app.disable('x-powered-by');
 app.set('trust proxy', 1); // For express-rate-limit behind reverse proxy
-app.use(helmet({ contentSecurityPolicy: false }));
+app.use(helmet({ contentSecurityPolicy: false, hsts: false }));
 app.use(cors({
     origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
