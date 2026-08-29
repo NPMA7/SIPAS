@@ -8,7 +8,7 @@ const EMPTY_FORM = {
   name: '', ip_address: '', api_port: 8728, api_username: 'admin', api_password: '', location: '', router_type: 'internal'
 };
 
-function RouterCard({ router, onEdit, onDelete, onTest }) {
+function RouterCard({ router, onEdit, onDelete, onTest, isVisitor }) {
   const [testing, setTesting] = useState(false);
 
   async function handleTest() {
@@ -54,22 +54,24 @@ function RouterCard({ router, onEdit, onDelete, onTest }) {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         <span>Last seen: {lastSeen}</span>
       </div>
-      <div className="router-card-actions">
-        <button className="btn btn-secondary btn-sm" onClick={handleTest} disabled={testing}>
-          {testing ? <div className="loader-ring" style={{ width: 12, height: 12, borderWidth: 2 }} /> : (
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-          )}
-          Test
-        </button>
-        <button className="btn btn-ghost btn-sm" onClick={() => onEdit(router)}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-          Edit
-        </button>
-        <button className="btn btn-danger btn-sm" onClick={() => onDelete(router)}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
-          Hapus
-        </button>
-      </div>
+      {!isVisitor && (
+        <div className="router-card-actions">
+          <button className="btn btn-secondary btn-sm" onClick={handleTest} disabled={testing}>
+            {testing ? <div className="loader-ring" style={{ width: 12, height: 12, borderWidth: 2 }} /> : (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            )}
+            Test
+          </button>
+          <button className="btn btn-ghost btn-sm" onClick={() => onEdit(router)}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Edit
+          </button>
+          <button className="btn btn-danger btn-sm" onClick={() => onDelete(router)}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+            Hapus
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -84,6 +86,11 @@ export default function Routers() {
   const [saving, setSaving] = useState(false);
   const [confirmDel, setConfirmDel] = useState(null);
   const [deleting, setDeleting] = useState(false);
+
+  const currentAdmin = (() => {
+    try { return JSON.parse(localStorage.getItem('hotspot_admin') || '{}'); } catch { return {}; }
+  })();
+  const isVisitor = currentAdmin?.role === 'visitor';
 
   useEffect(() => { ctx?.setPageTitle?.('Manajemen Router'); }, [ctx]);
   useEffect(() => { loadRouters(); }, []);
@@ -180,12 +187,14 @@ export default function Routers() {
             Daftar Router
             <Badge variant="primary">{routers.length}</Badge>
           </div>
-          <button className="btn btn-primary btn-sm" onClick={openAdd}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-            Tambah Router
-          </button>
+          {!isVisitor && (
+            <button className="btn btn-primary btn-sm" onClick={openAdd}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              Tambah Router
+            </button>
+          )}
         </div>
 
         {loading ? (
@@ -202,6 +211,7 @@ export default function Routers() {
                   onEdit={openEdit}
                   onDelete={setConfirmDel}
                   onTest={testConnection}
+                  isVisitor={isVisitor}
                 />
               ))}
             </div>

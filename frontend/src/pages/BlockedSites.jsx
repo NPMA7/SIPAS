@@ -44,6 +44,11 @@ export default function BlockedSites() {
   const [confirmDel, setConfirmDel] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
+  const currentAdmin = (() => {
+    try { return JSON.parse(localStorage.getItem('hotspot_admin') || '{}'); } catch { return {}; }
+  })();
+  const isVisitor = currentAdmin?.role === 'visitor';
+
   useEffect(() => {
     ctx?.setPageTitle?.('Daftar Situs Diblokir');
     loadSites();
@@ -191,12 +196,14 @@ export default function BlockedSites() {
               onChange={e => setSearch(e.target.value)}
             />
           </div>
-          <button className="btn btn-primary btn-sm" onClick={openAdd}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
-              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-            Tambah Situs
-          </button>
+          {!isVisitor && (
+            <button className="btn btn-primary btn-sm" onClick={openAdd}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              Tambah Situs
+            </button>
+          )}
         </div>
       </div>
 
@@ -245,20 +252,22 @@ export default function BlockedSites() {
                 <Badge variant={site.is_active ? 'success' : 'neutral'}>
                   {site.is_active ? 'Aktif' : 'Nonaktif'}
                 </Badge>
-                <div className="user-card-actions">
-                  <button className="btn btn-ghost btn-icon-sm" title="Edit situs" onClick={() => openEdit(site)}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15">
-                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                    </svg>
-                  </button>
-                  <button className="btn btn-danger btn-icon-sm" title="Hapus situs" onClick={() => setConfirmDel(site)}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15">
-                      <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
-                      <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
-                    </svg>
-                  </button>
-                </div>
+                {!isVisitor && (
+                  <div className="user-card-actions">
+                    <button className="btn btn-ghost btn-icon-sm" title="Edit situs" onClick={() => openEdit(site)}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                      </svg>
+                    </button>
+                    <button className="btn btn-danger btn-icon-sm" title="Hapus situs" onClick={() => setConfirmDel(site)}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15">
+                        <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
+                        <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+                      </svg>
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           ))}

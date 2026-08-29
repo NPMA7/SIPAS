@@ -52,6 +52,11 @@ export default function Queues() {
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
 
+  const currentAdmin = (() => {
+    try { return JSON.parse(localStorage.getItem('hotspot_admin') || '{}'); } catch { return {}; }
+  })();
+  const isVisitor = currentAdmin?.role === 'visitor';
+
   useEffect(() => { ctx?.setPageTitle?.('Simple Queues'); }, [ctx]);
 
   const loadRouters = useCallback(async () => {
@@ -186,12 +191,17 @@ export default function Queues() {
                   <th>Target IP / Subnet</th>
                   <th>Max Limit (UL / DL)</th>
                   <th>Status</th>
-                  <th>Aksi</th>
+                  {!isVisitor && <th>Aksi</th>}
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((q, i) => {
                   const limits = formatPairRate(q.max_limit);
+                  let displayName = q.name || '';
+                  if (isVisitor && displayName.startsWith('hotspot-') && displayName.length > 12) {
+                    const nipPart = displayName.replace('hotspot-', '');
+                    displayName = `hotspot-${nipPart.substring(0, 4)}****${nipPart.substring(nipPart.length - 3)}`;
+                  }
                   return (
                     <tr key={i} style={{ opacity: q.disabled ? 0.6 : 1 }}>
                       <td style={{ fontWeight: 600 }}>
@@ -200,12 +210,12 @@ export default function Queues() {
                             width: 8, height: 8, borderRadius: '50%',
                             background: q.disabled ? 'var(--text-muted)' : '#10b981'
                           }} />
-                          {q.name}
+                          {displayName}
                         </div>
                       </td>
                       <td className="mono">{q.target || '—'}</td>
                       <td>
-                        <span style={{ color: '#8b5cf6', fontWeight: 600, marginRight: 6 }}>↑ {limits.ul}</span>
+                        <span style={{ color: '#38bdf8', fontWeight: 600, marginRight: 6 }}>↑ {limits.ul}</span>
                         <span style={{ color: '#10b981', fontWeight: 600 }}>↓ {limits.dl}</span>
                       </td>
                       <td>
@@ -213,24 +223,26 @@ export default function Queues() {
                           {q.disabled ? 'Disabled' : 'Active'}
                         </Badge>
                       </td>
-                      <td>
-                        <div style={{ display: 'flex', gap: 6 }}>
-                          <button
-                            className={`btn btn-xs ${q.disabled ? 'btn-success' : 'btn-warning'}`}
-                            onClick={() => handleQueueAction(q.id, q.disabled ? 'enable' : 'disable')}
-                            disabled={actionLoading}
-                          >
-                            {q.disabled ? 'Enable' : 'Disable'}
-                          </button>
-                          <button
-                            className="btn btn-danger btn-xs"
-                            onClick={() => setConfirmDelete(q)}
-                            disabled={actionLoading}
-                          >
-                            Hapus
-                          </button>
-                        </div>
-                      </td>
+                      {!isVisitor && (
+                        <td>
+                          <div style={{ display: 'flex', gap: 6 }}>
+                            <button
+                              className={`btn btn-xs ${q.disabled ? 'btn-success' : 'btn-warning'}`}
+                              onClick={() => handleQueueAction(q.id, q.disabled ? 'enable' : 'disable')}
+                              disabled={actionLoading}
+                            >
+                              {q.disabled ? 'Enable' : 'Disable'}
+                            </button>
+                            <button
+                              className="btn btn-danger btn-xs"
+                              onClick={() => setConfirmDelete(q)}
+                              disabled={actionLoading}
+                            >
+                              Hapus
+                            </button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   );
                 })}

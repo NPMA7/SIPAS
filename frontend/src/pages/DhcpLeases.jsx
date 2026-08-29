@@ -15,6 +15,11 @@ export default function DhcpLeases() {
   const [confirmDel, setConfirmDel] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
+  const currentAdmin = (() => {
+    try { return JSON.parse(localStorage.getItem('hotspot_admin') || '{}'); } catch { return {}; }
+  })();
+  const isVisitor = currentAdmin?.role === 'visitor';
+
   useEffect(() => { ctx?.setPageTitle?.('DHCP Leases'); }, [ctx]);
 
   useEffect(() => {
@@ -116,7 +121,7 @@ export default function DhcpLeases() {
                   <th>Status</th>
                   <th>Expires</th>
                   <th>Type</th>
-                  <th>Aksi</th>
+                  {!isVisitor && <th>Aksi</th>}
                 </tr>
               </thead>
               <tbody>
@@ -137,14 +142,16 @@ export default function DhcpLeases() {
                         {l.dynamic === 'true' || l.dynamic === true ? 'dynamic' : 'static'}
                       </Badge>
                     </td>
-                    <td>
-                      <button
-                        className="btn btn-danger btn-xs"
-                        onClick={() => setConfirmDel({ id: l.id, address: l.address })}
-                      >
-                        Hapus
-                      </button>
-                    </td>
+                    {!isVisitor && (
+                      <td>
+                        <button
+                          className="btn btn-danger btn-xs"
+                          onClick={() => setConfirmDel({ id: l.id, address: l.address })}
+                        >
+                          Hapus
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

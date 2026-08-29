@@ -57,6 +57,11 @@ export default function Hotspot() {
   const location = useLocation();
   const navigate = useNavigate();
 
+  const currentAdmin = (() => {
+    try { return JSON.parse(localStorage.getItem('hotspot_admin') || '{}'); } catch { return {}; }
+  })();
+  const isVisitor = currentAdmin?.role === 'visitor';
+
   const [routers, setRouters] = useState([]);
   const [routerId, setRouterId] = useState('');
   const [data, setData] = useState([]);
@@ -275,7 +280,8 @@ export default function Hotspot() {
         <table className="data-table">
           <thead><tr>
             <th>User</th><th>IP Address</th><th>MAC</th><th>Uptime</th>
-            <th>Traffic Realtime (DL / UL)</th><th>Total Kuota (Kumulatif)</th><th>Aksi</th>
+            <th>Traffic Realtime (DL / UL)</th><th>Total Kuota (Kumulatif)</th>
+            {!isVisitor && <th>Aksi</th>}
           </tr></thead>
           <tbody>
             {filtered.map((s, i) => (
@@ -297,7 +303,7 @@ export default function Hotspot() {
                   <span style={{ color: '#10b981', fontWeight: 600, marginRight: 8 }}>
                     ↓ {formatSpeed(s.tx_rate || s['tx-rate'])}
                   </span>
-                  <span style={{ color: '#8b5cf6', fontWeight: 600 }}>
+                  <span style={{ color: '#38bdf8', fontWeight: 600 }}>
                     ↑ {formatSpeed(s.rx_rate || s['rx-rate'])}
                   </span>
                 </td>
@@ -309,11 +315,13 @@ export default function Hotspot() {
                     (↑ {formatBytes(s.bytes_in || s['bytes-in'])})
                   </span>
                 </td>
-                <td>
-                  <button className="btn btn-danger btn-xs" onClick={() => setConfirmKick({ id: s.id || s['.id'], user: s.user })}>
-                    Kick
-                  </button>
-                </td>
+                {!isVisitor && (
+                  <td>
+                    <button className="btn btn-danger btn-xs" onClick={() => setConfirmKick({ id: s.id || s['.id'], user: s.user })}>
+                      Kick
+                    </button>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
@@ -324,7 +332,8 @@ export default function Hotspot() {
       return (
         <table className="data-table">
           <thead><tr>
-            <th>MAC</th><th>IP Address</th><th>Server</th><th>Status</th><th>Aksi</th>
+            <th>MAC</th><th>IP Address</th><th>Server</th><th>Status</th>
+            {!isVisitor && <th>Aksi</th>}
           </tr></thead>
           <tbody>
             {filtered.map((h, i) => (
@@ -337,11 +346,13 @@ export default function Hotspot() {
                     {h.bypass === 'true' || h.bypass === true ? 'Bypass' : 'Normal'}
                   </Badge>
                 </td>
-                <td>
-                  <button className="btn btn-danger btn-xs" onClick={() => deleteHost(h.id || h['.id'])}>
-                    Hapus
-                  </button>
-                </td>
+                {!isVisitor && (
+                  <td>
+                    <button className="btn btn-danger btn-xs" onClick={() => deleteHost(h.id || h['.id'])}>
+                      Hapus
+                    </button>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
@@ -352,7 +363,8 @@ export default function Hotspot() {
       return (
         <table className="data-table">
           <thead><tr>
-            <th>Username</th><th>Password</th><th>Profile</th><th>Komentar</th><th>Aksi</th>
+            <th>Username</th><th>Password</th><th>Profile</th><th>Komentar</th>
+            {!isVisitor && <th>Aksi</th>}
           </tr></thead>
           <tbody>
             {filtered.map((u, i) => (
@@ -363,11 +375,13 @@ export default function Hotspot() {
                 </td>
                 <td>{u.profile || '—'}</td>
                 <td style={{ color: 'var(--text-muted)', maxWidth: 180 }}>{u.comment || '—'}</td>
-                <td>
-                  <button className="btn btn-danger btn-xs" onClick={() => deleteUser(u.id || u['.id'])}>
-                    Hapus
-                  </button>
-                </td>
+                {!isVisitor && (
+                  <td>
+                    <button className="btn btn-danger btn-xs" onClick={() => deleteUser(u.id || u['.id'])}>
+                      Hapus
+                    </button>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
@@ -378,7 +392,8 @@ export default function Hotspot() {
     return (
       <table className="data-table">
         <thead><tr>
-          <th>MAC Address</th><th>Address (IP)</th><th>To Address</th><th>Server</th><th>Type</th><th>Komentar</th><th>Aksi</th>
+          <th>MAC Address</th><th>Address (IP)</th><th>To Address</th><th>Server</th><th>Type</th><th>Komentar</th>
+          {!isVisitor && <th>Aksi</th>}
         </tr></thead>
         <tbody>
           {filtered.map((b, i) => {
@@ -396,11 +411,13 @@ export default function Hotspot() {
                   </Badge>
                 </td>
                 <td style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>{b.comment || '—'}</td>
-                <td>
-                  <button className="btn btn-danger btn-xs" onClick={() => setConfirmDeleteBinding(b)}>
-                    Hapus
-                  </button>
-                </td>
+                {!isVisitor && (
+                  <td>
+                    <button className="btn btn-danger btn-xs" onClick={() => setConfirmDeleteBinding(b)}>
+                      Hapus
+                    </button>
+                  </td>
+                )}
               </tr>
             );
           })}
@@ -447,7 +464,7 @@ export default function Hotspot() {
           </div>
 
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-            {tab === 'bindings' && (
+            {tab === 'bindings' && !isVisitor && (
               <button className="btn btn-primary btn-sm" onClick={() => setShowAddBindingModal(true)}>
                 + Tambah IP Binding
               </button>
