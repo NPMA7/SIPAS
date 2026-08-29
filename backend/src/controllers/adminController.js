@@ -2,6 +2,8 @@ const bcrypt = require('bcrypt');
 const jwt    = require('jsonwebtoken');
 const { query } = require('../config/db');
 
+const DUMMY_HASH = '$2b$12$X5eO8qW0V3n3p7y5z8R2XeXy2w9v8u7t6s5r4q3p2o1n0m9l8k7j6';
+
 /**
  * POST /api/admin/login
  * Login admin dan dapatkan JWT token
@@ -20,6 +22,8 @@ const login = async (req, res) => {
         );
 
         if (result.rows.length === 0) {
+            // F3-5: Constant-time dummy comparison to prevent username enumeration timing attacks
+            await bcrypt.compare(password, DUMMY_HASH);
             return res.status(401).json({ success: false, message: 'Username atau password salah.' });
         }
 

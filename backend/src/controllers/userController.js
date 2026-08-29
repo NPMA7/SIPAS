@@ -18,21 +18,45 @@ const upload = multer({
 
 // ─── GET /api/users ──────────────────────────────────────────────────────────
 const getUsers = async (req, res) => {
-    const { page = 1, limit = 50, search = '', router_id, is_active, auth_provider } = req.query;
-    const offset = (parseInt(page) - 1) * parseInt(limit);
+    const { page = '1', limit = '50', search = '', router_id, is_active, auth_provider } = req.query;
+
+    // F3-2: Validasi page / limit (Number.isInteger + clamp page >= 1, limit 1..N -> 400 pesan bersih)
+    const pageNum = Number(page);
+    const limitNum = Number(limit);
+
+    if (!Number.isInteger(pageNum) || pageNum < 1 || !Number.isInteger(limitNum) || limitNum < 1 || limitNum > 1000) {
+        return res.status(400).json({
+            success: false,
+            message: 'Parameter page dan limit tidak valid. Harus berupa integer positif (page >= 1, limit 1..1000).'
+        });
+    }
+
+    const offset = (pageNum - 1) * limitNum;
 
     let conditions = [];
     let params = [];
     let pi = 1;
 
-    if (search) {
-        conditions.push(`(hu.username ILIKE $${pi} OR hu.full_name ILIKE $${pi} OR hu.nip ILIKE $${pi} OR hu.jabatan ILIKE $${pi} OR hu.instansi ILIKE $${pi} OR hu.email ILIKE $${pi})`);
-        params.push(`%${search}%`);
+    // F3-1: Filter search escape %, _, \ saat nilai dimaksud literal
+    if (search && typeof search === 'string' && search.trim() !== '') {
+        const escapedSearch = search.replace(/[%_\\]/g, '\\$&');
+        conditions.push(`(
+            hu.username ILIKE $${pi} ESCAPE '\\' OR 
+            hu.full_name ILIKE $${pi} ESCAPE '\\' OR 
+            hu.nip ILIKE $${pi} ESCAPE '\\' OR 
+            hu.jabatan ILIKE $${pi} ESCAPE '\\' OR 
+            hu.instansi ILIKE $${pi} ESCAPE '\\' OR 
+            hu.email ILIKE $${pi} ESCAPE '\\'
+        )`);
+        params.push(`%${escapedSearch}%`);
         pi++;
     }
     if (router_id) {
+        if (!/^\d+$/.test(String(router_id).trim())) {
+            return res.status(400).json({ success: false, message: 'router_id tidak valid.' });
+        }
         conditions.push(`(hu.router_id = $${pi} OR hu.router_id IS NULL)`);
-        params.push(parseInt(router_id));
+        params.push(parseInt(router_id, 10));
         pi++;
     }
     if (is_active !== undefined) {
@@ -66,9 +90,8 @@ const getUsers = async (req, res) => {
              ${where}
              ORDER BY hu.created_at DESC
              LIMIT $${pi} OFFSET $${pi + 1}`,
-            [...params, parseInt(limit), offset]
+            [...params, limitNum, offset]
         );
-
 
         let rows = result.rows;
         if (req.admin && req.admin.role === 'visitor') {
@@ -81,9 +104,9 @@ const getUsers = async (req, res) => {
             data:  rows,
             pagination: {
                 total,
-                page:  parseInt(page),
-                limit: parseInt(limit),
-                pages: Math.ceil(total / parseInt(limit))
+                page:  pageNum,
+                limit: limitNum,
+                pages: Math.ceil(total / limitNum)
             }
         });
     } catch (err) {
@@ -451,7 +474,30 @@ const importCSV = [
     }
 ];
 
+// ─── GET /api/users/export ───────────────────────────────────────────────────
+const exportUsers = async (req, res) => {
+    try {
+        const result = await query(
+            `SELECT hu.id, hu.username, hu.full_name, hu.nip, hu.email, hu.phone,
+                    hu.bandwidth_limit, hu.max_devices, hu.website_block, hu.is_active,
+                    hu.auth_provider, hu.jabatan, hu.instansi, r.name as router_name, hu.created_at
+             FROM hotspot_users hu
+             LEFT JOIN routers r ON hu.router_id = r.id
+             ORDER BY hu.created_at DESC`
+        );
+        res.json({
+            success: true,
+            data: result.rows,
+            count: result.rows.length
+        });
+    } catch (err) {
+        console.error('[UserController] exportUsers:', err.message);
+        res.status(500).json({ success: false, message: 'Gagal mengekspor data user.' });
+    }
+};
+
 module.exports = {
     getUsers, getUserById, createUser, updateUser, deleteUser,
-    updateBandwidth, toggleWebsiteBlock, importCSV, syncUserToActiveRouters
+    updateBandwidth, toggleWebsiteBlock, importCSV, syncUserToActiveRouters,
+    exportUsers
 };

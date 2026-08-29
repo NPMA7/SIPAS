@@ -1,9 +1,10 @@
 const router    = require('express').Router();
 const adminAuth = require('../middleware/adminAuth');
-const { preventVisitorMutation } = require('../middleware/adminAuth');
+const { preventVisitorMutation, requireSuperAdmin } = require('../middleware/adminAuth');
 const ctrl      = require('../controllers/userController');
 
-// Import CSV harus sebelum /:id agar tidak konflik routing
+// Export & Import CSV harus sebelum /:id agar tidak konflik routing
+router.get('/export',           adminAuth, requireSuperAdmin, ctrl.exportUsers);
 router.post('/import-csv',      adminAuth, preventVisitorMutation, ...ctrl.importCSV);
 
 router.get('/',                 adminAuth, ctrl.getUsers);

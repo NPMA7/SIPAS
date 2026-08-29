@@ -1,14 +1,28 @@
 const { query } = require('../config/db');
 const mikrotik = require('../services/mikrotikService');
 
+const parseRouterId = (raw) => {
+    if (!raw) return { valid: false, message: 'router_id wajib diisi.' };
+    const val = Array.isArray(raw) ? raw[0] : raw;
+    const str = String(val).trim();
+    if (!/^\d+$/.test(str)) {
+        return { valid: false, message: 'router_id tidak valid.' };
+    }
+    const id = parseInt(str, 10);
+    if (isNaN(id) || id <= 0) {
+        return { valid: false, message: 'router_id tidak valid.' };
+    }
+    return { valid: true, id };
+};
+
 const getActiveSessions = async (req, res) => {
-    const { router_id } = req.query;
-    if (!router_id) {
-        return res.status(400).json({ success: false, message: 'router_id wajib diisi.' });
+    const check = parseRouterId(req.query.router_id);
+    if (!check.valid) {
+        return res.status(400).json({ success: false, message: check.message });
     }
 
     try {
-        const rResult = await query('SELECT * FROM routers WHERE id = $1', [router_id]);
+        const rResult = await query('SELECT * FROM routers WHERE id = $1', [check.id]);
         if (rResult.rows.length === 0) {
             return res.status(404).json({ success: false, message: 'Router tidak ditemukan.' });
         }
@@ -45,19 +59,19 @@ const getActiveSessions = async (req, res) => {
         res.json({ success: true, data: enriched });
     } catch (err) {
         console.error('[HotspotRouterController] getActiveSessions:', err.message);
-        res.status(500).json({ success: false, message: err.message || 'Gagal mengambil sesi aktif.' });
+        res.status(500).json({ success: false, message: 'Gagal mengambil sesi aktif.' });
     }
 };
 
 const kickActiveSession = async (req, res) => {
     const { id } = req.params;
-    const { router_id } = req.query;
-    if (!router_id) {
-        return res.status(400).json({ success: false, message: 'router_id wajib diisi.' });
+    const check = parseRouterId(req.query.router_id);
+    if (!check.valid) {
+        return res.status(400).json({ success: false, message: check.message });
     }
 
     try {
-        const rResult = await query('SELECT * FROM routers WHERE id = $1', [router_id]);
+        const rResult = await query('SELECT * FROM routers WHERE id = $1', [check.id]);
         if (rResult.rows.length === 0) {
             return res.status(404).json({ success: false, message: 'Router tidak ditemukan.' });
         }
@@ -66,18 +80,18 @@ const kickActiveSession = async (req, res) => {
         res.json({ success: true, message: 'Sesi aktif berhasil diputus (kick).' });
     } catch (err) {
         console.error('[HotspotRouterController] kickActiveSession:', err.message);
-        res.status(500).json({ success: false, message: err.message || 'Gagal memutus sesi aktif.' });
+        res.status(500).json({ success: false, message: 'Gagal memutus sesi aktif.' });
     }
 };
 
 const getHosts = async (req, res) => {
-    const { router_id } = req.query;
-    if (!router_id) {
-        return res.status(400).json({ success: false, message: 'router_id wajib diisi.' });
+    const check = parseRouterId(req.query.router_id);
+    if (!check.valid) {
+        return res.status(400).json({ success: false, message: check.message });
     }
 
     try {
-        const rResult = await query('SELECT * FROM routers WHERE id = $1', [router_id]);
+        const rResult = await query('SELECT * FROM routers WHERE id = $1', [check.id]);
         if (rResult.rows.length === 0) {
             return res.status(404).json({ success: false, message: 'Router tidak ditemukan.' });
         }
@@ -93,19 +107,19 @@ const getHosts = async (req, res) => {
         res.json({ success: true, data: processedHosts });
     } catch (err) {
         console.error('[HotspotRouterController] getHosts:', err.message);
-        res.status(500).json({ success: false, message: err.message || 'Gagal mengambil host terhubung.' });
+        res.status(500).json({ success: false, message: 'Gagal mengambil host terhubung.' });
     }
 };
 
 const removeHost = async (req, res) => {
     const { id } = req.params;
-    const { router_id } = req.query;
-    if (!router_id) {
-        return res.status(400).json({ success: false, message: 'router_id wajib diisi.' });
+    const check = parseRouterId(req.query.router_id);
+    if (!check.valid) {
+        return res.status(400).json({ success: false, message: check.message });
     }
 
     try {
-        const rResult = await query('SELECT * FROM routers WHERE id = $1', [router_id]);
+        const rResult = await query('SELECT * FROM routers WHERE id = $1', [check.id]);
         if (rResult.rows.length === 0) {
             return res.status(404).json({ success: false, message: 'Router tidak ditemukan.' });
         }
@@ -114,18 +128,22 @@ const removeHost = async (req, res) => {
         res.json({ success: true, message: 'Host berhasil dihapus.' });
     } catch (err) {
         console.error('[HotspotRouterController] removeHost:', err.message);
-        res.status(500).json({ success: false, message: err.message || 'Gagal menghapus host.' });
+        res.status(500).json({ success: false, message: 'Gagal menghapus host.' });
     }
 };
 
 const toggleBypassHost = async (req, res) => {
     const { router_id, mac, bypass } = req.body;
-    if (!router_id || !mac || bypass === undefined) {
-        return res.status(400).json({ success: false, message: 'router_id, mac, dan bypass wajib diisi.' });
+    const check = parseRouterId(router_id);
+    if (!check.valid) {
+        return res.status(400).json({ success: false, message: check.message });
+    }
+    if (!mac || bypass === undefined) {
+        return res.status(400).json({ success: false, message: 'mac dan bypass wajib diisi.' });
     }
 
     try {
-        const rResult = await query('SELECT * FROM routers WHERE id = $1', [router_id]);
+        const rResult = await query('SELECT * FROM routers WHERE id = $1', [check.id]);
         if (rResult.rows.length === 0) {
             return res.status(404).json({ success: false, message: 'Router tidak ditemukan.' });
         }
@@ -134,18 +152,18 @@ const toggleBypassHost = async (req, res) => {
         res.json({ success: true, message: `Bypass status untuk MAC ${mac} berhasil diubah.` });
     } catch (err) {
         console.error('[HotspotRouterController] toggleBypassHost:', err.message);
-        res.status(500).json({ success: false, message: err.message || 'Gagal mengubah status bypass host.' });
+        res.status(500).json({ success: false, message: 'Gagal mengubah status bypass host.' });
     }
 };
 
 const getRouterUsers = async (req, res) => {
-    const { router_id } = req.query;
-    if (!router_id) {
-        return res.status(400).json({ success: false, message: 'router_id wajib diisi.' });
+    const check = parseRouterId(req.query.router_id);
+    if (!check.valid) {
+        return res.status(400).json({ success: false, message: check.message });
     }
 
     try {
-        const rResult = await query('SELECT * FROM routers WHERE id = $1', [router_id]);
+        const rResult = await query('SELECT * FROM routers WHERE id = $1', [check.id]);
         if (rResult.rows.length === 0) {
             return res.status(404).json({ success: false, message: 'Router tidak ditemukan.' });
         }
@@ -167,19 +185,19 @@ const getRouterUsers = async (req, res) => {
         res.json({ success: true, data: filteredUsers });
     } catch (err) {
         console.error('[HotspotRouterController] getRouterUsers:', err.message);
-        res.status(500).json({ success: false, message: err.message || 'Gagal mengambil user router.' });
+        res.status(500).json({ success: false, message: 'Gagal mengambil user router.' });
     }
 };
 
 const removeRouterUser = async (req, res) => {
     const { id } = req.params;
-    const { router_id } = req.query;
-    if (!router_id) {
-        return res.status(400).json({ success: false, message: 'router_id wajib diisi.' });
+    const check = parseRouterId(req.query.router_id);
+    if (!check.valid) {
+        return res.status(400).json({ success: false, message: check.message });
     }
 
     try {
-        const rResult = await query('SELECT * FROM routers WHERE id = $1', [router_id]);
+        const rResult = await query('SELECT * FROM routers WHERE id = $1', [check.id]);
         if (rResult.rows.length === 0) {
             return res.status(404).json({ success: false, message: 'Router tidak ditemukan.' });
         }
@@ -188,18 +206,18 @@ const removeRouterUser = async (req, res) => {
         res.json({ success: true, message: 'User router berhasil dihapus.' });
     } catch (err) {
         console.error('[HotspotRouterController] removeRouterUser:', err.message);
-        res.status(500).json({ success: false, message: err.message || 'Gagal menghapus user router.' });
+        res.status(500).json({ success: false, message: 'Gagal menghapus user router.' });
     }
 };
 
 const getBindings = async (req, res) => {
-    const { router_id } = req.query;
-    if (!router_id) {
-        return res.status(400).json({ success: false, message: 'router_id wajib diisi.' });
+    const check = parseRouterId(req.query.router_id);
+    if (!check.valid) {
+        return res.status(400).json({ success: false, message: check.message });
     }
 
     try {
-        const rResult = await query('SELECT * FROM routers WHERE id = $1', [router_id]);
+        const rResult = await query('SELECT * FROM routers WHERE id = $1', [check.id]);
         if (rResult.rows.length === 0) {
             return res.status(404).json({ success: false, message: 'Router tidak ditemukan.' });
         }
@@ -208,21 +226,22 @@ const getBindings = async (req, res) => {
         res.json({ success: true, data: bindings });
     } catch (err) {
         console.error('[HotspotRouterController] getBindings:', err.message);
-        res.status(500).json({ success: false, message: err.message || 'Gagal mengambil IP Bindings.' });
+        res.status(500).json({ success: false, message: 'Gagal mengambil IP Bindings.' });
     }
 };
 
 const addBinding = async (req, res) => {
     const { router_id, macAddress, address, toAddress, server, type, comment } = req.body;
-    if (!router_id) {
-        return res.status(400).json({ success: false, message: 'router_id wajib diisi.' });
+    const check = parseRouterId(router_id);
+    if (!check.valid) {
+        return res.status(400).json({ success: false, message: check.message });
     }
     if (!macAddress && !address) {
         return res.status(400).json({ success: false, message: 'Minimal MAC Address atau IP Address harus diisi.' });
     }
 
     try {
-        const rResult = await query('SELECT * FROM routers WHERE id = $1', [router_id]);
+        const rResult = await query('SELECT * FROM routers WHERE id = $1', [check.id]);
         if (rResult.rows.length === 0) {
             return res.status(404).json({ success: false, message: 'Router tidak ditemukan.' });
         }
@@ -231,19 +250,19 @@ const addBinding = async (req, res) => {
         res.json({ success: true, message: 'IP Binding berhasil ditambahkan.' });
     } catch (err) {
         console.error('[HotspotRouterController] addBinding:', err.message);
-        res.status(500).json({ success: false, message: err.message || 'Gagal menambahkan IP Binding.' });
+        res.status(500).json({ success: false, message: 'Gagal menambahkan IP Binding.' });
     }
 };
 
 const removeBinding = async (req, res) => {
     const { id } = req.params;
-    const { router_id } = req.query;
-    if (!router_id) {
-        return res.status(400).json({ success: false, message: 'router_id wajib diisi.' });
+    const check = parseRouterId(req.query.router_id);
+    if (!check.valid) {
+        return res.status(400).json({ success: false, message: check.message });
     }
 
     try {
-        const rResult = await query('SELECT * FROM routers WHERE id = $1', [router_id]);
+        const rResult = await query('SELECT * FROM routers WHERE id = $1', [check.id]);
         if (rResult.rows.length === 0) {
             return res.status(404).json({ success: false, message: 'Router tidak ditemukan.' });
         }
@@ -252,7 +271,7 @@ const removeBinding = async (req, res) => {
         res.json({ success: true, message: 'IP Binding berhasil dihapus.' });
     } catch (err) {
         console.error('[HotspotRouterController] removeBinding:', err.message);
-        res.status(500).json({ success: false, message: err.message || 'Gagal menghapus IP Binding.' });
+        res.status(500).json({ success: false, message: 'Gagal menghapus IP Binding.' });
     }
 };
 

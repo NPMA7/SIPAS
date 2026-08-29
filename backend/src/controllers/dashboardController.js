@@ -1,15 +1,34 @@
 const { query }   = require('../config/db');
 const mikrotik    = require('../services/mikrotikService');
 
+const parseRouterId = (raw) => {
+    if (!raw) return { valid: false, message: 'router_id wajib diisi.' };
+    const val = Array.isArray(raw) ? raw[0] : raw;
+    const str = String(val).trim();
+    if (!/^\d+$/.test(str)) {
+        return { valid: false, message: 'router_id tidak valid.' };
+    }
+    const id = parseInt(str, 10);
+    if (isNaN(id) || id <= 0) {
+        return { valid: false, message: 'router_id tidak valid.' };
+    }
+    return { valid: true, id };
+};
+
 /**
  * GET /api/dashboard/:routerId/stats
  * Ambil semua data dashboard: sistem info + resource + clock
  */
 const getDashboardStats = async (req, res) => {
+    const check = parseRouterId(req.params.routerId);
+    if (!check.valid) {
+        return res.status(400).json({ success: false, message: check.message });
+    }
+
     try {
         const rResult = await query(
             'SELECT * FROM routers WHERE id = $1 AND is_active = TRUE',
-            [req.params.routerId]
+            [check.id]
         );
         if (rResult.rows.length === 0) {
             return res.status(404).json({ success: false, message: 'Router tidak ditemukan.' });
@@ -32,9 +51,9 @@ const getDashboardStats = async (req, res) => {
         res.json({ success: true, data: responseData });
     } catch (err) {
         console.error('[DashboardController] getDashboardStats:', err.message);
-        res.json({
+        res.status(500).json({
             success: false,
-            message: `Gagal mengambil data router: ${err.message}`
+            message: 'Gagal mengambil data router.'
         });
     }
 };
@@ -44,10 +63,15 @@ const getDashboardStats = async (req, res) => {
  * Ambil daftar active session hotspot
  */
 const getActiveSessions = async (req, res) => {
+    const check = parseRouterId(req.params.routerId);
+    if (!check.valid) {
+        return res.status(400).json({ success: false, message: check.message });
+    }
+
     try {
         const rResult = await query(
             'SELECT * FROM routers WHERE id = $1 AND is_active = TRUE',
-            [req.params.routerId]
+            [check.id]
         );
         if (rResult.rows.length === 0) {
             return res.status(404).json({ success: false, message: 'Router tidak ditemukan.' });
