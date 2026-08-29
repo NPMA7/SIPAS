@@ -17,9 +17,13 @@ function RouterCard({ router, onEdit, onDelete, onTest, isVisitor }) {
     setTesting(false);
   }
 
-  const lastSeen = router.last_seen
-    ? new Date(router.last_seen).toLocaleString('id-ID')
-    : 'Belum pernah';
+  let lastSeen = 'Belum pernah';
+  if (router.last_seen) {
+    const d = new Date(router.last_seen);
+    if (!isNaN(d.getTime())) {
+      lastSeen = d.toLocaleString('id-ID');
+    }
+  }
 
   return (
     <div className="router-card">
@@ -38,11 +42,11 @@ function RouterCard({ router, onEdit, onDelete, onTest, isVisitor }) {
       </div>
       <div className="router-card-detail">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
-        <span className="mono">{router.ip_address}:{router.api_port || 8728}</span>
+        <span className="mono">{router.ip_address}{isVisitor ? '' : `:${router.api_port || 8728}`}</span>
       </div>
       <div className="router-card-detail">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        <span>{router.router_type === 'external' ? 'Vendor Portal (No API)' : router.api_username}</span>
+        <span>{router.router_type === 'external' ? 'Vendor Portal (No API)' : (isVisitor ? (router.api_username || 'a****n') : router.api_username)}</span>
       </div>
       {router.location && (
         <div className="router-card-detail">

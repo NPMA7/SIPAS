@@ -62,7 +62,7 @@ const maskSensitiveText = (text, keepStart = 3, keepEnd = 3) => {
 
 /**
  * Universal Response Sanitizer for Visitor role
- * Sanitizes IP addresses, MAC addresses, serial numbers, hardware models, versions, and hostnames recursively
+ * Sanitizes IP addresses, MAC addresses, serial numbers, hardware models, versions, usernames, and hostnames recursively
  */
 const sanitizeVisitorData = (data) => {
     if (data === null || data === undefined) return data;
@@ -76,31 +76,52 @@ const sanitizeVisitorData = (data) => {
     for (const [key, val] of Object.entries(data)) {
         const lowerKey = key.toLowerCase().replace(/[-_]/g, '');
 
+        // Preserve Date and Timestamp fields intact
+        if (lowerKey.includes('date') || lowerKey.includes('seen') || lowerKey.includes('created') || lowerKey.includes('updated') || lowerKey.includes('time')) {
+            sanitized[key] = val;
+            continue;
+        }
+
         if (typeof val === 'string' && val.trim() !== '') {
-            // 1. MAC addresses & Client IDs
+            // 1. Password fields (Always obscure)
+            if (lowerKey.includes('password')) {
+                sanitized[key] = '••••••••';
+                continue;
+            }
+
+            // 2. API username (Router Mikrotik)
+            if (lowerKey === 'apiusername') {
+                sanitized[key] = maskSensitiveText(val, 1, 1);
+                continue;
+            }
+
+            // 3. Usernames & NIP
+            if (lowerKey === 'nip' || lowerKey === 'username' || lowerKey === 'user' || (lowerKey === 'name' && !val.startsWith('Router-') && !val.startsWith('hotspot-') && !val.startsWith('default'))) {
+                if (/^\d{8,}$/.test(val.trim())) {
+                    sanitized[key] = maskSensitiveText(val, 4, 3);
+                } else {
+                    sanitized[key] = maskSensitiveText(val, 1, 1);
+                }
+                continue;
+            }
+
+            // 4. Phone numbers & Emails
+            if (lowerKey.includes('phone')) {
+                sanitized[key] = maskSensitiveText(val, 3, 2);
+                continue;
+            }
+            if (lowerKey.includes('email') && val.includes('@')) {
+                sanitized[key] = maskSensitiveText(val, 2, 4);
+                continue;
+            }
+
+            // 5. MAC addresses & Client IDs
             if (lowerKey.includes('mac') || lowerKey.includes('clientid') || /^([0-9a-fA-F]{2}[:-]){5}([0-9a-fA-F]{2})$/.test(val) || /^1:([0-9a-fA-F]{1,2}:){5}[0-9a-fA-F]{1,2}$/.test(val)) {
                 sanitized[key] = maskSensitiveText(val, 4, 2);
                 continue;
             }
 
-            // 2. IP Addresses (address, ip_address, to_address, router_ip, etc.)
-            if (lowerKey.includes('ip') || lowerKey.includes('address') || /^(\d{1,3}\.){3}\d{1,3}(\/\d+)?$/.test(val)) {
-                // Jangan mask jika boolean atau empty
-                if (val.includes('.')) {
-                    const parts = val.split('/');
-                    const ip = parts[0];
-                    const octets = ip.split('.');
-                    if (octets.length === 4) {
-                        const maskedIp = `${octets[0]}.${octets[1]}.***.${octets[3]}`;
-                        sanitized[key] = parts.length > 1 ? `${maskedIp}/${parts[1]}` : maskedIp;
-                        continue;
-                    }
-                }
-                sanitized[key] = maskSensitiveText(val, 4, 2);
-                continue;
-            }
-
-            // 3. Router Serial Numbers & Platform Architecture
+            // 6. Router Serial Numbers & Firmware Platform
             if (lowerKey.includes('serial')) {
                 sanitized[key] = maskSensitiveText(val, 4, 3);
                 continue;
@@ -115,41 +136,23 @@ const sanitizeVisitorData = (data) => {
                 continue;
             }
 
-            // 4. Hostnames & Device names
-            if (lowerKey.includes('hostname') || lowerKey === 'host_name' || lowerKey === 'host-name') {
+            // 7. Hostnames & Device names
+            if (lowerKey.includes('hostname')) {
                 sanitized[key] = maskSensitiveText(val, 3, 2);
                 continue;
             }
 
-            // 5. Password fields
-            if (lowerKey.includes('password')) {
-                sanitized[key] = '••••••••';
-                continue;
-            }
-
-            // 6. Usernames / NIPs
-            if (lowerKey === 'nip' || (lowerKey === 'name' && /^\d{10,}$/.test(val)) || (lowerKey === 'user' && /^\d{10,}$/.test(val))) {
-                sanitized[key] = maskSensitiveText(val, 4, 3);
-                continue;
-            }
-
-            // 7. Queue Names with NIPs
+            // 8. Queue Names with NIPs
             if (lowerKey === 'name' && val.startsWith('hotspot-') && val.length > 12) {
                 const nipPart = val.replace('hotspot-', '');
                 sanitized[key] = `hotspot-${maskSensitiveText(nipPart, 4, 3)}`;
                 continue;
             }
 
-            // 8. Target Queue IP
-            if (lowerKey === 'target' && val.includes('.')) {
-                const parts = val.split('/');
-                const ip = parts[0];
-                const octets = ip.split('.');
-                if (octets.length === 4) {
-                    const maskedIp = `${octets[0]}.${octets[1]}.***.${octets[3]}`;
-                    sanitized[key] = parts.length > 1 ? `${maskedIp}/${parts[1]}` : maskedIp;
-                    continue;
-                }
+            // 9. IP Addresses (Standalone or Embedded in text like location)
+            if (/\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/.test(val)) {
+                sanitized[key] = val.replace(/\b(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})\b/g, '$1.$2.***.$4');
+                continue;
             }
 
             sanitized[key] = val;
