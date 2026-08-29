@@ -84,8 +84,8 @@ add server=hotspot1 dst-host=*.cloudflare.com comment="Bypass Cloudflare CDN"
 add server=hotspot1 dst-host=sipas.local comment="Bypass Domain Lokal"
 
 /ip hotspot walled-garden ip
-add dst-address=10.100.100.10 dst-port=3000 action=accept comment="Akses Web Portal SIPAS Mini PC (Port 3000)"
-add dst-address=10.100.100.10 dst-port=80 action=accept comment="Akses Web Portal SIPAS Mini PC (Port 80)"
+add dst-address=10.100.100.10 protocol=tcp dst-port=3000 action=accept comment="Akses Web Portal SIPAS Mini PC (Port 3000)"
+add dst-address=10.100.100.10 protocol=tcp dst-port=80 action=accept comment="Akses Web Portal SIPAS Mini PC (Port 80)"
 add dst-address=10.100.100.10 action=accept comment="Akses Penuh ke Server Mini PC"
 
 # --- LANGKAH 10: NAT DNS Redirect & TCP RST untuk Pop-Up Otomatis ---

@@ -44,8 +44,8 @@ add server=hotspot1 dst-host=sipas.local comment="Domain Lokal"
 add server=hotspot1 dst-host=10.100.100.10 comment="IP Mini PC"
 
 /ip hotspot walled-garden ip
-add dst-address=10.100.100.10 dst-port=3000 action=accept comment="Web Portal SIPAS Port 3000"
-add dst-address=10.100.100.10 dst-port=80 action=accept comment="Web Portal SIPAS Port 80"
+add dst-address=10.100.100.10 protocol=tcp dst-port=3000 action=accept comment="Web Portal SIPAS Port 3000"
+add dst-address=10.100.100.10 protocol=tcp dst-port=80 action=accept comment="Web Portal SIPAS Port 80"
 add dst-address=10.100.100.10 action=accept comment="Bypass Traffic Mini PC"
 
 # --- LANGKAH 7: Firewall Rules Dasar Hotspot & Keamanan Router ---
