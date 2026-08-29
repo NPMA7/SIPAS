@@ -36,8 +36,8 @@ const createAdminUser = async (req, res) => {
         return res.status(400).json({ success: false, message: 'Username dan password wajib diisi.' });
     }
 
-    if (password.length < 6) {
-        return res.status(400).json({ success: false, message: 'Password minimal 6 karakter.' });
+    if (password.length < 8) {
+        return res.status(400).json({ success: false, message: 'Password minimal 8 karakter.' });
     }
 
     const validRoles = ['superadmin', 'operator', 'visitor'];
@@ -112,8 +112,8 @@ const updateAdminUser = async (req, res) => {
         ];
 
         if (password && password.trim().length > 0) {
-            if (password.length < 6) {
-                return res.status(400).json({ success: false, message: 'Password minimal 6 karakter.' });
+            if (password.length < 8) {
+                return res.status(400).json({ success: false, message: 'Password minimal 8 karakter.' });
             }
             const password_hash = await bcrypt.hash(password, 12);
             queryText += `, password_hash = $6 WHERE id = $5 RETURNING id, username, full_name, email, role, is_active, updated_at`;

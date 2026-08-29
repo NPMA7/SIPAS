@@ -18,6 +18,7 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 // ── Security Middleware ──────────────────────────────────────
+app.disable('x-powered-by');
 app.set('trust proxy', 1); // For express-rate-limit behind reverse proxy
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({
@@ -30,6 +31,14 @@ app.use(cors({
 app.use(morgan('combined'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+
+// ── JSON Parse Error Handler (Prevent raw error leakage) ──────
+app.use((err, req, res, next) => {
+    if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+        return res.status(400).json({ success: false, message: 'Format payload JSON tidak valid.' });
+    }
+    next(err);
+});
 
 // ── Rate Limiting ────────────────────────────────────────────
 const apiLimiter = rateLimit({
@@ -61,14 +70,11 @@ app.use('/api/blocked-sites',  require('./routes/blockedSites'));
 app.use('/api/admin-users',    require('./routes/adminUsersRoutes'));
 app.use('/api/sso-mock',       require('./routes/ssoMockRoute'));
 
-
-// ── Health Check ─────────────────────────────────────────────
+// ── Health Check (Sanitized - No version/stack leakage) ──────
 app.get('/api/health', (req, res) => {
     res.json({
-        success: true,
-        message: 'Hotspot Backend is running',
-        timestamp: new Date().toISOString(),
-        version: '1.0.0'
+        status: 'ok',
+        healthy: true
     });
 });
 
