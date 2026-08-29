@@ -288,7 +288,7 @@ export default function AdminUsers() {
 
       {/* Main Card */}
       <div className="card">
-        <div className="card-header" style={{ flexWrap: 'wrap', gap: 12 }}>
+        <div className="card-header">
           <div className="card-title">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
@@ -298,7 +298,7 @@ export default function AdminUsers() {
             <Badge variant="primary">{filteredAdmins.length}</Badge>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <div className="card-actions">
             {/* Search */}
             <div className="search-wrapper">
               <svg className="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
@@ -314,12 +314,11 @@ export default function AdminUsers() {
               />
             </div>
 
-            {/* Role Filter (Only 3 roles) */}
+            {/* Role Filter */}
             <select
               className="select select-sm"
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
-              style={{ width: 'auto' }}
             >
               <option value="all">Semua Role</option>
               {isSuperAdmin && <option value="superadmin">Superadmin</option>}
