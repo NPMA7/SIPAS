@@ -123,7 +123,7 @@ const createConnection = (config) => {
     port: config.api_port || 8728,
     user: config.api_username,
     password: config.api_password,
-    timeout: 5,
+    timeout: 0,
     tls: false,
   });
   // Suppress ALL async errors on this connection to prevent process crash
@@ -1033,24 +1033,28 @@ const setupPortalUser = async (
             `=action=drop`,
             `=comment=Block ${siteKey} established connections via IP list`,
           ];
-          if (allFilters && allFilters.length > 0) args.push(`=place-before=0`);
-          await conn.write("/ip/firewall/filter/add", args);
+          if (allFilters && allFilters.length > 0 && allFilters[0][".id"]) {
+            args.push(`=place-before=${allFilters[0][".id"]}`);
+          }
+          try { await conn.write("/ip/firewall/filter/add", args); } catch (_) {}
         }
 
         // C. Pastikan L7 Protocol terdaftar
-        const allL7s = await conn.write("/ip/firewall/layer7-protocol/print");
-        const existingL7 = allL7s.find((entry) => entry.name === cfg.l7Name);
-        if (!existingL7) {
-          await conn.write("/ip/firewall/layer7-protocol/add", [
-            `=name=${cfg.l7Name}`,
-            `=regexp=${cfg.regexp}`,
-          ]);
-        } else if (existingL7.regexp !== cfg.regexp) {
-          await conn.write("/ip/firewall/layer7-protocol/set", [
-            `=.id=${existingL7[".id"]}`,
-            `=regexp=${cfg.regexp}`,
-          ]);
-        }
+        try {
+          const allL7s = await conn.write("/ip/firewall/layer7-protocol/print");
+          const existingL7 = (allL7s || []).find((entry) => entry.name === cfg.l7Name);
+          if (!existingL7) {
+            await conn.write("/ip/firewall/layer7-protocol/add", [
+              `=name=${cfg.l7Name}`,
+              `=regexp=${cfg.regexp}`,
+            ]);
+          } else if (existingL7.regexp !== cfg.regexp) {
+            await conn.write("/ip/firewall/layer7-protocol/set", [
+              `=.id=${existingL7[".id"]}`,
+              `=regexp=${cfg.regexp}`,
+            ]);
+          }
+        } catch (_) {}
 
         // D. Pastikan filter rule L7 ada
         const filterExists = allFilters.some(
@@ -1067,8 +1071,10 @@ const setupPortalUser = async (
             `=action=drop`,
             `=comment=Block ${siteKey} via L7`,
           ];
-          if (allFilters && allFilters.length > 0) args.push(`=place-before=0`);
-          await conn.write("/ip/firewall/filter/add", args);
+          if (allFilters && allFilters.length > 0 && allFilters[0][".id"]) {
+            args.push(`=place-before=${allFilters[0][".id"]}`);
+          }
+          try { await conn.write("/ip/firewall/filter/add", args); } catch (_) {}
         }
 
         // E. Pastikan filter rule drop QUIC/UDP 443 ada (bypass L7 untuk QUIC)
@@ -1088,15 +1094,17 @@ const setupPortalUser = async (
             `=action=drop`,
             `=comment=Block QUIC UDP 443 for ${siteKey}`,
           ];
-          if (allFilters && allFilters.length > 0) args.push(`=place-before=0`);
-          await conn.write("/ip/firewall/filter/add", args);
+          if (allFilters && allFilters.length > 0 && allFilters[0][".id"]) {
+            args.push(`=place-before=${allFilters[0][".id"]}`);
+          }
+          try { await conn.write("/ip/firewall/filter/add", args); } catch (_) {}
         }
 
         // F. Masukkan/hapus IP user ke address-list sesuai status blokir
         const isBlocked = blockedSites.includes(siteKey);
         const targetComment = `Block ${siteKey} for ${username}`;
         
-        // Cari semua entri address list milik user ini (baik di list spesifik maupun list legacy hotspot-blocked-users)
+        // Cari semua entri address list milik user ini
         const existingUserBlock = allAddressLists.filter(
           (entry) =>
             (entry.list === cfg.userList || entry.list === BLOCK_ADDRESS_LIST || entry.list === 'hotspot-blocked-users') &&
@@ -1104,13 +1112,15 @@ const setupPortalUser = async (
         );
 
         if (isBlocked) {
-          const hasCurrentIp = existingUserBlock.some((entry) => entry.address === ip);
+          const hasCurrentIp = allAddressLists.some((entry) => entry.list === cfg.userList && entry.address === ip);
           if (!hasCurrentIp) {
-            await conn.write("/ip/firewall/address-list/add", [
-              `=list=${cfg.userList}`,
-              `=address=${ip}`,
-              `=comment=${targetComment}`,
-            ]);
+            try {
+              await conn.write("/ip/firewall/address-list/add", [
+                `=list=${cfg.userList}`,
+                `=address=${ip}`,
+                `=comment=${targetComment}`,
+              ]);
+            } catch (_) {}
             await clearConnectionsForIp(conn, ip);
           }
           // Bersihkan sisa IP lama milik user ini jika ada pergantian IP DHCP

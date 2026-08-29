@@ -71,24 +71,25 @@ const syncUsersForBlockedSite = async (siteKey, targetUserIds) => {
             await query(`UPDATE hotspot_users SET website_block = $1, updated_at = NOW() WHERE id = $2`, [newBlockStr, u.id]);
             u.website_block = newBlockStr;
         }
+    }
 
-        // Jalankan sinkronisasi jaringan MikroTik di background
-        if (shouldHave || modified) {
-            (async () => {
-                if (!shouldHave) {
-                    for (const r of activeRouters) {
-                        try {
-                            await mikrotik.removeUserBlockFromMikrotik(r, cleanSiteKey, u.username);
-                        } catch (_) {}
-                    }
-                } else {
+    // Jalankan sinkronisasi MikroTik secara berurutan agar perintah API tidak saling tabrak
+    (async () => {
+        for (const u of usersRes.rows) {
+            const shouldHave = targetSet.has(u.id);
+            if (!shouldHave) {
+                for (const r of activeRouters) {
                     try {
-                        await syncUserToActiveRouters(u);
+                        await mikrotik.removeUserBlockFromMikrotik(r, cleanSiteKey, u.username);
                     } catch (_) {}
                 }
-            })();
+            } else {
+                try {
+                    await syncUserToActiveRouters(u);
+                } catch (_) {}
+            }
         }
-    }
+    })();
 };
 
 // ─── GET /api/blocked-sites ──────────────────────────────────────────────────
