@@ -140,10 +140,10 @@ const styles = {
   },
   bg: {
     position: 'fixed', inset: 0, zIndex: 0,
-    background: 'radial-gradient(ellipse at 20% 50%, rgba(99,102,241,0.08) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(6,182,212,0.06) 0%, transparent 50%)',
+    background: 'var(--bg-body)',
   },
-  orb1: { position: 'fixed', top: '-15%', left: '-10%', width: 500, height: 500, background: 'rgba(99,102,241,0.06)', borderRadius: '50%', filter: 'blur(80px)', zIndex: 0 },
-  orb2: { position: 'fixed', bottom: '-20%', right: '-10%', width: 600, height: 600, background: 'rgba(6,182,212,0.04)', borderRadius: '50%', filter: 'blur(100px)', zIndex: 0 },
+  orb1: { position: 'fixed', top: '-15%', left: '-10%', width: 500, height: 500, background: 'rgba(37,99,235,0.04)', borderRadius: '50%', filter: 'blur(80px)', zIndex: 0 },
+  orb2: { position: 'fixed', bottom: '-20%', right: '-10%', width: 600, height: 600, background: 'rgba(2,132,199,0.03)', borderRadius: '50%', filter: 'blur(100px)', zIndex: 0 },
   card: {
     background: 'var(--bg-card)',
     border: '1px solid var(--border)',

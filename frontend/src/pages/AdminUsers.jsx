@@ -8,19 +8,22 @@ const ROLE_CONFIG = {
   superadmin: {
     label: 'Superadmin',
     variant: 'primary',
-    badgeStyle: { background: 'linear-gradient(135deg, #8b5cf6, #ec4899)', color: '#fff', border: 'none' },
+    badgeStyle: { background: 'rgba(37, 99, 235, 0.18)', color: '#60a5fa', border: '1px solid rgba(59, 130, 246, 0.4)' },
+    avatarBg: '#1d4ed8',
     desc: 'Akses penuh ke seluruh sistem & manajemen pengelola web',
   },
   operator: {
     label: 'Operator',
     variant: 'info',
-    badgeStyle: { background: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa', border: '1px solid rgba(59, 130, 246, 0.3)' },
+    badgeStyle: { background: 'rgba(2, 132, 199, 0.18)', color: '#38bdf8', border: '1px solid rgba(2, 132, 199, 0.35)' },
+    avatarBg: '#0284c7',
     desc: 'Mengelola router, user hotspot, antrean bandwidth, dan situs',
   },
   visitor: {
     label: 'Visitor',
     variant: 'neutral',
-    badgeStyle: { background: 'rgba(156, 163, 175, 0.15)', color: '#9ca3af', border: '1px solid rgba(156, 163, 175, 0.3)' },
+    badgeStyle: { background: 'rgba(100, 116, 139, 0.18)', color: '#94a3b8', border: '1px solid rgba(100, 116, 139, 0.35)' },
+    avatarBg: '#475569',
     desc: 'Akses Read-Only (hanya melihat) & data sensitif disamarkan',
   },
 };
@@ -231,8 +234,8 @@ export default function AdminUsers() {
 
   return (
     <div className="page-container">
-      {/* Stat Cards */}
-      <div className="stat-grid" style={{ marginBottom: 24 }}>
+      {/* Stat Cards - Responsive Grid */}
+      <div className="stats-grid" style={{ marginBottom: 20 }}>
         <StatCard
           icon={
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="22" height="22">
@@ -367,19 +370,14 @@ export default function AdminUsers() {
                               width: 34,
                               height: 34,
                               borderRadius: '50%',
-                              background:
-                                a.role === 'superadmin'
-                                  ? 'linear-gradient(135deg, #8b5cf6, #ec4899)'
-                                  : a.role === 'visitor'
-                                  ? 'linear-gradient(135deg, #64748b, #94a3b8)'
-                                  : 'linear-gradient(135deg, #3b82f6, #06b6d4)',
+                              background: roleCfg.avatarBg,
                               color: '#fff',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
                               fontWeight: 700,
                               fontSize: '0.85rem',
-                              boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                              boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
                             }}
                           >
                             {initial}
