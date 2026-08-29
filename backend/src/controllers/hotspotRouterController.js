@@ -14,10 +14,10 @@ const getActiveSessions = async (req, res) => {
         }
 
         const isVisitor = req.admin && req.admin.role === 'visitor';
-        const { maskSensitiveText } = require('../middleware/adminAuth');
+        const { sanitizeVisitorData } = require('../middleware/adminAuth');
 
         const active = await mikrotik.getActiveHotspotUsers(rResult.rows[0]);
-        const enriched = await Promise.all(active.map(async (s) => {
+        let enriched = await Promise.all(active.map(async (s) => {
             const userResult = await query(
                 'SELECT bandwidth_limit, website_block, full_name, nip, jabatan, instansi FROM hotspot_users WHERE username = $1 OR nip = $1',
                 [s.user]
@@ -28,17 +28,20 @@ const getActiveSessions = async (req, res) => {
 
             return {
                 ...s,
-                user: isVisitor ? maskSensitiveText(rawUser, 2, 2) : rawUser,
-                address: isVisitor && s.address ? maskSensitiveText(s.address, 6, 2) : s.address,
-                mac: isVisitor && (s.mac || s['mac-address']) ? maskSensitiveText(s.mac || s['mac-address'], 5, 2) : (s.mac || s['mac-address']),
+                user: rawUser,
                 bandwidth_limit: dbUser?.bandwidth_limit || 'N/A',
                 website_block:   dbUser?.website_block   || '',
-                full_name:       dbUser?.full_name       || (isVisitor ? maskSensitiveText(rawUser, 2, 2) : rawUser),
-                nip:             isVisitor && rawNip ? maskSensitiveText(rawNip, 4, 3) : rawNip,
+                full_name:       dbUser?.full_name       || rawUser,
+                nip:             rawNip,
                 jabatan:         dbUser?.jabatan         || '',
                 instansi:        dbUser?.instansi        || '',
             };
         }));
+
+        if (isVisitor) {
+            enriched = sanitizeVisitorData(enriched);
+        }
+
         res.json({ success: true, data: enriched });
     } catch (err) {
         console.error('[HotspotRouterController] getActiveSessions:', err.message);
@@ -80,15 +83,13 @@ const getHosts = async (req, res) => {
         }
 
         const isVisitor = req.admin && req.admin.role === 'visitor';
-        const { maskSensitiveText } = require('../middleware/adminAuth');
+        const { sanitizeVisitorData } = require('../middleware/adminAuth');
 
         const hosts = await mikrotik.getHotspotHosts(rResult.rows[0]);
-        const processedHosts = hosts.map(h => ({
-            ...h,
-            address: isVisitor && h.address ? maskSensitiveText(h.address, 6, 2) : h.address,
-            'mac-address': isVisitor && (h['mac-address'] || h.mac_address) ? maskSensitiveText(h['mac-address'] || h.mac_address, 5, 2) : (h['mac-address'] || h.mac_address),
-            mac_address: isVisitor && (h['mac-address'] || h.mac_address) ? maskSensitiveText(h['mac-address'] || h.mac_address, 5, 2) : (h['mac-address'] || h.mac_address),
-        }));
+        let processedHosts = hosts;
+        if (isVisitor) {
+            processedHosts = sanitizeVisitorData(processedHosts);
+        }
         res.json({ success: true, data: processedHosts });
     } catch (err) {
         console.error('[HotspotRouterController] getHosts:', err.message);
@@ -150,16 +151,19 @@ const getRouterUsers = async (req, res) => {
         }
 
         const isVisitor = req.admin && req.admin.role === 'visitor';
-        const { maskSensitiveText } = require('../middleware/adminAuth');
+        const { sanitizeVisitorData } = require('../middleware/adminAuth');
 
         const users = await mikrotik.getRouterHotspotUsers(rResult.rows[0]);
-        const filteredUsers = users
+        let filteredUsers = users
             .filter(u => u.name !== 'default-trial')
             .map(u => ({
                 ...u,
-                name: isVisitor ? maskSensitiveText(u.name, 2, 2) : u.name,
                 password: isVisitor ? '••••••••' : (u.password ? '••••••••' : ''),
             }));
+
+        if (isVisitor) {
+            filteredUsers = sanitizeVisitorData(filteredUsers);
+        }
         res.json({ success: true, data: filteredUsers });
     } catch (err) {
         console.error('[HotspotRouterController] getRouterUsers:', err.message);

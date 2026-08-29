@@ -72,15 +72,8 @@ const getUsers = async (req, res) => {
 
         let rows = result.rows;
         if (req.admin && req.admin.role === 'visitor') {
-            const { maskSensitiveText } = require('../middleware/adminAuth');
-            rows = rows.map(u => ({
-                ...u,
-                username: maskSensitiveText(u.username, 2, 2),
-                nip: u.nip ? maskSensitiveText(u.nip, 4, 3) : null,
-                password: '••••••',
-                phone: u.phone ? maskSensitiveText(u.phone, 3, 2) : null,
-                email: u.email ? maskSensitiveText(u.email, 2, 4) : null,
-            }));
+            const { sanitizeVisitorData } = require('../middleware/adminAuth');
+            rows = sanitizeVisitorData(rows);
         }
 
         res.json({
@@ -117,14 +110,8 @@ const getUserById = async (req, res) => {
         }
         let user = result.rows[0];
         if (req.admin && req.admin.role === 'visitor') {
-            const { maskSensitiveText } = require('../middleware/adminAuth');
-            user = {
-                ...user,
-                username: maskSensitiveText(user.username, 2, 2),
-                nip: user.nip ? maskSensitiveText(user.nip, 4, 3) : null,
-                phone: user.phone ? maskSensitiveText(user.phone, 3, 2) : null,
-                email: user.email ? maskSensitiveText(user.email, 2, 4) : null,
-            };
+            const { sanitizeVisitorData } = require('../middleware/adminAuth');
+            user = sanitizeVisitorData(user);
         }
         res.json({ success: true, data: user });
     } catch (err) {

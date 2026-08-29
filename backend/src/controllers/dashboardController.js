@@ -19,28 +19,17 @@ const getDashboardStats = async (req, res) => {
         let data = await mikrotik.getDashboardData(router);
 
         const isVisitor = req.admin && req.admin.role === 'visitor';
-        const { maskSensitiveText } = require('../middleware/adminAuth');
-
-        if (isVisitor && data) {
-            if (data.system) {
-                data.system = {
-                    ...data.system,
-                    serial: data.system.serial ? maskSensitiveText(data.system.serial, 4, 3) : undefined,
-                    version: data.system.version ? `${data.system.version.split('.')[0]}.x` : undefined,
-                };
-            }
-            if (data.resource) {
-                data.resource = {
-                    ...data.resource,
-                    version: data.resource.version ? `${data.resource.version.split('.')[0]}.x` : undefined,
-                };
-            }
-        }
+        const { sanitizeVisitorData } = require('../middleware/adminAuth');
 
         // Update last_seen
         await query('UPDATE routers SET last_seen = NOW() WHERE id = $1', [router.id]);
 
-        res.json({ success: true, data: { ...data, router_name: router.name, router_id: router.id } });
+        let responseData = { ...data, router_name: router.name, router_id: router.id };
+        if (isVisitor) {
+            responseData = sanitizeVisitorData(responseData);
+        }
+
+        res.json({ success: true, data: responseData });
     } catch (err) {
         console.error('[DashboardController] getDashboardStats:', err.message);
         res.json({
@@ -67,10 +56,10 @@ const getActiveSessions = async (req, res) => {
         const sessions = await mikrotik.getActiveHotspotUsers(rResult.rows[0]);
 
         const isVisitor = req.admin && req.admin.role === 'visitor';
-        const { maskSensitiveText } = require('../middleware/adminAuth');
+        const { maskSensitiveText, sanitizeVisitorData } = require('../middleware/adminAuth');
 
         // Enrich dengan data dari DB (Cocokkan dengan username atau NIP)
-        const enriched = await Promise.all(sessions.map(async (s) => {
+        let enriched = await Promise.all(sessions.map(async (s) => {
             const userResult = await query(
                 'SELECT bandwidth_limit, website_block, full_name, nip, jabatan, instansi FROM hotspot_users WHERE username = $1 OR nip = $1',
                 [s.user]
@@ -81,17 +70,19 @@ const getActiveSessions = async (req, res) => {
 
             return {
                 ...s,
-                user: isVisitor ? maskSensitiveText(rawUser, 2, 2) : rawUser,
-                address: isVisitor && s.address ? maskSensitiveText(s.address, 6, 2) : s.address,
-                mac: isVisitor && (s.mac || s['mac-address']) ? maskSensitiveText(s.mac || s['mac-address'], 5, 2) : (s.mac || s['mac-address']),
+                user: rawUser,
                 bandwidth_limit: dbUser?.bandwidth_limit || 'N/A',
                 website_block:   dbUser?.website_block   || '',
-                full_name:       dbUser?.full_name       || (isVisitor ? maskSensitiveText(rawUser, 2, 2) : rawUser),
-                nip:             isVisitor && rawNip ? maskSensitiveText(rawNip, 4, 3) : rawNip,
+                full_name:       dbUser?.full_name       || rawUser,
+                nip:             rawNip,
                 jabatan:         dbUser?.jabatan         || '',
                 instansi:        dbUser?.instansi        || '',
             };
         }));
+
+        if (isVisitor) {
+            enriched = sanitizeVisitorData(enriched);
+        }
 
         res.json({ success: true, data: enriched, count: enriched.length });
     } catch (err) {

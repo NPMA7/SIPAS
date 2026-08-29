@@ -16,14 +16,12 @@ const getLeases = async (req, res) => {
         const leases = await mikrotik.getDhcpLeases(rResult.rows[0]);
 
         const isVisitor = req.admin && req.admin.role === 'visitor';
-        const { maskSensitiveText } = require('../middleware/adminAuth');
+        const { sanitizeVisitorData } = require('../middleware/adminAuth');
 
-        const processedLeases = leases.map(l => ({
-            ...l,
-            address: isVisitor && l.address ? maskSensitiveText(l.address, 6, 2) : l.address,
-            mac_address: isVisitor && (l.mac_address || l['mac-address']) ? maskSensitiveText(l.mac_address || l['mac-address'], 5, 2) : (l.mac_address || l['mac-address']),
-            'mac-address': isVisitor && (l.mac_address || l['mac-address']) ? maskSensitiveText(l.mac_address || l['mac-address'], 5, 2) : (l.mac_address || l['mac-address']),
-        }));
+        let processedLeases = leases;
+        if (isVisitor) {
+            processedLeases = sanitizeVisitorData(processedLeases);
+        }
 
         res.json({ success: true, data: processedLeases });
     } catch (err) {

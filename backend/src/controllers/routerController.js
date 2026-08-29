@@ -9,17 +9,20 @@ const getRouters = async (req, res) => {
              FROM routers ORDER BY id ASC`
         );
         // Hitung jumlah user per router
-        const isVisitor = req.admin && req.admin.role === 'visitor';
-        const { maskSensitiveText } = require('../middleware/adminAuth');
-
         for (const r of result.rows) {
             const cnt = await query('SELECT COUNT(*) FROM hotspot_users WHERE router_id = $1', [r.id]);
             r.user_count = parseInt(cnt.rows[0].count);
-            if (isVisitor) {
-                r.api_username = r.api_username ? maskSensitiveText(r.api_username, 1, 1) : r.api_username;
-            }
         }
-        res.json({ success: true, data: result.rows });
+
+        const isVisitor = req.admin && req.admin.role === 'visitor';
+        const { sanitizeVisitorData } = require('../middleware/adminAuth');
+
+        let data = result.rows;
+        if (isVisitor) {
+            data = sanitizeVisitorData(data);
+        }
+
+        res.json({ success: true, data });
     } catch (err) {
         console.error('[RouterController] getRouters:', err.message);
         res.status(500).json({ success: false, message: 'Gagal mengambil data router.' });
@@ -37,12 +40,11 @@ const getRouterById = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Router tidak ditemukan.' });
         }
         let router = result.rows[0];
-        if (req.admin && req.admin.role === 'visitor') {
-            const { maskSensitiveText } = require('../middleware/adminAuth');
-            router = {
-                ...router,
-                api_username: router.api_username ? maskSensitiveText(router.api_username, 1, 1) : router.api_username,
-            };
+        const isVisitor = req.admin && req.admin.role === 'visitor';
+        const { sanitizeVisitorData } = require('../middleware/adminAuth');
+
+        if (isVisitor) {
+            router = sanitizeVisitorData(router);
         }
         res.json({ success: true, data: router });
     } catch (err) {
