@@ -8,6 +8,7 @@ import Hotspot from './pages/Hotspot';
 import DhcpLeases from './pages/DhcpLeases';
 import Queues from './pages/Queues';
 import BlockedSites from './pages/BlockedSites';
+import AdminUsers from './pages/AdminUsers';
 import PortalLogin from './pages/Portal/Login';
 import './index.css';
 
@@ -25,6 +26,7 @@ export default function App() {
           <Route path="hotspot/*" element={<Hotspot />} />
           <Route path="queues" element={<Queues />} />
           <Route path="dhcp" element={<DhcpLeases />} />
+          <Route path="admins" element={<AdminUsers />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

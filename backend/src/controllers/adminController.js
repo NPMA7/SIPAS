@@ -31,7 +31,7 @@ const login = async (req, res) => {
         }
 
         const token = jwt.sign(
-            { id: admin.id, username: admin.username, full_name: admin.full_name },
+            { id: admin.id, username: admin.username, full_name: admin.full_name, role: admin.role || 'admin' },
             process.env.JWT_SECRET,
             { expiresIn: '8h' }
         );
@@ -45,6 +45,7 @@ const login = async (req, res) => {
                 username: admin.username,
                 full_name: admin.full_name,
                 email: admin.email,
+                role: admin.role || 'admin',
             }
         });
     } catch (err) {
@@ -60,7 +61,7 @@ const login = async (req, res) => {
 const getProfile = async (req, res) => {
     try {
         const result = await query(
-            'SELECT id, username, full_name, email, created_at FROM admin_users WHERE id = $1',
+            'SELECT id, username, full_name, email, role, created_at FROM admin_users WHERE id = $1',
             [req.admin.id]
         );
         if (result.rows.length === 0) {

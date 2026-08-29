@@ -22,4 +22,19 @@ const adminAuth = (req, res, next) => {
     }
 };
 
+/**
+ * Middleware otorisasi khusus superadmin
+ */
+const requireSuperAdmin = (req, res, next) => {
+    if (!req.admin || req.admin.role !== 'superadmin') {
+        return res.status(403).json({
+            success: false,
+            message: 'Akses ditolak. Fitur ini hanya dapat diakses oleh Superadmin.'
+        });
+    }
+    next();
+};
+
 module.exports = adminAuth;
+module.exports.adminAuth = adminAuth;
+module.exports.requireSuperAdmin = requireSuperAdmin;

@@ -58,6 +58,7 @@ app.use('/api/dhcp',      require('./routes/dhcp'));
 app.use('/api/queues',    require('./routes/queues'));
 app.use('/api/hotspot-router', require('./routes/hotspotRouter'));
 app.use('/api/blocked-sites',  require('./routes/blockedSites'));
+app.use('/api/admin-users',    require('./routes/adminUsersRoutes'));
 app.use('/api/sso-mock',       require('./routes/ssoMockRoute'));
 
 

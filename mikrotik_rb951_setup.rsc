@@ -76,7 +76,7 @@ add name=hsprof-sipas hotspot-address=10.10.0.1 dns-name=hotspot.net login-by=ht
 add name=hotspot1 interface=bridge-hotspot address-pool=none profile=hsprof-sipas idle-timeout=00:05:00 keepalive-timeout=00:02:00 disabled=no
 
 /ip hotspot user profile
-set [find default=yes] idle-timeout=00:05:00 keepalive-timeout=00:02:00 shared-users=4 on-logout=":local ip \$address; /ip firewall address-list remove [find address=\$ip and list~\"hotspot-blocked\"];"
+set [find default=yes] idle-timeout=00:05:00 keepalive-timeout=00:02:00 shared-users=4"
 
 # --- LANGKAH 9: WALLED GARDEN (IZIN AKSES KE SERVER & DOMAIN SEBELUM LOGIN) ---
 /ip hotspot walled-garden

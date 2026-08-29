@@ -15,6 +15,7 @@ const TITLE_MAP = {
   '/admin/hotspot': 'Hotspot Router',
   '/admin/queues': 'Simple Queues',
   '/admin/dhcp': 'DHCP Leases',
+  '/admin/admins': 'Pengelola Web',
 };
 
 export default function Layout() {

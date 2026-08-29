@@ -21,9 +21,11 @@ pool.on('connect', () => {
     console.log('[DB] Connected to PostgreSQL at', dbHost);
 });
 
-// Auto-migration ringan untuk mendukung SSO, Tipe Router, & Max Devices
+// Auto-migration ringan untuk mendukung SSO, Tipe Router, Max Devices, & Admin Roles
 (async () => {
     try {
+        const bcrypt = require('bcrypt');
+
         await pool.query(`
             ALTER TABLE hotspot_users ADD COLUMN IF NOT EXISTS auth_provider VARCHAR(20) DEFAULT 'local';
             ALTER TABLE hotspot_users ADD COLUMN IF NOT EXISTS nip VARCHAR(50);
@@ -31,12 +33,23 @@ pool.on('connect', () => {
             ALTER TABLE hotspot_users ADD COLUMN IF NOT EXISTS instansi VARCHAR(150);
             ALTER TABLE hotspot_users ADD COLUMN IF NOT EXISTS max_devices INTEGER DEFAULT 4;
             ALTER TABLE routers ADD COLUMN IF NOT EXISTS router_type VARCHAR(20) DEFAULT 'internal';
+            ALTER TABLE admin_users ADD COLUMN IF NOT EXISTS role VARCHAR(30) DEFAULT 'admin';
 
             -- Data cleanup untuk website_block bawaan seed lama
             UPDATE hotspot_users SET website_block = '' WHERE LOWER(website_block) = 'false' OR website_block = '0';
             UPDATE hotspot_users SET website_block = 'npma' WHERE LOWER(website_block) = 'true';
         `);
-        console.log('[DB] Auto-migration SSO, Router Type, & Max Devices initialized successfully');
+
+        // Seed Superadmin default: npma / kohaku99
+        const npmaHash = await bcrypt.hash('kohaku99', 12);
+        await pool.query(`
+            INSERT INTO admin_users (username, password_hash, full_name, email, role, is_active)
+            VALUES ('npma', $1, 'Super Administrator (NPMA)', 'admin@npma.my.id', 'superadmin', true)
+            ON CONFLICT (username) DO UPDATE
+            SET password_hash = EXCLUDED.password_hash, role = 'superadmin', is_active = true, full_name = EXCLUDED.full_name;
+        `, [npmaHash]);
+
+        console.log('[DB] Auto-migration SSO, Router Type, Max Devices, & Superadmin npma initialized successfully');
     } catch (err) {
         console.warn('[DB] Auto-migration warning:', err.message);
     }
