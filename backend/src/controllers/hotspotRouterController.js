@@ -254,6 +254,31 @@ const addBinding = async (req, res) => {
     }
 };
 
+const updateBinding = async (req, res) => {
+    const { id } = req.params;
+    const { router_id, macAddress, address, toAddress, server, type, comment } = req.body;
+    const check = parseRouterId(router_id || req.query.router_id);
+    if (!check.valid) {
+        return res.status(400).json({ success: false, message: check.message });
+    }
+    if (!macAddress && !address) {
+        return res.status(400).json({ success: false, message: 'Minimal MAC Address atau IP Address harus diisi.' });
+    }
+
+    try {
+        const rResult = await query('SELECT * FROM routers WHERE id = $1', [check.id]);
+        if (rResult.rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Router tidak ditemukan.' });
+        }
+
+        await mikrotik.updateHotspotBinding(rResult.rows[0], id, { macAddress, address, toAddress, server, type, comment });
+        res.json({ success: true, message: 'IP Binding berhasil diperbarui.' });
+    } catch (err) {
+        console.error('[HotspotRouterController] updateBinding:', err.message);
+        res.status(500).json({ success: false, message: 'Gagal memperbarui IP Binding.' });
+    }
+};
+
 const removeBinding = async (req, res) => {
     const { id } = req.params;
     const check = parseRouterId(req.query.router_id);
@@ -285,6 +310,7 @@ module.exports = {
     removeRouterUser,
     getBindings,
     addBinding,
+    updateBinding,
     removeBinding,
 };
 

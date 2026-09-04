@@ -1505,6 +1505,37 @@ const addHotspotBinding = async (routerConfig, { macAddress, address, toAddress,
 };
 
 /**
+ * Ubah / Update IP Binding di router
+ */
+const updateHotspotBinding = async (routerConfig, id, { macAddress, address, toAddress, server, type, comment }) => {
+  return withConnection(routerConfig, async (conn) => {
+    const args = [`=.id=${id}`];
+    if (macAddress && macAddress.trim()) {
+      args.push(`=mac-address=${macAddress.trim()}`);
+    } else {
+      args.push(`=mac-address=00:00:00:00:00:00`);
+    }
+
+    if (address && address.trim()) {
+      args.push(`=address=${address.trim()}`);
+    } else {
+      args.push(`=address=0.0.0.0`);
+    }
+
+    if (toAddress && toAddress.trim()) {
+      args.push(`=to-address=${toAddress.trim()}`);
+    }
+
+    args.push(`=server=${server || "all"}`);
+    args.push(`=type=${type || "bypassed"}`);
+    args.push(`=comment=${(comment || "").trim()}`);
+
+    await conn.write("/ip/hotspot/ip-binding/set", args);
+    return { success: true };
+  });
+};
+
+/**
  * Hapus IP Binding dari router
  */
 const removeHotspotBinding = async (routerConfig, id) => {
@@ -1970,6 +2001,7 @@ module.exports = {
   manageSimpleQueue,
   getHotspotBindings,
   addHotspotBinding,
+  updateHotspotBinding,
   removeHotspotBinding,
   reconcileRouterState,
 };

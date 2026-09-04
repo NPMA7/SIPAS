@@ -12,6 +12,7 @@ router.get('/users',           adminAuth, ctrl.getRouterUsers);
 router.delete('/users/:id',     adminAuth, preventVisitorMutation, ctrl.removeRouterUser);
 router.get('/bindings',        adminAuth, ctrl.getBindings);
 router.post('/bindings',       adminAuth, preventVisitorMutation, ctrl.addBinding);
+router.put('/bindings/:id',     adminAuth, preventVisitorMutation, ctrl.updateBinding);
 router.delete('/bindings/:id',  adminAuth, preventVisitorMutation, ctrl.removeBinding);
 
 module.exports = router;

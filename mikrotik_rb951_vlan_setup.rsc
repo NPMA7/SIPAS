@@ -107,7 +107,7 @@ set [find default=yes] idle-timeout=00:05:00 keepalive-timeout=00:02:00 shared-u
 /ip hotspot ip-binding
 add address=10.100.100.10 type=bypassed comment="Mini PC SIPAS Server - Bypass Hotspot"
 # Optional: Bypass AP Ruijie (Ganti IP / MAC sesuai perangkat AP Anda)
-# add address=10.87.1.2 type=bypassed comment="Ruijie AP Management - Bypass Hotspot"
+add address=10.87.1.2 type=bypassed comment="Ruijie AP Management - Bypass Hotspot"
 
 # --- LANGKAH 11: WALLED GARDEN (AKSES KE SERVER & DOMAIN SEBELUM LOGIN) ---
 /ip hotspot walled-garden

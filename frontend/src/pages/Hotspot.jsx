@@ -84,6 +84,18 @@ export default function Hotspot() {
     comment: ''
   });
 
+  const [showEditBindingModal, setShowEditBindingModal] = useState(false);
+  const [editingBinding, setEditingBinding] = useState(false);
+  const [editBindingData, setEditBindingData] = useState({
+    id: '',
+    macAddress: '',
+    address: '',
+    toAddress: '',
+    server: 'all',
+    type: 'bypassed',
+    comment: ''
+  });
+
   const [confirmDeleteBinding, setConfirmDeleteBinding] = useState(null);
   const [deletingBinding, setDeletingBinding] = useState(false);
 
@@ -245,6 +257,53 @@ export default function Hotspot() {
       }
     } finally {
       setAddingBinding(false);
+    }
+  }
+
+  const openEditBinding = (b) => {
+    setEditBindingData({
+      id: b.id || b['.id'],
+      macAddress: b.mac_address || b['mac-address'] || '',
+      address: b.address || '',
+      toAddress: b.to_address || '',
+      server: b.server || 'all',
+      type: b.type || 'bypassed',
+      comment: b.comment || ''
+    });
+    setShowEditBindingModal(true);
+  };
+
+  async function handleEditBindingSubmit(e) {
+    e.preventDefault();
+    if (!editBindingData.macAddress && !editBindingData.address) {
+      ctx?.addToast('Peringatan', 'Minimal MAC Address atau IP Address harus diisi.', 'warning');
+      return;
+    }
+    setEditingBinding(true);
+    try {
+      const res = await apiFetch(`/hotspot-router/bindings/${editBindingData.id}?router_id=${routerId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          router_id: routerId,
+          macAddress: editBindingData.macAddress,
+          address: editBindingData.address,
+          toAddress: editBindingData.toAddress,
+          server: editBindingData.server,
+          type: editBindingData.type,
+          comment: editBindingData.comment
+        })
+      });
+      if (res?.success) {
+        ctx?.addToast('Berhasil', 'IP Binding berhasil diperbarui di router.', 'success');
+        setShowEditBindingModal(false);
+        loadTab('bindings');
+        loadAllCounts();
+      } else {
+        ctx?.addToast('Gagal', res?.message || 'Gagal memperbarui IP Binding.', 'error');
+      }
+    } finally {
+      setEditingBinding(false);
     }
   }
 
@@ -413,9 +472,14 @@ export default function Hotspot() {
                 <td style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>{b.comment || '—'}</td>
                 {!isVisitor && (
                   <td>
-                    <button className="btn btn-danger btn-xs" onClick={() => setConfirmDeleteBinding(b)}>
-                      Hapus
-                    </button>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button className="btn btn-secondary btn-xs" onClick={() => openEditBinding(b)}>
+                        Edit
+                      </button>
+                      <button className="btn btn-danger btn-xs" onClick={() => setConfirmDeleteBinding(b)}>
+                        Hapus
+                      </button>
+                    </div>
                   </td>
                 )}
               </tr>
@@ -595,6 +659,96 @@ export default function Hotspot() {
               placeholder="Catatan / Nama Perangkat (opsional)"
               value={newBinding.comment}
               onChange={e => setNewBinding({ ...newBinding, comment: e.target.value })}
+            />
+          </div>
+        </form>
+      </Modal>
+
+      {/* Modal Edit IP Binding */}
+      <Modal
+        open={showEditBindingModal}
+        onClose={() => !editingBinding && setShowEditBindingModal(false)}
+        title="Edit Hotspot IP Binding"
+        footer={
+          <>
+            <button className="btn btn-secondary" onClick={() => setShowEditBindingModal(false)} disabled={editingBinding}>Batal</button>
+            <button className="btn btn-primary" onClick={handleEditBindingSubmit} disabled={editingBinding} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              {editingBinding && <div className="loader-ring" style={{ width: 14, height: 14, borderWidth: 2 }} />}
+              {editingBinding ? 'Menyimpan...' : 'Simpan Perubahan'}
+            </button>
+          </>
+        }
+      >
+        <form onSubmit={handleEditBindingSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div>
+            <label className="label">MAC Address</label>
+            <input
+              type="text"
+              className="input mono"
+              placeholder="Contoh: 9C:CE:88:1E:3B:F4"
+              value={editBindingData.macAddress}
+              onChange={e => setEditBindingData({ ...editBindingData, macAddress: e.target.value })}
+            />
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Boleh dikosongkan jika hanya mem-binding IP.</span>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div>
+              <label className="label">Address (IP)</label>
+              <input
+                type="text"
+                className="input mono"
+                placeholder="Contoh: 10.10.254.252"
+                value={editBindingData.address}
+                onChange={e => setEditBindingData({ ...editBindingData, address: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="label">To Address</label>
+              <input
+                type="text"
+                className="input mono"
+                placeholder="Kosongkan atau samakan IP"
+                value={editBindingData.toAddress}
+                onChange={e => setEditBindingData({ ...editBindingData, toAddress: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div>
+              <label className="label">Server</label>
+              <select
+                className="select"
+                value={editBindingData.server}
+                onChange={e => setEditBindingData({ ...editBindingData, server: e.target.value })}
+              >
+                <option value="all">all</option>
+                <option value="dhcp-hotspot">dhcp-hotspot</option>
+              </select>
+            </div>
+            <div>
+              <label className="label">Type</label>
+              <select
+                className="select"
+                value={editBindingData.type}
+                onChange={e => setEditBindingData({ ...editBindingData, type: e.target.value })}
+              >
+                <option value="bypassed">bypassed (Meloloskan Internet & Captive)</option>
+                <option value="regular">regular (Wajib Login Hotspot)</option>
+                <option value="passthrough">passthrough (Bypass Login saja)</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="label">Komentar</label>
+            <input
+              type="text"
+              className="input"
+              placeholder="Catatan / Nama Perangkat (opsional)"
+              value={editBindingData.comment}
+              onChange={e => setEditBindingData({ ...editBindingData, comment: e.target.value })}
             />
           </div>
         </form>
