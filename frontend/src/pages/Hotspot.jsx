@@ -139,12 +139,20 @@ export default function Hotspot() {
         apiFetch(`/hotspot-router/bindings?router_id=${routerId}`)
       ]);
       const isRealUser = a => a && a.user && String(a.user).trim() !== '' && String(a.user).trim() !== '—' && String(a.user).trim() !== 'undefined' && String(a.user).trim() !== 'null';
+      const isRealHost = h => h && ((h.mac_address && h.mac_address.trim() !== '' && h.mac_address !== '—') || (h.address && h.address.trim() !== '' && h.address !== '—'));
+      const isRealRouterUser = u => u && u.name && u.name.trim() !== '' && u.name !== 'default-trial' && u.name !== '—';
+      const isRealBinding = b => b && ((b.mac_address && b.mac_address.trim() !== '' && b.mac_address !== '—') || (b.address && b.address.trim() !== '' && b.address !== '—'));
+
       const validActive = (resActive?.data || []).filter(isRealUser);
+      const validHosts = (resHosts?.data || []).filter(isRealHost);
+      const validUsers = (resUsers?.data || []).filter(isRealRouterUser);
+      const validBindings = (resBindings?.data || []).filter(isRealBinding);
+
       setCounts({
         active: validActive.length,
-        hosts: resHosts?.success ? (resHosts.data || []).length : 0,
-        users: resUsers?.success ? (resUsers.data || []).length : 0,
-        bindings: resBindings?.success ? (resBindings.data || []).length : 0,
+        hosts: resHosts?.success ? validHosts.length : 0,
+        users: resUsers?.success ? validUsers.length : 0,
+        bindings: resBindings?.success ? validBindings.length : 0,
       });
     } catch (err) {
       console.warn('Failed to load counts:', err.message);
@@ -164,9 +172,19 @@ export default function Hotspot() {
 
       if (res?.success) {
         const rawList = res.data || [];
+        const isRealUser = a => a && a.user && String(a.user).trim() !== '' && String(a.user).trim() !== '—' && String(a.user).trim() !== 'undefined' && String(a.user).trim() !== 'null';
+        const isRealHost = h => h && ((h.mac_address && h.mac_address.trim() !== '' && h.mac_address !== '—') || (h.address && h.address.trim() !== '' && h.address !== '—'));
+        const isRealRouterUser = u => u && u.name && u.name.trim() !== '' && u.name !== 'default-trial' && u.name !== '—';
+        const isRealBinding = b => b && ((b.mac_address && b.mac_address.trim() !== '' && b.mac_address !== '—') || (b.address && b.address.trim() !== '' && b.address !== '—'));
+
         if (t === 'active') {
-          const isRealUser = a => a && a.user && String(a.user).trim() !== '' && String(a.user).trim() !== '—' && String(a.user).trim() !== 'undefined' && String(a.user).trim() !== 'null';
           setData(rawList.filter(isRealUser));
+        } else if (t === 'hosts') {
+          setData(rawList.filter(isRealHost));
+        } else if (t === 'bindings') {
+          setData(rawList.filter(isRealBinding));
+        } else if (t === 'users') {
+          setData(rawList.filter(isRealRouterUser));
         } else {
           setData(rawList);
         }

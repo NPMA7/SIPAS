@@ -79,7 +79,9 @@ export default function Queues() {
     try {
       const d = await apiFetch(`/queues/${rId}`);
       if (d?.success) {
-        setQueues(d.data || []);
+        const raw = d.data || [];
+        const valid = raw.filter(q => (q.name && q.name.trim() !== '') || (q.target && q.target.trim() !== ''));
+        setQueues(valid);
       } else {
         ctx?.addToast?.('warning', d?.message || 'Gagal memuat Simple Queues');
       }

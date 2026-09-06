@@ -6,16 +6,60 @@
 
 const { RouterOSAPI } = require("node-routeros");
 
-// Programmatic patch for Channel prototype to handle !empty gracefully (avoiding UNKNOWNREPLY crash)
+// Programmatic patch for Channel prototype to handle !empty and prevent ghost/dummy row on !done
 try {
   const { Channel } = require("node-routeros/dist/Channel");
-  if (Channel && Channel.prototype && Channel.prototype.processPacket) {
-    const originalProcessPacket = Channel.prototype.processPacket;
-    Channel.prototype.processPacket = function (packet) {
-      if (packet && packet[0] === "!empty") {
-        packet[0] = "!done";
+  if (Channel && Channel.prototype) {
+    // Only parse attributes that start with '=', ignoring raw '.tag' socket identifiers
+    Channel.prototype.parsePacket = function (packet) {
+      const obj = {};
+      for (const line of packet) {
+        if (!line.startsWith("=")) continue;
+        const linePair = line.split("=");
+        linePair.shift(); // remove empty leading element
+        const key = linePair.shift();
+        if (key) obj[key] = linePair.join("=");
       }
-      return originalProcessPacket.call(this, packet);
+      return obj;
+    };
+
+    // Override processPacket so !empty / !done do NOT emit bogus 'data' events
+    Channel.prototype.processPacket = function (packet) {
+      if (packet && (packet[0] === "!empty" || packet[0] === "!done")) {
+        const reply = packet.shift();
+        const parsed = this.parsePacket(packet);
+        if (parsed.ret !== undefined && !this.streaming) {
+          this.emit("data", parsed);
+        }
+        if (!this.trapped) {
+          this.emit("done", this.data);
+        }
+        this.close();
+        return;
+      }
+      const reply = packet.shift();
+      const parsed = this.parsePacket(packet);
+      if (reply === "!trap") {
+        this.trapped = true;
+        this.emit("trap", parsed);
+        return;
+      }
+      if (reply === "!re" && packet.length > 0 && !this.streaming) {
+        this.emit("data", parsed);
+      }
+      switch (reply) {
+        case "!re":
+          if (this.streaming) this.emit("stream", parsed);
+          break;
+        case "!done":
+          if (!this.trapped) this.emit("done", this.data);
+          this.close();
+          break;
+        default:
+          this.emit("unknown", reply);
+          this.close();
+          break;
+      }
     };
   }
 } catch (err) {
@@ -1240,18 +1284,20 @@ const setupPortalUser = async (
 const getDhcpLeases = async (routerConfig) => {
   return withConnection(routerConfig, async (conn) => {
     const leases = await conn.write("/ip/dhcp-server/lease/print");
-    return leases.map((l) => ({
-      id: l[".id"] || "",
-      address: l["address"] || "",
-      mac_address: l["mac-address"] || "",
-      client_id: l["client-id"] || "",
-      server: l["server"] || "",
-      status: l["status"] || "",
-      host_name: l["host-name"] || "",
-      expires_after: l["expires-after"] || "",
-      comment: l["comment"] || "",
-      dynamic: l["dynamic"] || "false",
-    }));
+    return (leases || [])
+      .filter((l) => (l["address"] && l["address"].trim() !== "") || (l["mac-address"] && l["mac-address"].trim() !== ""))
+      .map((l) => ({
+        id: l[".id"] || "",
+        address: l["address"] || "",
+        mac_address: l["mac-address"] || "",
+        client_id: l["client-id"] || "",
+        server: l["server"] || "",
+        status: l["status"] || "",
+        host_name: l["host-name"] || "",
+        expires_after: l["expires-after"] || "",
+        comment: l["comment"] || "",
+        dynamic: l["dynamic"] || "false",
+      }));
   });
 };
 
@@ -1406,18 +1452,20 @@ const removeDhcpLease = async (routerConfig, leaseId) => {
 const getHotspotHosts = async (routerConfig) => {
   return withConnection(routerConfig, async (conn) => {
     const hosts = await conn.write("/ip/hotspot/host/print");
-    return hosts.map((h) => ({
-      id: h[".id"] || "",
-      mac_address: h["mac-address"] || "",
-      address: h["address"] || "",
-      to_address: h["to-address"] || "",
-      server: h["server"] || "",
-      uptime: h["uptime"] || "",
-      keepalive: h["keepalive-timeout"] || "",
-      authorized: h["authorized"] || "false",
-      bypassed: h["bypassed"] || "false",
-      comment: h["comment"] || "",
-    }));
+    return (hosts || [])
+      .filter((h) => (h["mac-address"] && h["mac-address"].trim() !== "") || (h["address"] && h["address"].trim() !== ""))
+      .map((h) => ({
+        id: h[".id"] || "",
+        mac_address: h["mac-address"] || "",
+        address: h["address"] || "",
+        to_address: h["to-address"] || "",
+        server: h["server"] || "",
+        uptime: h["uptime"] || "",
+        keepalive: h["keepalive-timeout"] || "",
+        authorized: h["authorized"] || "false",
+        bypassed: h["bypassed"] || "false",
+        comment: h["comment"] || "",
+      }));
   });
 };
 
@@ -1473,16 +1521,18 @@ const toggleHotspotHostBypass = async (routerConfig, mac, shouldBypass) => {
 const getHotspotBindings = async (routerConfig) => {
   return withConnection(routerConfig, async (conn) => {
     const bindings = await conn.write("/ip/hotspot/ip-binding/print");
-    return (bindings || []).map((b) => ({
-      id: b[".id"] || "",
-      mac_address: b["mac-address"] || "",
-      address: b["address"] || "",
-      to_address: b["to-address"] || "",
-      server: b["server"] || "all",
-      type: b["type"] || "bypassed",
-      comment: b["comment"] || "",
-      disabled: b["disabled"] || "false",
-    }));
+    return (bindings || [])
+      .filter((b) => (b["mac-address"] && b["mac-address"].trim() !== "") || (b["address"] && b["address"].trim() !== ""))
+      .map((b) => ({
+        id: b[".id"] || "",
+        mac_address: b["mac-address"] || "",
+        address: b["address"] || "",
+        to_address: b["to-address"] || "",
+        server: b["server"] || "all",
+        type: b["type"] || "bypassed",
+        comment: b["comment"] || "",
+        disabled: b["disabled"] || "false",
+      }));
   });
 };
 
@@ -1552,15 +1602,17 @@ const removeHotspotBinding = async (routerConfig, id) => {
 const getRouterHotspotUsers = async (routerConfig) => {
   return withConnection(routerConfig, async (conn) => {
     const users = await conn.write("/ip/hotspot/user/print");
-    return users.map((u) => ({
-      id: u[".id"] || "",
-      name: u["name"] || "",
-      password: u["password"] || "",
-      profile: u["profile"] || "",
-      limit_bytes_out: u["limit-bytes-out"] || "",
-      limit_uptime: u["limit-uptime"] || "",
-      comment: u["comment"] || "",
-    }));
+    return (users || [])
+      .filter((u) => u["name"] && u["name"].trim() !== "" && u["name"] !== "default-trial")
+      .map((u) => ({
+        id: u[".id"] || "",
+        name: u["name"] || "",
+        password: u["password"] || "",
+        profile: u["profile"] || "",
+        limit_bytes_out: u["limit-bytes-out"] || "",
+        limit_uptime: u["limit-uptime"] || "",
+        comment: u["comment"] || "",
+      }));
   });
 };
 
@@ -1721,17 +1773,19 @@ const removeHotspotActive = async (routerConfig, activeId) => {
 const getSimpleQueues = async (routerConfig) => {
   return withConnection(routerConfig, async (conn) => {
     const queues = await conn.write("/queue/simple/print");
-    return queues.map((q) => ({
-      id: q[".id"] || "",
-      name: q["name"] || "",
-      target: q["target"] || "",
-      max_limit: q["max-limit"] || "",
-      rate: q["rate"] || "0/0",
-      bytes: q["bytes"] || "0/0",
-      packets: q["packets"] || "0/0",
-      disabled: q["disabled"] === "true" || q["disabled"] === true,
-      comment: q["comment"] || "",
-    }));
+    return (queues || [])
+      .filter((q) => (q["name"] && q["name"].trim() !== "") || (q["target"] && q["target"].trim() !== ""))
+      .map((q) => ({
+        id: q[".id"] || "",
+        name: q["name"] || "",
+        target: q["target"] || "",
+        max_limit: q["max-limit"] || "",
+        rate: q["rate"] || "0/0",
+        bytes: q["bytes"] || "0/0",
+        packets: q["packets"] || "0/0",
+        disabled: q["disabled"] === "true" || q["disabled"] === true,
+        comment: q["comment"] || "",
+      }));
   });
 };
 
