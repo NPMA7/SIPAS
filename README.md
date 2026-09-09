@@ -37,21 +37,21 @@ Untuk memblokir situs-situs CDN modern seperti YouTube atau domain kustom (NPMA)
 * Backend secara cerdas menyaring data sampah (lease kosong) pada menu DHCP Leases.
 * Ketika status blokir untuk suatu situs dimatikan (uncheck) di web admin, sistem mendeteksi apakah masih ada user lain yang diblokir. Jika list kosong, backend otomatis menghapus **seluruh rule filter L7/IP/QUIC, address-list target, dan regex L7** dari router secara real-time agar konfigurasi Winbox tetap bersih.
 
-### 4. Hybrid SSO & Dual Router Support
+### 4. Hybrid SSO & Multi-VLAN Hotspot
 * **Hybrid SSO**: Terintegrasi langsung dengan API SSO Pemkab untuk pegawai ASN (autofill NIP, Nama, Jabatan, Golongan) serta mendukung pendaftaran manual User Lokal/Tamu.
 * **Batas Perangkat (Max Devices)**: Mengunci jumlah perangkat aktif bersamaan per user (default: **4 perangkat**). Mengganti sesi lama jika reconnect dari perangkat yang sama dan menolak login perangkat ke-5.
-* **Dual Router Support**: Mendukung Router Internal Diskominfo (Full Mikrotik API) dan Router Eksternal/Vendor (Portal Auth Bypass).
-* **Multi-VLAN Subnet Kelas A**: Menyediakan pilihan script setup komplit Multi-VLAN Per-Dinas (`mikrotik_vlan_setup.rsc`) dengan subnet Kelas A (/16 = 65,534 IP per Dinas).
+* **Mikrotik CCR2116-12G-4S+ Ready**: Dioptimalkan untuk RouterOS v7 dengan pemisahan interface Dedicated Server (`LAN-ether2` `10.100.100.10`), VLAN 101 TIK (`10.87.1.0/24`), dan VLAN 138 KORPRI (`10.87.38.0/24`).
+* **Multi-VLAN Subnetting**: Script setup komplit [mikrotik_ccr2116_vlan_setup.rsc](./docs/mikrotik_ccr2116_vlan_setup.rsc) mencakup DHCP pool, DNS static `hotspot.net`, Walled Garden, dan Fast TCP Reset untuk instant pop-up captive portal.
 
 ---
 
-## 📂 Dokumentasi Lainnya
+## 📂 Dokumentasi Teknis
 
-Untuk memulai deploy dan menggunakan sistem ini, silakan baca dokumentasi detail berikut:
+Untuk memulai deploy dan mengoperasikan sistem ini, silakan baca dokumentasi detail berikut:
 
 1. 💻 **[Panduan Instalasi & Konfigurasi (SETUP.md)](./docs/SETUP.md)**
-2. 🔒 **[Panduan Setup VPS & VPN L2TP/IPsec (VPNSETUP.md)](./docs/VPNSETUP.md)**
-3. 📖 **[Panduan Penggunaan Fitur Web Admin (TUTORIAL.md)](./docs/TUTORIAL.md)**
-4. 🤝 **[Panduan Kolaborasi Tim Dev & Network (COLLABORATION.md)](./docs/COLLABORATION.md)**
+2. 🤝 **[Panduan Kolaborasi Tim Dev & Network (COLLABORATION.md)](./docs/COLLABORATION.md)**
+3. 🔄 **[Panduan Alur Logika Jaringan & Aplikasi (LOGIC_FLOW.md)](./docs/LOGIC_FLOW.md)**
+4. 🏢 **[Panduan Integrasi Topologi FTTH & Ruijie AP (SOLUSI_FTTH.md)](./docs/SOLUSI_FTTH.md)**
 5. 📂 **[Panduan Struktur Folder & File (STRUCTURE.md)](./docs/STRUCTURE.md)**
-6. 🔄 **[Panduan Alur Logika Jaringan & Aplikasi (LOGIC_FLOW.md)](./docs/LOGIC_FLOW.md)**
+6. 📡 **[Script Konfigurasi CCR2116-12G-4S+ (mikrotik_ccr2116_vlan_setup.rsc)](./docs/mikrotik_ccr2116_vlan_setup.rsc)**

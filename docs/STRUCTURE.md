@@ -85,24 +85,22 @@ SIPAS/
 │   │   └── main.jsx                      # Entry Point Bootstrap React JS
 │   └── package.json                      # Berkas Dependensi & Script React Vite
 │
-├── nginx/                                # Web Server Reverse Proxy
-│   └── nginx.conf                        # Konfigurasi Reverse Proxy Nginx
-│
-├── VPN-SERVER/                           # Script Otomasi VPN Server
-│   └── vpnsetup.sh                       # Script Installer L2TP/IPsec Server di VPS Debian
+├── docs/                                 # Dokumentasi & Script Konfigurasi Router
+│   ├── mikrotik_ccr2116_vlan_setup.rsc   # Script Konfigurasi CCR2116-12G-4S+ (VLAN 101 & 138, API, Walled Garden)
+│   ├── CONFIG_VENDOR_CCR.rsc             # Konfigurasi Vendor / Template Router Eksternal
+│   ├── API.md                            # Spesifikasi Endpoint REST API
+│   ├── COLLABORATION.md                  # Panduan Kolaborasi Tim Dev & Network Engineer
+│   ├── LOGIC_FLOW.md                     # Panduan Alur Kerja Logika Jaringan & Aplikasi
+│   ├── SETUP.md                          # Panduan Setup Lengkap Server & Router
+│   ├── SOLUSI_FTTH.md                    # Panduan Integrasi FTTH & AP Ruijie
+│   └── STRUCTURE.md                      # Panduan Struktur Direktori Proyek
 │
 ├── .env                                  # Konfigurasi Variabel Lingkungan Sistem
-├── docker-compose.yml                    # Konfigurasi Orkestrasi Container Docker
-├── mikrotik_basic_setup.rsc              # Script Setup Internet & LAN Dasar Router (Single Subnet)
-├── mikrotik_vlan_setup.rsc               # Script Setup Internet, LAN, & Multi-VLAN Per-Dinas Subnet Kelas A (/16)
-├── mikrotik_project_setup_vps.rsc        # Script Setup Hotspot & Integrasi API VPS Web
-├── mikrotik_vpn_setup.rsc                # Script Setup L2TP/IPsec Client di Router Mikrotik
+├── docker-compose.yml                    # Konfigurasi Orkestrasi Container Docker (Nginx, Backend, PostgreSQL)
+├── build-backend.sh                      # Script Kompilasi & Restart Container Backend
+├── build-frontend.sh                     # Script Kompilasi Frontend Vite React
 ├── sample_users.csv                      # Templat Format Berkas CSV Impor Massal
-├── README.md                             # Panduan Instalasi Sistem Lengkap
-├── SETUP.md                              # Panduan Setup Lengkap: Web UI, Hotspot, & VPN
-├── STRUCTURE.md                          # Panduan Struktur Direktori Proyek
-├── TUTORIAL.md                           # Panduan Lengkap: Web UI, Hotspot, & VPN
-└── VPNSETUP.md                           # Panduan Setup L2TP/IPsec VPN Server & Client
+└── README.md                             # Gambaran Umum & Quick Start Sistem SIPAS
 ```
 
 ---

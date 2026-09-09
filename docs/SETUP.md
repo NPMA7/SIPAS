@@ -1,63 +1,49 @@
 # Panduan Setup & Instalasi 💻⚙️
 
-Dokumen ini menjelaskan alur instalasi **SIPAS** (*Sistem Integrasi Portal & Autentikasi Satu-Pintu*) dari awal hingga sistem berjalan penuh, baik untuk skenario **Lokal (LAN)** maupun **Online (VPS)**.
+Dokumen ini menjelaskan alur instalasi dan deployment **SIPAS** (*Sistem Integrasi Portal & Autentikasi Satu-Pintu*) dari awal hingga sistem berjalan penuh pada router **Mikrotik CCR2116-12G-4S+** dan Server Dedicated Mini PC / Cloudflare.
 
 ---
 
 ## 📋 Ringkasan File Script Mikrotik
 
-Proyek ini menyediakan 3 berkas script Mikrotik (`.rsc`) yang dijalankan sesuai kebutuhan:
+Proyek ini menyediakan berkas script konfigurasi RouterOS v7 siap pakai di folder `docs/`:
 
-| File Script                                                            | Fungsi                                                                       | Kapan Diimpor?                            |
-| :--------------------------------------------------------------------- | :--------------------------------------------------------------------------- | :---------------------------------------- |
-| **[mikrotik_basic_setup.rsc](./mikrotik_basic_setup.rsc)**             | Setup komplit ISP, Bridge, Single Subnet Hotspot, NAT, DNS.                  | **Pilihan A** (Non-VLAN)                  |
-| **[mikrotik_vlan_setup.rsc](./mikrotik_vlan_setup.rsc)**               | Setup komplit ISP, Bridge, Multi-VLAN Per-Dinas Subnet Kelas A (/16), NAT, DNS. | **Pilihan B** (Pengganti Basic utk VLAN)  |
-| **[mikrotik_project_setup_vps.rsc](./mikrotik_project_setup_vps.rsc)** | Konfigurasi Hotspot Server, API Port `8728`, Walled Garden, dan Autocleanup. | **Wajib** (Setelah Basic/VLAN)            |
-| **[mikrotik_vpn_setup.rsc](./mikrotik_vpn_setup.rsc)**                 | Konfigurasi L2TP/IPsec Client untuk menghubungkan Mikrotik ke VPS.           | **Khusus VPS**                            |
+| File Script | Target Hardware / Fungsi | Kapan Digunakan? |
+| :--- | :--- | :--- |
+| **[mikrotik_ccr2116_vlan_setup.rsc](./mikrotik_ccr2116_vlan_setup.rsc)** | **CCR2116-12G-4S+**: Setup VLAN 101 (TIK) & VLAN 138 (KORPRI), Dedicated Server `10.100.100.10` di `LAN-ether2`, RouterOS API `8728`, Walled Garden, dan Fast TCP Reset. | **Utama / Produksi (Recommended)** |
+| **[CONFIG_VENDOR_CCR.rsc](./CONFIG_VENDOR_CCR.rsc)** | Templat konfigurasi router eksternal / vendor untuk integrasi bypass portal. | **Opsi Router Vendor** |
 
 ---
 
-## 🛠️ Langkah 1: Konfigurasi Router Mikrotik
+## 🛠️ Langkah 1: Konfigurasi Router Mikrotik CCR2116
 
-1. Buka **Winbox** dan hubungkan ke router Mikrotik Anda.
-2. Buka menu **Files** di Winbox, lalu drag & drop berkas script berikut:
-   - `mikrotik_basic_setup.rsc` *(atau `mikrotik_vlan_setup.rsc` jika jaringan memakai VLAN)*
-   - `mikrotik_project_setup_vps.rsc`
-   - `mikrotik_vpn_setup.rsc` _(Hanya jika deploy via VPN ke VPS)_
-3. Buka **New Terminal** di Winbox dan jalankan secara berurutan:
-
+1. Buka **Winbox** dan hubungkan ke router Mikrotik CCR2116 Anda.
+2. Buka menu **Files** di Winbox, lalu upload berkas:
+   - `docs/mikrotik_ccr2116_vlan_setup.rsc`
+3. Buka **New Terminal** di Winbox dan jalankan:
    ```routeros
-   # 1A. Jika TANPA VLAN (Single Subnet Kelas A):
-   /import file-name=mikrotik_basic_setup.rsc
-
-   # ATAU 1B. Jika MENGGUNAKAN Multi-VLAN Per-Dinas (Subnet Kelas A /16):
-   /import file-name=mikrotik_vlan_setup.rsc
-
-   # 2. Setup captive portal hotspot & API VPS
-   /import file-name=mikrotik_project_setup_vps.rsc
+   /import file-name=mikrotik_ccr2116_vlan_setup.rsc
    ```
-
-4. **Khusus Skenario VPS / Remote Router**:
-   Jika server SIPAS Anda berada di VPS, jalankan script VPN Client:
-   ```routeros
-   /import file-name=mikrotik_vpn_setup.rsc
-   ```
-   _(Pastikan data IP Public VPS, Username, Password, dan IPsec Secret di dalam file tersebut sudah disesuaikan)._
+4. Verifikasi di Winbox:
+   - **IP -> Address**: Pastikan `10.100.100.1/24` terpasang di `LAN-ether2`, `10.87.1.1/24` di `vlan - TIK`, dan `10.87.38.1/24` di `vlan - KORPRI`.
+   - **IP -> Hotspot**: Pastikan server `hs-tik` dan `hs-korpri` aktif dengan profile `hsprof-sipas`.
+   - **IP -> Services**: Pastikan port `api` (`8728`) aktif.
 
 ---
 
 ## 📦 Langkah 2: Jalankan Application Server (Docker Compose)
 
-Di komputer Server / VPS (yang sudah terpasang Docker & Docker Compose):
+Di komputer Server Dedicated Mini PC (yang terhubung ke port `LAN-ether2` Mikrotik):
 
-1. Buka terminal di direktori root proyek `SIPAS`.
-2. Jalankan perintah untuk mengaktifkan Database PostgreSQL, Backend, dan Frontend Nginx:
+1. Buka terminal di direktori root `/var/www/SIPAS`.
+2. Pastikan file `.env` sudah terisi dengan benar (IP database, JWT secret, domain `sipas.npma.my.id`).
+3. Jalankan perintah untuk mengaktifkan seluruh container:
    ```bash
-   docker-compose up -d --build
+   docker compose up -d --build
    ```
-3. Pastikan seluruh container berstatus **Up (Running)**:
+4. Pastikan seluruh container berstatus **Up (Running)**:
    ```bash
-   docker-compose ps
+   docker compose ps
    ```
 
 ---
@@ -65,27 +51,32 @@ Di komputer Server / VPS (yang sudah terpasang Docker & Docker Compose):
 ## 🌐 Langkah 3: Hubungkan Web Admin ke Router Mikrotik
 
 1. Buka browser Anda dan akses halaman admin Web SIPAS di:
-   - `http://103.67.244.193` (IP Public VPS)
-2. Login ke Web Admin, lalu masuk ke menu **Setting / Router Setup**.
-3. Daftarkan Router Mikrotik Anda:
-   - Isikan **IP VPN Client Mikrotik**: `192.168.42.2` (atau IP VPN router yang terhubung ke VPS).
-   - Isikan **API Port**: `8728`.
-4. Simpan data router dan pastikan indikator status koneksi menunjukkan **Connected (Hijau)**.
+   - `https://sipas.npma.my.id/manage/admin/login`
+2. Login sebagai Admin / SuperAdmin, lalu masuk ke menu **Routers / Router Setup** (`/manage/admin/routers`).
+3. Daftarkan Router Mikrotik CCR2116 Anda:
+   - **IP Address**: `10.100.100.1` (IP gateway router pada interface `LAN-ether2`)
+   - **API Port**: `8728`
+   - **Username**: `sipas-api`
+   - **Password**: `PasswordSipas123!`
+4. Klik **Test Koneksi** dan pastikan indikator status menunjukkan **Connected (Hijau)**.
 
 ---
 
 ## 🔑 Langkah 4: Upload Halaman Login Captive Portal (Hotspot Files)
 
-1. Buka folder proyek [flash/hotspot](./flash/hotspot).
-2. Pastikan file `login.html` dan `rlogin.html` sudah mengarah ke IP Public VPS `103.67.244.193` / domain portal Anda.
-3. Drag & drop seluruh isi folder `flash/hotspot` ke menu **Files** Winbox router Mikrotik Anda (folder `flash/hotspot` atau `hotspot`).
+1. Buka folder [flash/hotspot](../flash/hotspot).
+2. Pastikan file `login.html` dan `rlogin.html` sudah mengarah ke `https://sipas.npma.my.id/`.
+3. Upload seluruh isi folder `flash/hotspot` ke menu **Files** Winbox router Mikrotik Anda (folder `hotspot`).
 4. Di Winbox, buka **IP -> Hotspot -> Server Profiles**:
-   - Double-click `hsprof-captive`, pastikan **HTML Directory** sudah terarah ke folder `hotspot`.
+   - Double-click `hsprof-sipas`, pastikan **HTML Directory** sudah terarah ke folder `hotspot`.
+   - Pastikan **DNS Name** bernilai `hotspot.net`.
    - Klik **Apply** & **OK**.
 
 ---
 
-## 🔒 Panduan Lanjutan: Setup VPN Server di VPS
+## 🚀 Langkah 5: Pengujian Autentikasi Klien
 
-Jika Anda baru pertama kali menyiapkan VPS Debian/Ubuntu untuk VPN L2TP/IPsec, silakan baca dokumentasi khusus:
-👉 **[Panduan Setup VPS & L2TP VPN (VPNSETUP.md)](./VPNSETUP.md)**
+1. Hubungkan HP/Laptop ke Wi-Fi Hotspot VLAN 101 (TIK) atau VLAN 138 (KORPRI).
+2. Browser akan otomatis memunculkan pop-up Captive Portal SIPAS.
+3. Masukkan NIP dan Password SSO Pegawai.
+4. Setelah verifikasi berhasil, akses internet akan langsung terbuka dengan pembatasan bandwidth dan kebijakan firewall yang telah ditentukan.

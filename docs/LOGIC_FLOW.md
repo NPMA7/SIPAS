@@ -1,42 +1,42 @@
 # Alur Logika Jaringan & Aplikasi Dari Awal Sampai Akhir (Logic Flow) 🔄🧠
 
-Dokumen ini menjelaskan **alur kerja (workflow) lengkap dari awal sampai akhir** bagaimana seluruh komponen sistem **SIPAS** (*Sistem Integrasi Portal & Autentikasi Satu-Pintu*) berinteraksi — mulai dari perangkat client terhubung ke jaringan Wi-Fi, autentikasi Hybrid SSO, komunikasi VPN/API ke VPS, hingga pembersihan sesi otomatis di router Mikrotik.
+Dokumen ini menjelaskan **alur kerja (workflow) lengkap dari awal sampai akhir** bagaimana seluruh komponen sistem **SIPAS** (*Sistem Integrasi Portal & Autentikasi Satu-Pintu*) berinteraksi pada infrastruktur router **Mikrotik CCR2116-12G-4S+** — mulai dari perangkat client terhubung ke VLAN Wi-Fi Hotspot, autentikasi Hybrid SSO, komunikasi API ke Dedicated Mini PC Server SIPAS, hingga manajemen bandwidth dan pembersihan sesi otomatis.
 
 ---
 
 ## 🏛️ 1. Peta Arsitektur Sistem Terintegrasi
 
-Sistem SIPAS terdiri dari 6 komponen utama yang saling berkomunikasi:
+Sistem SIPAS terdiri dari komponen-komponen yang saling berkomunikasi secara lokal maupun cloud:
 
 ```text
-[HP/Laptop Client] ──(Wi-Fi / LAN)──► [Router Mikrotik Lapangan]
-                                              │ (VPN L2TP / Port 8728)
-                                              ▼
-[Server API SSO Pemkab] ◄──(HTTPS)── [Server VPS SIPAS]
-  (sso.xxx)                          ├── Nginx Reverse Proxy (Port 80/443)
-                                     ├── React Frontend Captive Portal
-                                     ├── Express.js Backend API (Port 3001)
-                                     └── PostgreSQL Database (Port 5432)
+[HP/Laptop Client] ──(VLAN 101 / VLAN 138)──► [Router Mikrotik CCR2116-12G-4S+]
+                                                        │ (LAN-ether2: Port 8728 API / Walled Garden)
+                                                        ▼
+[Server API SSO Pemkab] ◄──(HTTPS API)── [Server Mini PC SIPAS (10.100.100.10)]
+  (https://sso.xxx)                        ├── Nginx Reverse Proxy (Port 80/3000 / Cloudflare)
+                                           ├── React Frontend Captive Portal (Vite)
+                                           ├── Express.js Backend API (Port 3001)
+                                           └── PostgreSQL Database (Port 5432)
 ```
 
 ---
 
 ## 🌐 2. ALUR 1: Autentikasi Captive Portal Client (End-to-End Login)
 
-> **Analogi**: Seperti masuk gerbang tol otomatis. HP Anda diberikan nomor registrasi fisik (IP/MAC). Saat ingin lewat, gerbang mengalihkan Anda ke loket otomatis (Portal VPS). Loket mengecek KTP/NIP Anda ke Pusat (Server SSO Pemkab), memeriksa kuota mobil (Max 4 Devices), lalu membuka palang tol (Mikrotik Hotspot).
+> **Analogi**: Seperti masuk gerbang tol otomatis. HP Anda diberikan nomor registrasi fisik (IP/MAC) dari DHCP VLAN. Saat ingin lewat, gerbang mengalihkan Anda ke loket otomatis (Portal SIPAS). Loket mengecek KTP/NIP Anda ke Pusat (Server SSO Pemkab), memeriksa kuota perangkat (Max 4 Devices), lalu membuka palang tol (Mikrotik Hotspot).
 
 ```text
-[1. Koneksi Wi-Fi / LAN Hotspot]
+[1. Koneksi Wi-Fi AP Hotspot (VLAN 101 "vlan-TIK" / VLAN 138 "vlan-KORPRI")]
   │
   ▼
-[2. Mikrotik Berikan IP Dinamis via DHCP (10.10.1.X)]
-  │
+[2. Mikrotik Berikan IP Dinamis via DHCP]
+  │ (TIK: 10.87.1.10-254 / KORPRI: 10.87.38.10-254)
   ▼
 [3. Client Buka Browser / Akses HTTP (Port 80)]
   │
-  ▼ (HTTP 302 Redirect via redirect.html)
-[4. Browser Client Dialihkan ke Portal VPS: http://103.67.244.193/portal/login?ip=...&mac=...]
-  │
+  ▼ (HTTP 302 Redirect via redirect.html di Router)
+[4. Browser Client Dialihkan ke Portal: https://sipas.npma.my.id/portal/login?ip=...&mac=...]
+  │ (atau http://10.100.100.10:3000/portal/login?ip=...&mac=...)
   ▼
 [5. Client Input NIP/Username & Password SSO]
   │
@@ -51,7 +51,7 @@ Sistem SIPAS terdiri dari 6 komponen utama yang saling berkomunikasi:
   └──► [User Lokal] ─► Match Username & Password di PostgreSQL Lokal
   │
   ▼
-[7. Backend Panggil Mikrotik API (Port 8728 via VPN Tunnel 192.168.42.X)]
+[7. Backend Panggil Mikrotik API (10.100.100.1:8728 via LAN-ether2)]
   │  (Cek Active Sessions untuk NIP ini)
   │
   ├──► [MAC Sama (Reconnect)] ──► Tendang sesi usang dari MAC tersebut
@@ -63,14 +63,14 @@ Sistem SIPAS terdiri dari 6 komponen utama yang saling berkomunikasi:
   └──► [Kuota Perangkat Tersedia (Active Sessions < 4)]
           │
           ▼
-[8. Backend Buat User Temporer (temp-timestamp) & Simple Queue (30M/30M) via API Port 8728]
+[8. Backend Buat User Temporer (temp-timestamp) & Simple Queue via API Port 8728]
   │
   ▼
 [9. Backend Respon Sukses + Kredensial Temporer ke React Frontend]
   │
   ▼
-[10. React Frontend Auto Hidden Form Submit ke Router Mikrotik (http://10.10.0.1/login)]
-  │
+[10. React Frontend Auto Hidden Form Submit ke Router (http://hotspot.net/login)]
+  │  (atau http://10.87.1.1/login / http://10.87.38.1/login)
   ▼
 [11. Mikrotik Verifikasi Tiket Temporer ➔ IP Client Di-Authorize ➔ Akses Internet Terbuka! 🌐]
 ```
@@ -79,7 +79,7 @@ Sistem SIPAS terdiri dari 6 komponen utama yang saling berkomunikasi:
 
 ## 👥 3. ALUR 2: Manajemen User, Bandwidth, & Sync Realtime (Admin Web)
 
-Proses saat Administrator menambah, mengedit, atau mengubah limit bandwidth pengguna melalui Web Admin SIPAS:
+Proses saat Administrator menambah, mengedit, atau mengubah limit bandwidth pengguna melalui Web Admin SIPAS (`https://sipas.npma.my.id/manage/admin`):
 
 ```text
 [Admin Web UI (React Frontend)]
@@ -90,7 +90,7 @@ Proses saat Administrator menambah, mengedit, atau mengubah limit bandwidth peng
   ├──► (2. Update Record Data User) ──► [Database PostgreSQL]
   │
   ▼ (3. Cek Status Online User di Router)
-[Router Mikrotik via API Port 8728]
+[Router Mikrotik CCR2116 via API Port 8728]
   │
   ├──► [Status: User Sedang ONLINE Active]
   │       │
@@ -140,9 +140,16 @@ Sistem pemblokiran situs SIPAS menggunakan strategi **3-Lapis Perlindungan** unt
 
 | Parameter Sistem | Nilai / Konfigurasi | Keterangan |
 | :--- | :--- | :--- |
-| **IP Public VPS SIPAS** | `103.67.244.193` | Server Web Admin & Captive Portal |
-| **IP Tunnel L2TP VPN** | `192.168.42.0/24` | Jalur komunikasi aman Mikrotik ➔ VPS |
-| **Subnet Jaringan Hotspot** | `10.10.0.0/16` (Kelas A) | Mampu menampung hingga 65.534 User |
+| **Model Router** | Mikrotik CCR2116-12G-4S+ | RouterOS v7 Core Engine |
+| **Dedicated Server Mini PC** | `10.100.100.10` (Gateway `10.100.100.1`) | Terhubung ke `LAN-ether2` |
+| **Domain Public Portal** | `https://sipas.npma.my.id` | Akses Portal & Web Admin |
+| **Domain Lokal Server** | `sipas.local` (`10.100.100.10`) | Domain DNS Static Router |
+| **VLAN 101 (TIK)** | `10.87.1.0/24` (Gateway: `10.87.1.1`) | Pool: `10.87.1.10 - 10.87.1.254` |
+| **VLAN 138 (KORPRI)** | `10.87.38.0/24` (Gateway: `10.87.38.1`) | Pool: `10.87.38.10 - 10.87.38.254` |
+| **Domain Gateway Hotspot** | `hotspot.net` | DNS Name Hotspot Profile |
+| **Port API RouterOS** | `8728` (User: `sipas-api`) | Jalur Komunikasi Backend ke Mikrotik |
+| **Batas Perangkat (Max)** | **4 Perangkat** / User | Mengunci maksimal 4 login bersamaan per NIP |
+| **Timeout Idle & Keepalive** | `00:05:00` (Idle) / `00:02:00` (Keepalive)| Timeout Hotspot Profile Mikrotik ||
 | **Opsi Topologi VLAN** | Multi-VLAN Per-Dinas | Script `mikrotik_vlan_setup.rsc` |
 | **Batas Perangkat (Max)** | **4 Perangkat** / User | Mengunci maksimal 4 login bersamaan per NIP |
 | **Mode Autentikasi SSO** | `SSO_MODE=real` | Terhubung langsung ke API SSO Pemkab |
