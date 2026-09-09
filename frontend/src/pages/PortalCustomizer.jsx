@@ -2,6 +2,7 @@ import { useState, useEffect, useContext, useMemo } from 'react';
 import { apiFetch, apiPut, apiPost } from '../api/client';
 import { ToastContext } from '../hooks/ToastContext';
 import SipasLogo from '../components/ui/SipasLogo';
+import Modal from '../components/ui/Modal';
 
 function hexToRgba(hex, opacity) {
   if (!hex || !hex.startsWith('#')) return `rgba(17, 24, 39, ${opacity})`;
@@ -204,38 +205,30 @@ export default function PortalCustomizer() {
   const primaryColor = form.primary_color || '#2563eb';
 
   return (
-    <div className="page-container">
+    <div className="space-y-6">
       {/* Header Bar */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: 12,
-        marginBottom: 20
-      }}>
+      <div className="flex items-center justify-between flex-wrap gap-3 pb-2 border-b border-slate-800/60">
         <div>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>
+          <h2 className="text-lg font-bold text-slate-100">
             Kustomisasi Tampilan Portal Login
           </h2>
-          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '4px 0 0' }}>
+          <p className="text-xs text-slate-400 mt-0.5">
             Atur tema warna, gambar latar belakang, logo, teks branding, dan transparansi halaman captive portal.
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <div className="flex items-center gap-2 flex-wrap">
           <a
             href="/"
             target="_blank"
             rel="noreferrer"
-            className="btn btn-secondary btn-sm"
-            style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+            className="btn btn-secondary btn-sm inline-flex items-center gap-1.5"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
               <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
               <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
             </svg>
-            Buka Portal di Tab Baru
+            <span>Buka Portal di Tab Baru</span>
           </a>
 
           {!isVisitor && (
@@ -262,10 +255,9 @@ export default function PortalCustomizer() {
       </div>
 
       {/* Row 1: Top Section - Settings (Left) & Live Preview (Right) */}
-      <div className="portal-customizer-grid" style={{ marginBottom: 20 }}>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left: Background & Branding Cards */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          
+        <div className="lg:col-span-5 space-y-5">
           {/* Card 1: Latar Belakang (Background) */}
           <div className="card">
             <div className="card-header">
@@ -275,19 +267,18 @@ export default function PortalCustomizer() {
                   <circle cx="8.5" cy="8.5" r="1.5"/>
                   <polyline points="21 15 16 10 5 21"/>
                 </svg>
-                Latar Belakang (Background)
+                <span>Latar Belakang (Background)</span>
               </div>
             </div>
 
-            <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div className="card-body space-y-4">
               {/* Type Switcher */}
               <div className="form-group">
                 <label className="form-label">Tipe Latar Belakang</label>
-                <div style={{ display: 'flex', gap: 10 }}>
+                <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     className={`btn btn-sm ${form.bg_type === 'color' ? 'btn-primary' : 'btn-secondary'}`}
-                    style={{ flex: 1 }}
                     onClick={() => setForm(f => ({ ...f, bg_type: 'color' }))}
                   >
                     Warna Solid
@@ -295,7 +286,6 @@ export default function PortalCustomizer() {
                   <button
                     type="button"
                     className={`btn btn-sm ${form.bg_type === 'image' ? 'btn-primary' : 'btn-secondary'}`}
-                    style={{ flex: 1 }}
                     onClick={() => setForm(f => ({ ...f, bg_type: 'image' }))}
                   >
                     Gambar Background
@@ -305,49 +295,35 @@ export default function PortalCustomizer() {
 
               {/* Mode: Color */}
               {form.bg_type === 'color' && (
-                <div>
+                <div className="space-y-3">
                   <label className="form-label">Pilih Warna Solid</label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                  <div className="flex items-center gap-2">
                     <input
                       type="color"
                       value={form.bg_color || '#0a0e1a'}
                       onChange={(e) => setForm(f => ({ ...f, bg_color: e.target.value }))}
-                      style={{
-                        width: 44,
-                        height: 38,
-                        padding: 0,
-                        border: '1px solid var(--border)',
-                        borderRadius: 'var(--radius-sm)',
-                        cursor: 'pointer',
-                        background: 'transparent',
-                      }}
+                      className="w-10 h-9 p-0 border border-slate-700 rounded-lg cursor-pointer bg-transparent"
                     />
                     <input
                       type="text"
-                      className="input input-sm mono"
+                      className="input input-sm mono flex-1"
                       value={form.bg_color || '#0a0e1a'}
                       onChange={(e) => setForm(f => ({ ...f, bg_color: e.target.value }))}
                       placeholder="#0a0e1a"
-                      style={{ flex: 1 }}
                     />
                   </div>
 
                   {/* Presets */}
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  <div className="flex gap-1.5 flex-wrap">
                     {COLOR_PRESETS.map((p) => (
                       <button
                         key={p.value}
                         type="button"
                         onClick={() => setForm(f => ({ ...f, bg_color: p.value }))}
-                        style={{
-                          padding: '4px 10px',
-                          borderRadius: 6,
-                          fontSize: '0.74rem',
-                          background: p.value,
-                          color: '#ffffff',
-                          border: form.bg_color === p.value ? '2px solid var(--primary-light)' : '1px solid var(--border)',
-                          cursor: 'pointer',
-                        }}
+                        className={`px-2.5 py-1 rounded-md text-xs text-white border transition-all cursor-pointer ${
+                          form.bg_color === p.value ? 'ring-2 ring-blue-400 border-transparent' : 'border-slate-700'
+                        }`}
+                        style={{ backgroundColor: p.value }}
                       >
                         {p.label}
                       </button>
@@ -358,39 +334,31 @@ export default function PortalCustomizer() {
 
               {/* Mode: Image */}
               {form.bg_type === 'image' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div className="space-y-3">
                   <div>
                     <label className="form-label">Upload File Gambar Latar</label>
                     <input
                       type="file"
                       accept="image/png, image/jpeg, image/webp"
                       onChange={handleImageUpload}
-                      className="input input-sm"
-                      style={{ padding: '6px 10px' }}
+                      className="input input-sm text-xs"
                     />
-                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                    <div className="form-hint">
                       Format didukung: JPG, PNG, WebP (maks. 2 MB).
-                    </span>
+                    </div>
                   </div>
 
                   {form.bg_image && (
-                    <div style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', border: '1px solid var(--border)', height: 110 }}>
+                    <div className="relative rounded-lg overflow-hidden border border-slate-700 h-28">
                       <img
                         src={form.bg_image}
                         alt="Background Preview"
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        className="w-full h-full object-cover"
                       />
                       <button
                         type="button"
                         onClick={() => setForm(f => ({ ...f, bg_image: null, bg_type: 'color' }))}
-                        className="btn btn-danger btn-sm"
-                        style={{
-                          position: 'absolute',
-                          top: 6,
-                          right: 6,
-                          padding: '4px 8px',
-                          fontSize: '0.7rem',
-                        }}
+                        className="btn btn-danger btn-xs absolute top-2 right-2 shadow-md"
                       >
                         Hapus Gambar
                       </button>
@@ -398,11 +366,11 @@ export default function PortalCustomizer() {
                   )}
 
                   {/* Sliders for Image BG */}
-                  <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div className="grid grid-cols-2 gap-3 pt-1">
                     <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <label className="form-label" style={{ margin: 0 }}>Efek Blur</label>
-                        <span className="mono" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{form.bg_blur}px</span>
+                      <div className="flex justify-between items-center mb-1">
+                        <label className="form-label m-0 text-xs">Efek Blur</label>
+                        <span className="mono text-[11px] text-slate-400">{form.bg_blur}px</span>
                       </div>
                       <input
                         type="range"
@@ -411,14 +379,14 @@ export default function PortalCustomizer() {
                         step="1"
                         value={form.bg_blur}
                         onChange={(e) => setForm(f => ({ ...f, bg_blur: parseInt(e.target.value) }))}
-                        style={{ width: '100%' }}
+                        className="w-full accent-blue-500"
                       />
                     </div>
 
                     <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <label className="form-label" style={{ margin: 0 }}>Overlay Gelap</label>
-                        <span className="mono" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{form.bg_overlay_opacity}%</span>
+                      <div className="flex justify-between items-center mb-1">
+                        <label className="form-label m-0 text-xs">Overlay Gelap</label>
+                        <span className="mono text-[11px] text-slate-400">{form.bg_overlay_opacity}%</span>
                       </div>
                       <input
                         type="range"
@@ -427,7 +395,7 @@ export default function PortalCustomizer() {
                         step="5"
                         value={form.bg_overlay_opacity}
                         onChange={(e) => setForm(f => ({ ...f, bg_overlay_opacity: parseInt(e.target.value) }))}
-                        style={{ width: '100%' }}
+                        className="w-full accent-blue-500"
                       />
                     </div>
                   </div>
@@ -443,19 +411,18 @@ export default function PortalCustomizer() {
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
                   <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                 </svg>
-                Branding, Logo & Teks
+                <span>Branding, Logo & Teks</span>
               </div>
             </div>
 
-            <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div className="card-body space-y-3.5">
               {/* Logo Selection */}
               <div className="form-group">
                 <label className="form-label">Tipe Logo</label>
-                <div style={{ display: 'flex', gap: 10, marginBottom: 8 }}>
+                <div className="grid grid-cols-2 gap-2 mb-2">
                   <button
                     type="button"
                     className={`btn btn-sm ${form.logo_type === 'default' ? 'btn-primary' : 'btn-secondary'}`}
-                    style={{ flex: 1 }}
                     onClick={() => setForm(f => ({ ...f, logo_type: 'default' }))}
                   >
                     Logo Default SIPAS
@@ -463,7 +430,6 @@ export default function PortalCustomizer() {
                   <button
                     type="button"
                     className={`btn btn-sm ${form.logo_type === 'custom' ? 'btn-primary' : 'btn-secondary'}`}
-                    style={{ flex: 1 }}
                     onClick={() => setForm(f => ({ ...f, logo_type: 'custom' }))}
                   >
                     Upload Custom Logo
@@ -471,24 +437,22 @@ export default function PortalCustomizer() {
                 </div>
 
                 {form.logo_type === 'custom' && (
-                  <div>
+                  <div className="space-y-2">
                     <input
                       type="file"
                       accept="image/png, image/jpeg, image/svg+xml, image/webp"
                       onChange={handleLogoUpload}
-                      className="input input-sm"
-                      style={{ padding: '6px 10px' }}
+                      className="input input-sm text-xs"
                     />
-                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                    <div className="form-hint">
                       Upload logo transparan (PNG/SVG disarankan, maks. 1 MB).
-                    </span>
+                    </div>
                     {form.logo_custom && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8, padding: 8, background: 'rgba(255,255,255,0.03)', borderRadius: 6 }}>
-                        <img src={form.logo_custom} alt="Custom Logo" style={{ maxHeight: 44, maxWidth: 120, objectFit: 'contain' }} />
+                      <div className="flex items-center gap-3 p-2 bg-slate-950/40 border border-slate-800 rounded-lg">
+                        <img src={form.logo_custom} alt="Custom Logo" className="max-h-10 max-w-28 object-contain" />
                         <button
                           type="button"
-                          className="btn btn-ghost btn-sm"
-                          style={{ color: 'var(--danger)' }}
+                          className="btn btn-ghost btn-xs text-rose-400 hover:text-rose-300"
                           onClick={() => setForm(f => ({ ...f, logo_custom: null, logo_type: 'default' }))}
                         >
                           Hapus
@@ -534,78 +498,58 @@ export default function PortalCustomizer() {
               </div>
             </div>
           </div>
-
         </div>
 
-        {/* Right: Live Preview Card (Height matches Card 1 + Card 2 exactly!) */}
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', height: '100%', margin: 0 }}>
-          <div className="card-header" style={{ justifyContent: 'space-between' }}>
+        {/* Right: Live Preview Card */}
+        <div className="lg:col-span-7 card flex flex-col h-full">
+          <div className="card-header">
             <div className="card-title">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                 <circle cx="12" cy="12" r="3"/>
               </svg>
-              Live Preview Captive Portal
+              <span>Live Preview Captive Portal</span>
             </div>
 
             {/* Viewport Toggle */}
-            <div style={{ display: 'flex', gap: 4 }}>
+            <div className="flex gap-1 bg-slate-950/60 p-1 rounded-lg border border-slate-800">
               <button
                 type="button"
-                className={`btn btn-sm ${previewMode === 'desktop' ? 'btn-primary' : 'btn-ghost'}`}
-                style={{ padding: '4px 8px', fontSize: '0.75rem' }}
+                className={`btn btn-xs ${previewMode === 'desktop' ? 'btn-primary' : 'btn-ghost'}`}
                 onClick={() => setPreviewMode('desktop')}
                 title="Tampilan Desktop"
               >
-                 Desktop
+                Desktop
               </button>
               <button
                 type="button"
-                className={`btn btn-sm ${previewMode === 'mobile' ? 'btn-primary' : 'btn-ghost'}`}
-                style={{ padding: '4px 8px', fontSize: '0.75rem' }}
+                className={`btn btn-xs ${previewMode === 'mobile' ? 'btn-primary' : 'btn-ghost'}`}
                 onClick={() => setPreviewMode('mobile')}
                 title="Tampilan HP (Mobile)"
               >
-                 Mobile
+                Mobile
               </button>
             </div>
           </div>
 
-          <div className="card-body" style={{ padding: 12, background: 'rgba(0,0,0,0.35)', overflow: 'hidden', display: 'flex', flexDirection: 'column', flex: 1 }}>
-            
+          <div className="card-body p-4 bg-slate-950/80 overflow-hidden flex flex-col flex-1">
             {/* Preview Window Box */}
             <div
+              className={`relative w-full mx-auto flex-1 min-h-[420px] rounded-xl overflow-hidden flex items-center justify-center p-6 border border-slate-800 shadow-2xl transition-all duration-300 ${
+                previewMode === 'mobile' ? 'max-w-[340px]' : 'max-w-full'
+              }`}
               style={{
-                position: 'relative',
-                width: '100%',
-                maxWidth: previewMode === 'mobile' ? 340 : '100%',
-                margin: '0 auto',
-                flex: 1,
-                minHeight: 380,
-                borderRadius: 12,
-                overflow: 'hidden',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: 16,
                 backgroundColor: isImageBg ? '#060911' : (form.bg_color || '#0a0e1a'),
-                boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
-                border: '1px solid var(--border)',
-                transition: 'all 0.3s ease',
               }}
             >
               {/* Simulated BG Image */}
               {isImageBg && (
                 <div
+                  className="absolute inset-0 bg-cover bg-center z-0"
                   style={{
-                    position: 'absolute',
-                    inset: 0,
                     backgroundImage: `url(${form.bg_image})`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
                     filter: form.bg_blur > 0 ? `blur(${form.bg_blur}px)` : 'none',
                     transform: form.bg_blur > 0 ? 'scale(1.08)' : 'none',
-                    zIndex: 0,
                   }}
                 />
               )}
@@ -613,109 +557,90 @@ export default function PortalCustomizer() {
               {/* Simulated Overlay */}
               {isImageBg && (
                 <div
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    backgroundColor: '#000000',
-                    opacity: overlayOpacity,
-                    zIndex: 0,
-                  }}
+                  className="absolute inset-0 bg-black z-0"
+                  style={{ opacity: overlayOpacity }}
                 />
               )}
 
               {/* Preview Content Container */}
-              <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 360 }}>
+              <div className="relative z-10 w-full max-w-[340px]">
                 {/* Header */}
-                <div style={{ textAlign: 'center', marginBottom: 14 }}>
-                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
+                <div className="text-center mb-3.5">
+                  <div className="flex justify-center mb-2">
                     {form.logo_type === 'custom' && form.logo_custom ? (
                       <img
                         src={form.logo_custom}
                         alt="Logo Preview"
-                        style={{ maxHeight: 50, maxWidth: 140, objectFit: 'contain' }}
+                        className="max-h-12 max-w-32 object-contain"
                       />
                     ) : (
-                      <SipasLogo size={46} />
+                      <SipasLogo size={42} />
                     )}
                   </div>
-                  <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: '0 0 2px', color: 'var(--text-main)' }}>
+                  <h3 className="text-lg font-extrabold text-slate-100 tracking-tight">
                     {form.portal_title || 'Portal SIPAS'}
                   </h3>
-                  <p style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', margin: 0 }}>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
                     {form.portal_subtitle || 'Sistem Integrasi Portal & Autentikasi Satu-Pintu'}
                   </p>
                 </div>
 
                 {/* Card Simulation */}
                 <div
+                  className="border border-slate-700/80 rounded-xl p-4 shadow-xl"
                   style={{
                     backgroundColor: hexToRgba(form.card_bg_color || '#111827', cardOpacity),
                     backdropFilter: cardOpacity < 1 ? 'blur(12px)' : 'none',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: 12,
-                    padding: 16,
                   }}
                 >
                   {/* Simulated Net Info */}
-                  <div style={{
-                    display: 'flex',
-                    gap: 4,
-                    padding: '6px 8px',
-                    background: 'rgba(255, 255, 255, 0.03)',
-                    border: '1px solid rgba(255,255,255,0.06)',
-                    borderRadius: 6,
-                    marginBottom: 12,
-                  }}>
-                    <div style={{ flex: 1, textAlign: 'center' }}>
-                      <div style={{ fontSize: '0.55rem', color: 'var(--text-muted)', fontWeight: 600 }}>IP ANDA</div>
-                      <div style={{ fontSize: '0.68rem', fontFamily: 'monospace' }}>10.10.254.10</div>
+                  <div className="flex gap-1 p-1.5 bg-slate-950/40 border border-slate-800 rounded-lg mb-3">
+                    <div className="flex-1 text-center">
+                      <div className="text-[9px] text-slate-400 font-bold">IP ANDA</div>
+                      <div className="text-[10px] font-mono font-semibold text-slate-200">10.10.254.10</div>
                     </div>
-                    <div style={{ width: 1, background: 'rgba(255,255,255,0.08)' }} />
-                    <div style={{ flex: 1, textAlign: 'center' }}>
-                      <div style={{ fontSize: '0.55rem', color: 'var(--text-muted)', fontWeight: 600 }}>MAC</div>
-                      <div style={{ fontSize: '0.68rem', fontFamily: 'monospace' }}>10:F6:0A:C9:32:E5</div>
+                    <div className="w-px bg-slate-800" />
+                    <div className="flex-1 text-center">
+                      <div className="text-[9px] text-slate-400 font-bold">MAC</div>
+                      <div className="text-[10px] font-mono font-semibold text-slate-200">10:F6:0A:C9:32:E5</div>
                     </div>
-                    <div style={{ width: 1, background: 'rgba(255,255,255,0.08)' }} />
-                    <div style={{ flex: 1, textAlign: 'center' }}>
-                      <div style={{ fontSize: '0.55rem', color: 'var(--text-muted)', fontWeight: 600 }}>STATUS</div>
-                      <div style={{ fontSize: '0.68rem', color: '#fbbf24' }}>● Menunggu</div>
+                    <div className="w-px bg-slate-800" />
+                    <div className="flex-1 text-center">
+                      <div className="text-[9px] text-slate-400 font-bold">STATUS</div>
+                      <div className="text-[10px] text-amber-400 font-semibold">● Menunggu</div>
                     </div>
                   </div>
 
                   {/* Inputs */}
-                  <div style={{ marginBottom: 10 }}>
-                    <label style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-secondary)', marginBottom: 3 }}>Username</label>
-                    <input
-                      type="text"
-                      className="input input-sm"
-                      placeholder="Contoh: user123"
-                      disabled
-                      style={{ width: '100%', fontSize: '0.78rem', background: 'rgba(0,0,0,0.2)' }}
-                    />
-                  </div>
+                  <div className="space-y-2 mb-3 text-left">
+                    <div>
+                      <label className="block text-[11px] text-slate-300 font-medium mb-1">Username</label>
+                      <input
+                        type="text"
+                        className="input input-sm text-xs bg-slate-950/60"
+                        placeholder="Contoh: user123"
+                        disabled
+                      />
+                    </div>
 
-                  <div style={{ marginBottom: 12 }}>
-                    <label style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-secondary)', marginBottom: 3 }}>Password</label>
-                    <input
-                      type="password"
-                      className="input input-sm"
-                      value="••••••••"
-                      disabled
-                      style={{ width: '100%', fontSize: '0.78rem', background: 'rgba(0,0,0,0.2)' }}
-                    />
+                    <div>
+                      <label className="block text-[11px] text-slate-300 font-medium mb-1">Password</label>
+                      <input
+                        type="password"
+                        className="input input-sm text-xs bg-slate-950/60"
+                        value="••••••••"
+                        disabled
+                      />
+                    </div>
                   </div>
 
                   {/* Simulated Submit Button */}
                   <button
                     type="button"
-                    className="btn btn-sm"
+                    className="w-full py-2 px-3 text-white text-xs font-bold rounded-lg shadow-md transition-all"
                     style={{
-                      width: '100%',
                       backgroundColor: primaryColor,
-                      borderColor: primaryColor,
-                      color: '#ffffff',
-                      fontWeight: 600,
-                      padding: '8px',
+                      boxShadow: `0 4px 12px ${hexToRgba(primaryColor, 0.35)}`,
                     }}
                   >
                     Masuk ke Internet
@@ -723,22 +648,19 @@ export default function PortalCustomizer() {
                 </div>
 
                 {/* Simulated Footer */}
-                <div style={{ textAlign: 'center', marginTop: 12, fontSize: '0.68rem', color: 'var(--text-secondary)' }}>
+                <div className="text-center mt-3 text-[10px] text-slate-400">
                   {form.footer_text || 'Butuh bantuan? Hubungi administrator jaringan'}
                 </div>
               </div>
-
             </div>
-
           </div>
         </div>
-
       </div>
 
-      {/* Row 2: Bottom Section - Button Settings (Left) & Tips/Endpoint (Right) */}
-      <div className="portal-customizer-grid">
+      {/* Row 2: Bottom Section - Card Colors & Info Guide */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left: Card 3 - Warna Kartu & Tombol Form Login */}
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', height: '100%', margin: 0 }}>
+        <div className="lg:col-span-5 card">
           <div className="card-header">
             <div className="card-title">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
@@ -746,54 +668,40 @@ export default function PortalCustomizer() {
                 <line x1="3" y1="9" x2="21" y2="9"/>
                 <line x1="9" y1="21" x2="9" y2="9"/>
               </svg>
-              Warna Kartu & Tombol Form Login
+              <span>Warna Kartu & Tombol Form</span>
             </div>
           </div>
 
-          <div className="card-body" style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 16 }}>
+          <div className="card-body space-y-4">
             {/* Form Card Background Color */}
-            <div>
-              <label className="form-label" style={{ marginBottom: 6 }}>Warna Latar Kartu Form</label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+            <div className="space-y-2">
+              <label className="form-label">Warna Latar Kartu Form</label>
+              <div className="flex items-center gap-2">
                 <input
                   type="color"
                   value={form.card_bg_color || '#111827'}
                   onChange={(e) => setForm(f => ({ ...f, card_bg_color: e.target.value }))}
-                  style={{
-                    width: 44,
-                    height: 38,
-                    padding: 0,
-                    border: '1px solid var(--border)',
-                    borderRadius: 'var(--radius-sm)',
-                    cursor: 'pointer',
-                    background: 'transparent',
-                  }}
+                  className="w-10 h-9 p-0 border border-slate-700 rounded-lg cursor-pointer bg-transparent"
                 />
                 <input
                   type="text"
-                  className="input input-sm mono"
+                  className="input input-sm mono flex-1"
                   value={form.card_bg_color || '#111827'}
                   onChange={(e) => setForm(f => ({ ...f, card_bg_color: e.target.value }))}
                   placeholder="#111827"
-                  style={{ flex: 1 }}
                 />
               </div>
 
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              <div className="flex gap-1.5 flex-wrap">
                 {CARD_COLOR_PRESETS.map((p) => (
                   <button
                     key={p.value}
                     type="button"
                     onClick={() => setForm(f => ({ ...f, card_bg_color: p.value }))}
-                    style={{
-                      padding: '4px 10px',
-                      borderRadius: 6,
-                      fontSize: '0.74rem',
-                      background: p.value,
-                      color: '#ffffff',
-                      border: form.card_bg_color === p.value ? '2px solid var(--primary-light)' : '1px solid var(--border)',
-                      cursor: 'pointer',
-                    }}
+                    className={`px-2.5 py-1 rounded-md text-xs text-white border transition-all cursor-pointer ${
+                      form.card_bg_color === p.value ? 'ring-2 ring-blue-400 border-transparent' : 'border-slate-700'
+                    }`}
+                    style={{ backgroundColor: p.value }}
                   >
                     {p.label}
                   </button>
@@ -803,9 +711,9 @@ export default function PortalCustomizer() {
 
             {/* Card Opacity Slider */}
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                <label className="form-label" style={{ margin: 0 }}>Kepadatan (Opasitas) Kartu Login</label>
-                <span className="mono" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{form.card_opacity}%</span>
+              <div className="flex justify-between items-center mb-1">
+                <label className="form-label m-0 text-xs">Kepadatan (Opasitas) Kartu</label>
+                <span className="mono text-[11px] text-slate-400">{form.card_opacity}%</span>
               </div>
               <input
                 type="range"
@@ -814,56 +722,42 @@ export default function PortalCustomizer() {
                 step="5"
                 value={form.card_opacity}
                 onChange={(e) => setForm(f => ({ ...f, card_opacity: parseInt(e.target.value) }))}
-                style={{ width: '100%' }}
+                className="w-full accent-blue-500"
               />
-              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+              <div className="form-hint">
                 Nilai lebih rendah memberi efek glassmorphism transparan yang elegan.
-              </span>
+              </div>
             </div>
 
             {/* Primary Button Color */}
-            <div>
-              <label className="form-label" style={{ marginBottom: 6 }}>Warna Tombol Utama</label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+            <div className="space-y-2">
+              <label className="form-label">Warna Tombol Utama</label>
+              <div className="flex items-center gap-2">
                 <input
                   type="color"
                   value={form.primary_color || '#2563eb'}
                   onChange={(e) => setForm(f => ({ ...f, primary_color: e.target.value }))}
-                  style={{
-                    width: 44,
-                    height: 38,
-                    padding: 0,
-                    border: '1px solid var(--border)',
-                    borderRadius: 'var(--radius-sm)',
-                    cursor: 'pointer',
-                    background: 'transparent',
-                  }}
+                  className="w-10 h-9 p-0 border border-slate-700 rounded-lg cursor-pointer bg-transparent"
                 />
                 <input
                   type="text"
-                  className="input input-sm mono"
+                  className="input input-sm mono flex-1"
                   value={form.primary_color || '#2563eb'}
                   onChange={(e) => setForm(f => ({ ...f, primary_color: e.target.value }))}
                   placeholder="#2563eb"
-                  style={{ flex: 1 }}
                 />
               </div>
 
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              <div className="flex gap-1.5 flex-wrap">
                 {BUTTON_PRESETS.map((p) => (
                   <button
                     key={p.value}
                     type="button"
                     onClick={() => setForm(f => ({ ...f, primary_color: p.value }))}
-                    style={{
-                      padding: '4px 10px',
-                      borderRadius: 6,
-                      fontSize: '0.74rem',
-                      background: p.value,
-                      color: '#ffffff',
-                      border: form.primary_color === p.value ? '2px solid #ffffff' : '1px solid var(--border)',
-                      cursor: 'pointer',
-                    }}
+                    className={`px-2.5 py-1 rounded-md text-xs text-white border transition-all cursor-pointer ${
+                      form.primary_color === p.value ? 'ring-2 ring-white border-transparent' : 'border-slate-700'
+                    }`}
+                    style={{ backgroundColor: p.value }}
                   >
                     {p.label}
                   </button>
@@ -873,327 +767,148 @@ export default function PortalCustomizer() {
           </div>
         </div>
 
-        {/* Right: Card 2 - Panduan & Arsitektur Sistem Portal SIPAS */}
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', height: '100%', margin: 0 }}>
-          <div className="card-header" style={{ justifyContent: 'space-between' }}>
+        {/* Right: Panduan & Arsitektur Sistem Portal SIPAS */}
+        <div className="lg:col-span-7 card">
+          <div className="card-header">
             <div className="card-title">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
                 <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
                 <line x1="8" y1="21" x2="16" y2="21"/>
                 <line x1="12" y1="17" x2="12" y2="21"/>
               </svg>
-              Panduan & Arsitektur Sistem Portal SIPAS
+              <span>Panduan & Arsitektur Sistem Portal SIPAS</span>
             </div>
-            <span style={{ fontSize: '0.7rem', color: 'var(--success)', fontWeight: 600 }}>
-              ● Sistem Terintegrasi
+            <span className="text-xs text-emerald-400 font-semibold flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
+              Sistem Terintegrasi
             </span>
           </div>
 
-          <div className="card-body" style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 12, padding: 16 }}>
-            {/* Bagian 1: 4 Tahap Alur Integrasi Hotspot */}
+          <div className="card-body space-y-4">
+            {/* 4 Tahap Alur */}
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                <span style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-main)' }}>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-xs font-bold text-slate-100">
                   🔄 Alur Kerja & Mekanisme Otentikasi Hotspot:
                 </span>
-                <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+                <span className="text-[11px] text-slate-500">
                   MikroTik RouterOS ➔ SIPAS Engine
                 </span>
               </div>
 
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(4, 1fr)',
-                gap: 8,
-              }}>
-                <div style={{
-                  padding: '8px 10px',
-                  background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 8,
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
-                    <span style={{ fontSize: '0.9rem' }}>📶</span>
-                    <strong style={{ fontSize: '0.72rem', color: 'var(--text-main)' }}>1. Intersepsi</strong>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                <div className="p-2.5 bg-slate-950/40 border border-slate-800 rounded-lg">
+                  <div className="flex items-center gap-1.5 mb-1 text-xs font-bold text-slate-200">
+                    <span>📶</span> 1. Intersepsi
                   </div>
-                  <p style={{ fontSize: '0.66rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
-                    MikroTik menangkap HTTP request klien baru & redirect ke portal SIPAS dengan parameter IP & MAC.
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    MikroTik menangkap HTTP request klien baru & redirect ke portal SIPAS dengan IP & MAC.
                   </p>
                 </div>
 
-                <div style={{
-                  padding: '8px 10px',
-                  background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 8,
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
-                    <span style={{ fontSize: '0.9rem' }}>🎨</span>
-                    <strong style={{ fontSize: '0.72rem', color: 'var(--text-main)' }}>2. UI Dinamis</strong>
+                <div className="p-2.5 bg-slate-950/40 border border-slate-800 rounded-lg">
+                  <div className="flex items-center gap-1.5 mb-1 text-xs font-bold text-slate-200">
+                    <span>🎨</span> 2. UI Dinamis
                   </div>
-                  <p style={{ fontSize: '0.66rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
-                    SIPAS menyajikan antarmuka login responsif sesuai tema kustomisasi & mendeteksi identitas klien.
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    SIPAS menyajikan antarmuka login responsif sesuai tema kustomisasi & deteksi identitas.
                   </p>
                 </div>
 
-                <div style={{
-                  padding: '8px 10px',
-                  background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 8,
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
-                    <span style={{ fontSize: '0.9rem' }}>🛡️</span>
-                    <strong style={{ fontSize: '0.72rem', color: 'var(--text-main)' }}>3. Verifikasi</strong>
+                <div className="p-2.5 bg-slate-950/40 border border-slate-800 rounded-lg">
+                  <div className="flex items-center gap-1.5 mb-1 text-xs font-bold text-slate-200">
+                    <span>🛡️</span> 3. Verifikasi
                   </div>
-                  <p style={{ fontSize: '0.66rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
-                    Backend memvalidasi akun, sisa kuota (FUP), masa aktif (uptime), dan batas multi-device.
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    Backend memvalidasi akun, sisa kuota (FUP), masa aktif, dan batas multi-device.
                   </p>
                 </div>
 
-                <div style={{
-                  padding: '8px 10px',
-                  background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 8,
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
-                    <span style={{ fontSize: '0.9rem' }}>🚀</span>
-                    <strong style={{ fontSize: '0.72rem', color: 'var(--text-main)' }}>4. Otorisasi</strong>
+                <div className="p-2.5 bg-slate-950/40 border border-slate-800 rounded-lg">
+                  <div className="flex items-center gap-1.5 mb-1 text-xs font-bold text-slate-200">
+                    <span>🚀</span> 4. Otorisasi
                   </div>
-                  <p style={{ fontSize: '0.66rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
-                    MikroTik membuka akses internet & menerapkan limit kecepatan bandwidth (Simple Queue) otomatis.
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    MikroTik membuka akses internet & menerapkan limit bandwidth (Simple Queue) otomatis.
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Bagian 2: Panduan Pengalaman Login Klien */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
-              gap: 8,
-            }}>
-              <div style={{
-                padding: '8px 10px',
-                background: 'rgba(37, 99, 235, 0.06)',
-                border: '1px solid rgba(37, 99, 235, 0.2)',
-                borderRadius: 8,
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: 8,
-              }}>
-                <span style={{ fontSize: '1.1rem', marginTop: 1 }}>🔑</span>
-                <div>
-                  <strong style={{ fontSize: '0.73rem', color: 'var(--text-main)', display: 'block' }}>1. Masukkan Kredensial</strong>
-                  <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', lineHeight: 1.35, display: 'block' }}>
-                    Pengguna mengetikkan Username & Password hotspot yang telah terdaftar di sistem.
-                  </span>
-                </div>
-              </div>
-
-              <div style={{
-                padding: '8px 10px',
-                background: 'rgba(16, 185, 129, 0.06)',
-                border: '1px solid rgba(16, 185, 129, 0.2)',
-                borderRadius: 8,
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: 8,
-              }}>
-                <span style={{ fontSize: '1.1rem', marginTop: 1 }}>⚡</span>
-                <div>
-                  <strong style={{ fontSize: '0.73rem', color: 'var(--text-main)', display: 'block' }}>2. Autentikasi Instan</strong>
-                  <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', lineHeight: 1.35, display: 'block' }}>
-                    SIPAS memvalidasi sisa kuota, masa aktif, & batas perangkat secara real-time.
-                  </span>
-                </div>
-              </div>
-
-              <div style={{
-                padding: '8px 10px',
-                background: 'rgba(245, 158, 11, 0.06)',
-                border: '1px solid rgba(245, 158, 11, 0.2)',
-                borderRadius: 8,
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: 8,
-              }}>
-                <span style={{ fontSize: '1.1rem', marginTop: 1 }}>🌐</span>
-                <div>
-                  <strong style={{ fontSize: '0.73rem', color: 'var(--text-main)', display: 'block' }}>3. Terhubung ke Internet</strong>
-                  <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', lineHeight: 1.35, display: 'block' }}>
-                    Status berubah jadi 'Tersambung' dan internet langsung aktif berkecepatan penuh.
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Bagian 3: Tips Desain & Keterbacaan Visual */}
-            <div style={{
-              borderTop: '1px solid var(--border)',
-              paddingTop: 8,
-              display: 'grid',
-              gridTemplateColumns: 'repeat(2, 1fr)',
-              gap: 8,
-              fontSize: '0.72rem',
-              color: 'var(--text-secondary)',
-            }}>
-              <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
+            {/* Tips Desain */}
+            <div className="border-t border-slate-800/80 pt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-400">
+              <div className="flex items-start gap-2">
                 <span>💡</span>
                 <div>
-                  <strong style={{ color: 'var(--text-main)' }}>Keterbacaan Teks:</strong> Gunakan <em>Overlay Gelap</em> (60%-80%) jika gambar latar Anda terang agar form tetap kontras.
+                  <strong className="text-slate-200">Keterbacaan Teks:</strong> Gunakan <em>Overlay Gelap</em> (60%-80%) jika gambar latar Anda terang agar form tetap kontras.
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
+              <div className="flex items-start gap-2">
                 <span>📐</span>
                 <div>
-                  <strong style={{ color: 'var(--text-main)' }}>Rasio & Resolusi:</strong> Disarankan gambar 16:9 (1920x1080) di bawah 2MB untuk performa loading secepat kilat.
+                  <strong className="text-slate-200">Rasio & Resolusi:</strong> Disarankan gambar 16:9 (1920x1080) di bawah 2MB untuk performa loading secepat kilat.
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
+              <div className="flex items-start gap-2">
                 <span>✨</span>
                 <div>
-                  <strong style={{ color: 'var(--text-main)' }}>Modern Glassmorphism:</strong> Atur <em>Kepadatan Kartu</em> ke 80%-90% untuk efek kaca transparan yang profesional.
+                  <strong className="text-slate-200">Modern Glassmorphism:</strong> Atur <em>Kepadatan Kartu</em> ke 80%-90% untuk efek kaca transparan yang profesional.
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
+              <div className="flex items-start gap-2">
                 <span>🛡️</span>
                 <div>
-                  <strong style={{ color: 'var(--text-main)' }}>Format Logo:</strong> Upload logo format PNG transparan atau SVG agar logo berpadu menyatu sempurna dengan latar belakang.
+                  <strong className="text-slate-200">Format Logo:</strong> Upload logo format PNG transparan atau SVG agar logo berpadu menyatu sempurna.
                 </div>
               </div>
             </div>
-
           </div>
         </div>
-
       </div>
 
-      {/* Custom Confirmation Modal for Reset Default */}
-      {showResetModal && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.7)',
-            backdropFilter: 'blur(4px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 9999,
-            padding: 16,
-          }}
-          onClick={() => setShowResetModal(false)}
-        >
-          <div
-            className="card"
-            style={{
-              width: '100%',
-              maxWidth: 460,
-              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.6)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              backgroundColor: '#0d1322',
-              animation: 'modalSlideIn 0.2s ease-out',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Modal Header */}
-            <div className="card-header" style={{ justifyContent: 'space-between', borderBottom: '1px solid var(--border)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: 8,
-                  background: 'rgba(239, 68, 68, 0.15)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'var(--danger)',
-                }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-                    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
-                    <line x1="12" y1="9" x2="12" y2="13"/>
-                    <line x1="12" y1="17" x2="12.01" y2="17"/>
-                  </svg>
-                </div>
-                <div>
-                  <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)' }}>
-                    Reset Pengaturan Portal?
-                  </h4>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                    Kembalikan ke tampilan default bawaan SIPAS
-                  </span>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                className="btn btn-ghost btn-sm"
-                onClick={() => setShowResetModal(false)}
-                style={{ padding: '2px 8px', fontSize: '1.1rem', color: 'var(--text-muted)' }}
-              >
-                &times;
-              </button>
+      {/* Confirmation Modal for Reset Default */}
+      <Modal
+        open={showResetModal}
+        title="Reset Pengaturan Portal?"
+        onClose={() => setShowResetModal(false)}
+        footer={
+          <>
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={() => setShowResetModal(false)}
+              disabled={saving}
+            >
+              Batal
+            </button>
+            <button
+              type="button"
+              className="btn btn-danger btn-sm"
+              onClick={confirmReset}
+              disabled={saving}
+            >
+              {saving ? 'Mereset...' : 'Ya, Reset ke Default'}
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <p className="text-xs text-slate-300">
+            Tindakan ini akan mengembalikan semua tema visual halaman captive portal ke setelan standar:
+          </p>
+          <div className="p-3 bg-slate-950/60 border border-slate-800 rounded-lg space-y-1.5 text-xs text-slate-400">
+            <div className="flex items-center gap-2">
+              <span>🎨</span> <span>Latar belakang & kartu kembali ke tema Deep Navy & Slate.</span>
             </div>
-
-            {/* Modal Body */}
-            <div className="card-body" style={{ padding: '16px 20px', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-              <p style={{ margin: '0 0 10px', lineHeight: 1.5 }}>
-                Tindakan ini akan mengembalikan semua tema visual halaman captive portal ke setelan standar:
-              </p>
-              <div style={{
-                background: 'rgba(255, 255, 255, 0.03)',
-                padding: '10px 14px',
-                borderRadius: 8,
-                border: '1px solid var(--border)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 6,
-                fontSize: '0.76rem',
-                color: 'var(--text-secondary)',
-              }}>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <span>🎨</span> <span>Latar belakang & kartu kembali ke tema Deep Navy & Slate.</span>
-                </div>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <span>🛡️</span> <span>Logo kembali ke <strong>Logo Default SIPAS</strong>.</span>
-                </div>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <span>🔵</span> <span>Warna tombol kembali ke warna biru primer.</span>
-                </div>
-              </div>
+            <div className="flex items-center gap-2">
+              <span>🛡️</span> <span>Logo kembali ke <strong>Logo Default SIPAS</strong>.</span>
             </div>
-
-            {/* Modal Footer Actions */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'flex-end',
-              gap: 8,
-              padding: '12px 20px',
-              borderTop: '1px solid var(--border)',
-              background: 'rgba(0, 0, 0, 0.2)',
-            }}>
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm"
-                onClick={() => setShowResetModal(false)}
-                disabled={saving}
-              >
-                Batal
-              </button>
-              <button
-                type="button"
-                className="btn btn-danger btn-sm"
-                onClick={confirmReset}
-                disabled={saving}
-              >
-                {saving ? 'Mereset...' : 'Ya, Reset ke Default'}
-              </button>
+            <div className="flex items-center gap-2">
+              <span>🔵</span> <span>Warna tombol kembali ke warna biru primer.</span>
             </div>
           </div>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }

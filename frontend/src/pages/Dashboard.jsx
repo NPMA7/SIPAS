@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback, useContext } from 'react';
 import { apiFetch } from '../api/client';
 import { ToastContext } from '../hooks/ToastContext';
-import { StatCard, Loader, EmptyState } from '../components/ui/index';
-import { Badge } from '../components/ui/index';
+import { StatCard, Loader, EmptyState, Badge } from '../components/ui/index';
 
 function formatBytes(b) {
   const n = parseInt(b) || 0;
@@ -24,17 +23,24 @@ function formatSpeed(val) {
   return n + ' bps';
 }
 
-function ResourceBar({ label, value, max, unit = '%', color = 'var(--primary)' }) {
+function ResourceBar({ label, value, max, unit = '%', colorClass = 'bg-blue-500' }) {
   const pct = Math.min((value / max) * 100, 100);
-  const barColor = pct > 85 ? 'var(--danger)' : pct > 65 ? 'var(--warning)' : color;
+  const barColor = pct > 85 ? 'bg-rose-500' : pct > 65 ? 'bg-amber-500' : colorClass;
+
   return (
-    <div style={{ marginBottom: 12 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: '0.78rem' }}>
-        <span style={{ color: 'var(--text-secondary)' }}>{label}</span>
-        <span style={{ fontWeight: 600 }}>{value}<span style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>{unit}</span></span>
+    <div className="mb-3">
+      <div className="flex items-center justify-between mb-1.5 text-xs">
+        <span className="text-slate-400 font-medium">{label}</span>
+        <span className="font-bold text-slate-200">
+          {value}
+          <span className="text-[10px] text-slate-500 font-normal ml-0.5">{unit}</span>
+        </span>
       </div>
-      <div style={{ height: 4, background: 'var(--border)', borderRadius: 2, overflow: 'hidden' }}>
-        <div style={{ width: `${pct}%`, height: '100%', background: barColor, borderRadius: 2, transition: 'width 0.5s' }} />
+      <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+        <div
+          className={`h-full ${barColor} rounded-full transition-all duration-500`}
+          style={{ width: `${pct}%` }}
+        />
       </div>
     </div>
   );
@@ -57,9 +63,9 @@ function AutoRefreshBadge({ onRefresh }) {
   }, [onRefresh]);
 
   return (
-    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--surface)', padding: '4px 12px', borderRadius: 20, border: '1px solid var(--border)' }}>
-      <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981', display: 'inline-block' }} />
-      Auto Refresh: <strong style={{ color: 'var(--primary-light)' }}>{countdown}s</strong>
+    <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-800/80 border border-slate-700/60 rounded-full text-xs text-slate-400">
+      <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+      <span>Auto Refresh: <strong className="text-blue-400 font-bold">{countdown}s</strong></span>
     </div>
   );
 }
@@ -86,7 +92,6 @@ export default function Dashboard() {
         setRouters(rRes.data);
         setRouterId(prev => prev || rRes.data[0].id);
 
-        // Fetch stats untuk SEMUA router secara bersamaan
         const statsMap = {};
         await Promise.all(
           rRes.data.map(async (r) => {
@@ -128,8 +133,8 @@ export default function Dashboard() {
   }, [routerId]);
 
   useEffect(() => {
-    if (routerId) { 
-      loadRouterData(false); 
+    if (routerId) {
+      loadRouterData(false);
     }
   }, [routerId, loadRouterData]);
 
@@ -143,9 +148,9 @@ export default function Dashboard() {
   }, [ctx, handleAutoRefresh]);
 
   return (
-    <>
-      {/* Summary Stats */}
-      <div className="stats-grid">
+    <div className="space-y-6">
+      {/* Summary Stats Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
         <StatCard
           label="Total Pengguna"
           value={summary?.total_users ?? '—'}
@@ -172,41 +177,46 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* Resource Cards for ALL Routers (Simultaneous Display) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 14, marginBottom: 16 }}>
+      {/* Resource Cards for ALL Routers */}
+      <div className={`grid gap-4 ${routers.length === 1 ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2'}`}>
         {routers.map(r => {
           const rStats = allStats[r.id];
+          const isSingle = routers.length === 1;
           return (
             <div key={r.id} className="card">
               <div className="card-header">
                 <div className="card-title">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-                  {r.name} — Sumber Daya
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                    <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+                  </svg>
+                  <span className="truncate">{r.name} — Sumber Daya</span>
                 </div>
-                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                <div className="flex items-center gap-1.5 shrink-0">
                   <Badge variant={r.router_type === 'external' ? 'warning' : 'info'}>
                     {r.router_type === 'external' ? 'Eksternal' : 'Internal'}
                   </Badge>
                   <Badge variant={rStats ? "success" : "danger"}>
-                    {rStats ? "Online" : "API Off / Errenous"}
+                    {rStats ? "Online" : "Offline / Auth Error"}
                   </Badge>
                 </div>
               </div>
               <div className="card-body">
                 {rStats ? (
                   <>
-                    <ResourceBar label="CPU Load" value={parseFloat(rStats.cpu_load) || 0} max={100} unit="%" />
-                    <ResourceBar label={`RAM — Free: ${rStats.free_memory_mb} MB`} value={parseFloat(rStats.memory_percent) || 0} max={100} unit="%" color="var(--accent)" />
-                    <ResourceBar label={`HDD — Free: ${rStats.free_hdd_mb} MB`} value={parseFloat(rStats.hdd_percent) || 0} max={100} unit="%" color="var(--success)" />
-                    <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 12, fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                      <span>IP: <strong style={{ color: 'var(--text)' }}>{r.ip_address}</strong></span>
-                      <span>Uptime: <strong style={{ color: 'var(--text)' }}>{rStats.uptime || '—'}</strong></span>
-                      <span>Ver: <strong style={{ color: 'var(--text)' }}>{rStats.version || '—'}</strong></span>
+                    <div className={isSingle ? "grid grid-cols-1 md:grid-cols-3 gap-4" : "space-y-1"}>
+                      <ResourceBar label="CPU Load" value={parseFloat(rStats.cpu_load) || 0} max={100} unit="%" colorClass="bg-blue-500" />
+                      <ResourceBar label={`RAM (Free: ${rStats.free_memory_mb} MB)`} value={parseFloat(rStats.memory_percent) || 0} max={100} unit="%" colorClass="bg-cyan-500" />
+                      <ResourceBar label={`HDD (Free: ${rStats.free_hdd_mb} MB)`} value={parseFloat(rStats.hdd_percent) || 0} max={100} unit="%" colorClass="bg-emerald-500" />
+                    </div>
+                    <div className="flex items-center gap-4 sm:gap-6 flex-wrap mt-3 pt-3 border-t border-slate-800/80 text-xs text-slate-400">
+                      <span>IP: <strong className="text-slate-200">{r.ip_address}</strong></span>
+                      <span>Uptime: <strong className="text-slate-200">{rStats.uptime || '—'}</strong></span>
+                      <span>Ver: <strong className="text-slate-200">{rStats.version || '—'}</strong></span>
                     </div>
                   </>
                 ) : (
-                  <div style={{ fontSize: '0.8rem', color: 'var(--danger)', padding: '12px 0' }}>
-                    ⚠ Gagal koneksi API Mikrotik (Password API tidak cocok).
+                  <div className="text-xs text-rose-400 py-3 flex items-center gap-2">
+                    <span>⚠️ Gagal koneksi API Mikrotik (periksa IP / kredensial router).</span>
                   </div>
                 )}
               </div>
@@ -215,18 +225,19 @@ export default function Dashboard() {
         })}
       </div>
 
-      {/* Active Sessions */}
+      {/* Active Hotspot Sessions Table */}
       <div className="card">
         <div className="card-header">
           <div className="card-title">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-            Sesi Aktif Sekarang
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+            </svg>
+            <span>Sesi Aktif Sekarang</span>
             <Badge variant="primary">{sessions.length}</Badge>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <div className="flex items-center gap-2.5 flex-wrap">
             <select
               className="select"
-              style={{ width: 'auto', minWidth: 160 }}
               value={routerId}
               onChange={e => {
                 setRouterId(e.target.value);
@@ -237,12 +248,12 @@ export default function Dashboard() {
                 <option key={r.id} value={r.id}>{r.name} ({r.ip_address})</option>
               ))}
             </select>
-            <button 
-              className="btn btn-secondary btn-sm" 
-              onClick={() => { 
-                loadRoutersAndSummary(); 
-                if (routerId) loadRouterData(true); 
-              }} 
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={() => {
+                loadRoutersAndSummary();
+                if (routerId) loadRouterData(true);
+              }}
               disabled={refreshing || loading}
             >
               {refreshing ? (
@@ -252,7 +263,7 @@ export default function Dashboard() {
                   <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/>
                 </svg>
               )}
-              Refresh
+              <span>Refresh</span>
             </button>
           </div>
         </div>
@@ -267,41 +278,41 @@ export default function Dashboard() {
                 <tr>
                   <th>User</th>
                   <th>IP Address</th>
-                  <th>MAC</th>
+                  <th>MAC Address</th>
                   <th>Uptime</th>
                   <th>Traffic Realtime (DL / UL)</th>
-                  <th>Total Kuota (Kumulatif)</th>
+                  <th>Total Kuota Kumulatif</th>
                 </tr>
               </thead>
               <tbody>
                 {sessions.map((s, i) => (
                   <tr key={i}>
                     <td>
-                      <div style={{ fontWeight: 600, color: 'var(--text-main)' }}>
+                      <div className="font-semibold text-slate-100">
                         {s.full_name || s.user || '—'}
                       </div>
                       {s.full_name && s.full_name !== s.user && (
-                        <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 400, marginTop: 2 }}>
+                        <div className="text-[11px] text-slate-400 mt-0.5">
                           {s.user}
                         </div>
                       )}
                     </td>
-                    <td className="mono">{s.address || '—'}</td>
-                    <td className="mono" style={{ fontSize: '0.72rem' }}>{s.mac || s['mac-address'] || '—'}</td>
-                    <td>{s.uptime || '—'}</td>
+                    <td className="mono font-semibold text-slate-300">{s.address || '—'}</td>
+                    <td className="mono text-xs text-slate-400">{s.mac || s['mac-address'] || '—'}</td>
+                    <td className="text-slate-300">{s.uptime || '—'}</td>
                     <td>
-                      <span style={{ color: '#10b981', fontWeight: 600, marginRight: 8 }}>
+                      <span className="text-emerald-400 font-semibold mr-2.5">
                         ↓ {formatSpeed(s.tx_rate || s['tx-rate'])}
                       </span>
-                      <span style={{ color: '#38bdf8', fontWeight: 600 }}>
+                      <span className="text-sky-400 font-semibold">
                         ↑ {formatSpeed(s.rx_rate || s['rx-rate'])}
                       </span>
                     </td>
                     <td>
-                      <span style={{ color: 'var(--text-main)', fontSize: '0.85rem' }}>
+                      <span className="text-slate-200 font-medium">
                         ↓ {formatBytes(s.bytes_out || s['bytes-out'])}
                       </span>
-                      <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem', marginLeft: 8 }}>
+                      <span className="text-slate-500 text-xs ml-2">
                         (↑ {formatBytes(s.bytes_in || s['bytes-in'])})
                       </span>
                     </td>
@@ -312,6 +323,6 @@ export default function Dashboard() {
           )}
         </div>
       </div>
-    </>
+    </div>
   );
 }

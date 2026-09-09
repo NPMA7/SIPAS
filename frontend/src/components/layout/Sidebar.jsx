@@ -43,7 +43,6 @@ const NAV = [
           </svg>
         ),
       },
-     
       {
         to: '/manage/admin/hotspot',
         label: 'Hotspot Router',
@@ -77,7 +76,7 @@ const NAV = [
           </svg>
         ),
       },
-       {
+      {
         to: '/manage/admin/routers',
         label: 'Manajemen Router',
         icon: (
@@ -148,35 +147,38 @@ export default function Sidebar({ collapsed, mobileOpen, onToggle, onCloseMobile
   const initial = admin?.username?.[0]?.toUpperCase() || 'A';
 
   return (
-    <aside className={`sidebar ${collapsed ? 'collapsed' : ''} ${mobileOpen ? 'mobile-open' : ''}`}>
-      {/* Brand */}
-      <div className="sidebar-brand" style={{ justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div className="brand-icon" title="SIPAS v1.0.0 by: npma">
-            <SipasLogo size={38} />
+    <aside
+      className={`fixed top-0 left-0 h-screen z-50 flex flex-col bg-slate-900 border-r border-slate-800 transition-all duration-200 overflow-hidden ${
+        collapsed ? 'w-16' : 'w-60'
+      } ${
+        mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+      }`}
+    >
+      {/* Brand Header */}
+      <div className="h-15 flex items-center justify-between px-3.5 border-b border-slate-800 shrink-0">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-9 h-9 flex items-center justify-center shrink-0" title="SIPAS v1.0.0 by: npma">
+            <SipasLogo size={36} />
           </div>
-          <div className="brand-text">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span className="brand-name">SIPAS</span>
-              <span className="brand-tag">v1.0.0</span>
+          {!collapsed && (
+            <div className="flex flex-col min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="font-bold text-sm text-slate-100 tracking-wide">SIPAS</span>
+                <span className="text-[10px] font-semibold bg-blue-500/20 text-blue-400 px-1.5 py-0.2 rounded-full border border-blue-500/30">
+                  v1.0.0
+                </span>
+              </div>
+              <span className="text-[10px] font-medium text-slate-400">
+                by: npma
+              </span>
             </div>
-            <span style={{ fontSize: '0.62rem', color: 'var(--text-muted)', fontWeight: 500 }}>
-              by: npma
-            </span>
-          </div>
+          )}
         </div>
+
         {mobileOpen && (
           <button
             onClick={onCloseMobile}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--text-muted)',
-              cursor: 'pointer',
-              padding: 4,
-              display: 'flex',
-              alignItems: 'center'
-            }}
+            className="p-1 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 lg:hidden"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
@@ -185,8 +187,8 @@ export default function Sidebar({ collapsed, mobileOpen, onToggle, onCloseMobile
         )}
       </div>
 
-      {/* Nav */}
-      <nav className="sidebar-nav">
+      {/* Navigation List */}
+      <nav className="flex-1 px-2 py-3 overflow-y-auto overflow-x-hidden space-y-4">
         {NAV.map((group) => {
           const visibleItems = group.items.filter(
             (item) => !item.superAdminOnly || admin?.role === 'superadmin'
@@ -194,65 +196,112 @@ export default function Sidebar({ collapsed, mobileOpen, onToggle, onCloseMobile
           if (visibleItems.length === 0) return null;
 
           return (
-            <div key={group.group}>
-              <div className="nav-group-label">{group.group}</div>
+            <div key={group.group} className="space-y-1">
+              {!collapsed && (
+                <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  {group.group}
+                </div>
+              )}
               {visibleItems.map((item) =>
-              item.external ? (
-                <a 
-                  key={item.to} 
-                  href={item.to} 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="nav-item" 
-                  title={item.label}
-                  onClick={onCloseMobile}
-                >
-                  {item.icon}
-                  <span className="nav-label">{item.label}</span>
-                  <span className="nav-tooltip">{item.label}</span>
-                </a>
-              ) : (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  end={item.end}
-                  title={item.label}
-                  onClick={onCloseMobile}
-                  className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
-                >
-                  {item.icon}
-                  <span className="nav-label">{item.label}</span>
-                  <span className="nav-tooltip">{item.label}</span>
-                  {item.badgeKey && badges[item.badgeKey] ? (
-                    <span className="nav-badge">{badges[item.badgeKey]}</span>
-                  ) : null}
-                </NavLink>
-              )
-            )}
-            <div className="divider" />
-          </div>
+                item.external ? (
+                  <a
+                    key={item.to}
+                    href={item.to}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={onCloseMobile}
+                    className={`group relative flex items-center gap-3 px-2.5 py-2 rounded-lg text-xs font-medium text-slate-300 hover:text-slate-100 hover:bg-slate-800/80 transition-colors ${
+                      collapsed ? 'justify-center' : ''
+                    }`}
+                    title={collapsed ? item.label : undefined}
+                  >
+                    <span className="shrink-0 text-slate-400 group-hover:text-blue-400 transition-colors">{item.icon}</span>
+                    {!collapsed && <span className="truncate">{item.label}</span>}
+                    {collapsed && (
+                      <span className="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-slate-200 text-xs rounded-md shadow-lg whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50">
+                        {item.label}
+                      </span>
+                    )}
+                  </a>
+                ) : (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    end={item.end}
+                    onClick={onCloseMobile}
+                    className={({ isActive }) =>
+                      `group relative flex items-center gap-3 px-2.5 py-2 rounded-lg text-xs font-medium transition-colors ${
+                        collapsed ? 'justify-center' : ''
+                      } ${
+                        isActive
+                          ? 'bg-blue-600/15 text-blue-400 font-semibold border border-blue-500/20'
+                          : 'text-slate-300 hover:text-slate-100 hover:bg-slate-800/80'
+                      }`
+                    }
+                    title={collapsed ? item.label : undefined}
+                  >
+                    {({ isActive }) => (
+                      <>
+                        <span className={`shrink-0 transition-colors ${isActive ? 'text-blue-400' : 'text-slate-400 group-hover:text-slate-200'}`}>
+                          {item.icon}
+                        </span>
+                        {!collapsed && (
+                          <span className="truncate flex-1">{item.label}</span>
+                        )}
+                        {!collapsed && item.badgeKey && badges[item.badgeKey] ? (
+                          <span className="ml-auto px-1.5 py-0.2 bg-blue-600 text-white text-[10px] font-bold rounded-full">
+                            {badges[item.badgeKey]}
+                          </span>
+                        ) : null}
+                        {collapsed && (
+                          <span className="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-slate-200 text-xs rounded-md shadow-lg whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50">
+                            {item.label}
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </NavLink>
+                )
+              )}
+            </div>
           );
         })}
       </nav>
 
-      {/* Footer */}
-      <div className="sidebar-footer">
-        <div className="sidebar-user" title={`${admin?.username || 'Admin'} (${admin?.role === 'superadmin' ? 'Superadmin' : admin?.role === 'visitor' ? 'Visitor' : 'Operator SIPAS'})`}>
-          <div className="user-avatar">{initial}</div>
-          <div className="user-info">
-            <div className="user-name">{admin?.username || 'Admin'}</div>
-            <div className="user-role">
-              {admin?.role === 'superadmin' ? 'Super Administrator' : admin?.role === 'visitor' ? 'Visitor (Read-Only)' : 'Operator SIPAS'}
-            </div>
+      {/* Footer User & Logout */}
+      <div className="p-3 border-t border-slate-800 shrink-0 bg-slate-900/50 space-y-2">
+        <div
+          className={`flex items-center gap-2.5 p-1.5 rounded-lg bg-slate-800/40 border border-slate-700/40 ${
+            collapsed ? 'justify-center' : ''
+          }`}
+          title={`${admin?.username || 'Admin'} (${admin?.role === 'superadmin' ? 'Superadmin' : admin?.role === 'visitor' ? 'Visitor' : 'Operator SIPAS'})`}
+        >
+          <div className="w-7 h-7 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
+            {initial}
           </div>
+          {!collapsed && (
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-semibold text-slate-200 truncate">{admin?.username || 'Admin'}</div>
+              <div className="text-[10px] text-slate-400 truncate">
+                {admin?.role === 'superadmin' ? 'Super Administrator' : admin?.role === 'visitor' ? 'Visitor (Read-Only)' : 'Operator SIPAS'}
+              </div>
+            </div>
+          )}
         </div>
-        <button className="btn-logout" onClick={logout} title="Keluar">
+
+        <button
+          onClick={logout}
+          className={`cursor-pointer w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-semibold text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors ${
+            collapsed ? 'justify-center' : ''
+          }`}
+          title="Keluar"
+        >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
             <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
             <polyline points="16 17 21 12 16 7"/>
             <line x1="21" y1="12" x2="9" y2="12"/>
           </svg>
-          <span>Keluar</span>
+          {!collapsed && <span>Keluar</span>}
         </button>
       </div>
     </aside>

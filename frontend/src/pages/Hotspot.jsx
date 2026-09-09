@@ -68,11 +68,11 @@ export default function Hotspot() {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [counts, setCounts] = useState({ active: 0, hosts: 0, users: 0, bindings: 0 });
-  
+
   // Modals state
   const [confirmKick, setConfirmKick] = useState(null);
   const [kicking, setKicking] = useState(false);
-  
+
   const [showAddBindingModal, setShowAddBindingModal] = useState(false);
   const [addingBinding, setAddingBinding] = useState(false);
   const [newBinding, setNewBinding] = useState({
@@ -99,13 +99,11 @@ export default function Hotspot() {
   const [confirmDeleteBinding, setConfirmDeleteBinding] = useState(null);
   const [deletingBinding, setDeletingBinding] = useState(false);
 
-  // Sync tab with URL
   const currentPathSegment = location.pathname.replace(/^\/(manage\/)?admin\/hotspot/, '').replace(/^\//, '');
   const activeTabObj = TABS.find(t => t.path === currentPathSegment) || TABS[0];
   const tab = activeTabObj.key;
 
   useEffect(() => {
-    // If URL is just /manage/admin/hotspot or invalid sub-path, redirect to active-sessions
     if (!currentPathSegment || !TABS.some(t => t.path === currentPathSegment)) {
       navigate('/manage/admin/hotspot/active-sessions', { replace: true });
     }
@@ -364,31 +362,31 @@ export default function Hotspot() {
             {filtered.map((s, i) => (
               <tr key={i}>
                 <td>
-                  <div style={{ fontWeight: 600, color: 'var(--text-main)' }}>
+                  <div className="font-semibold text-slate-100">
                     {s.full_name || s.user || '—'}
                   </div>
                   {s.full_name && s.full_name !== s.user && (
-                    <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 400, marginTop: 2 }}>
+                    <div className="text-[11px] text-slate-400 mt-0.5">
                       {s.user}
                     </div>
                   )}
                 </td>
-                <td className="mono">{s.address || '—'}</td>
-                <td className="mono" style={{ fontSize: '0.72rem' }}>{s.mac || s['mac-address'] || '—'}</td>
-                <td>{s.uptime || '—'}</td>
+                <td className="mono font-semibold text-slate-300">{s.address || '—'}</td>
+                <td className="mono text-xs text-slate-400">{s.mac || s['mac-address'] || '—'}</td>
+                <td className="text-slate-300">{s.uptime || '—'}</td>
                 <td>
-                  <span style={{ color: '#10b981', fontWeight: 600, marginRight: 8 }}>
+                  <span className="text-emerald-400 font-semibold mr-2">
                     ↓ {formatSpeed(s.tx_rate || s['tx-rate'])}
                   </span>
-                  <span style={{ color: '#38bdf8', fontWeight: 600 }}>
+                  <span className="text-sky-400 font-semibold">
                     ↑ {formatSpeed(s.rx_rate || s['rx-rate'])}
                   </span>
                 </td>
                 <td>
-                  <span style={{ color: 'var(--text-main)', fontSize: '0.85rem' }}>
+                  <span className="text-slate-200">
                     ↓ {formatBytes(s.bytes_out || s['bytes-out'])}
                   </span>
-                  <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem', marginLeft: 8 }}>
+                  <span className="text-slate-500 text-xs ml-2">
                     (↑ {formatBytes(s.bytes_in || s['bytes-in'])})
                   </span>
                 </td>
@@ -415,9 +413,9 @@ export default function Hotspot() {
           <tbody>
             {filtered.map((h, i) => (
               <tr key={i}>
-                <td className="mono" style={{ fontSize: '0.72rem' }}>{h.mac_address || h['mac-address'] || '—'}</td>
-                <td className="mono">{h.address || '—'}</td>
-                <td>{h.server || '—'}</td>
+                <td className="mono text-xs text-slate-300">{h.mac_address || h['mac-address'] || '—'}</td>
+                <td className="mono font-semibold text-slate-200">{h.address || '—'}</td>
+                <td className="text-slate-400">{h.server || '—'}</td>
                 <td>
                   <Badge variant={h.bypass === 'true' || h.bypass === true ? 'success' : 'neutral'}>
                     {h.bypass === 'true' || h.bypass === true ? 'Bypass' : 'Normal'}
@@ -446,12 +444,12 @@ export default function Hotspot() {
           <tbody>
             {filtered.map((u, i) => (
               <tr key={i}>
-                <td style={{ fontWeight: 600 }}>{u.name || '—'}</td>
-                <td className="mono" style={{ fontSize: '0.72rem' }}>
-                  {u.password ? '••••••••' : <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>SSO (Tanpa Pass)</span>}
+                <td className="font-semibold text-slate-100">{u.name || '—'}</td>
+                <td className="mono text-xs text-slate-400">
+                  {u.password ? '••••••••' : <span className="italic text-slate-500">SSO (Tanpa Pass)</span>}
                 </td>
-                <td>{u.profile || '—'}</td>
-                <td style={{ color: 'var(--text-muted)', maxWidth: 180 }}>{u.comment || '—'}</td>
+                <td className="text-slate-300">{u.profile || '—'}</td>
+                <td className="text-slate-400 max-w-44 truncate">{u.comment || '—'}</td>
                 {!isVisitor && (
                   <td>
                     <button className="btn btn-danger btn-xs" onClick={() => deleteUser(u.id || u['.id'])}>
@@ -478,19 +476,19 @@ export default function Hotspot() {
             const badgeVariant = bType === 'bypassed' ? 'success' : (bType === 'passthrough' ? 'warning' : 'neutral');
             return (
               <tr key={i}>
-                <td className="mono" style={{ fontWeight: 600, fontSize: '0.8rem' }}>{b.mac_address || '—'}</td>
-                <td className="mono">{b.address || '—'}</td>
-                <td className="mono">{b.to_address || '—'}</td>
-                <td>{b.server || 'all'}</td>
+                <td className="mono font-semibold text-slate-200">{b.mac_address || '—'}</td>
+                <td className="mono text-slate-300">{b.address || '—'}</td>
+                <td className="mono text-slate-400">{b.to_address || '—'}</td>
+                <td className="text-slate-400">{b.server || 'all'}</td>
                 <td>
                   <Badge variant={badgeVariant}>
                     {bType}
                   </Badge>
                 </td>
-                <td style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>{b.comment || '—'}</td>
+                <td className="text-xs text-slate-400">{b.comment || '—'}</td>
                 {!isVisitor && (
                   <td>
-                    <div style={{ display: 'flex', gap: 6 }}>
+                    <div className="flex items-center gap-1.5">
                       <button className="btn btn-secondary btn-xs" onClick={() => openEditBinding(b)}>
                         Edit
                       </button>
@@ -511,15 +509,15 @@ export default function Hotspot() {
   return (
     <>
       {/* Router selector */}
-      <div style={{ marginBottom: 14, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-        <select className="select" style={{ width: 'auto', minWidth: 200 }} value={routerId} onChange={e => setRouterId(e.target.value)}>
+      <div className="mb-3.5 flex items-center gap-2.5 flex-wrap">
+        <select className="select min-w-52" value={routerId} onChange={e => setRouterId(e.target.value)}>
           {routers.map(r => <option key={r.id} value={r.id}>{r.name} ({r.ip_address})</option>)}
         </select>
         <button className="btn btn-secondary btn-sm" onClick={() => loadTab(tab)} disabled={loading}>
           {loading ? <div className="loader-ring" style={{ width: 13, height: 13, borderWidth: 2 }} /> : (
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>
           )}
-          Refresh
+          <span>Refresh</span>
         </button>
       </div>
 
@@ -531,7 +529,7 @@ export default function Hotspot() {
             className={`tab-btn ${tab === t.key ? 'active' : ''}`}
             onClick={() => handleTabClick(t)}
           >
-            {t.icon} {t.label}
+            {t.icon} <span>{t.label}</span>
             <span className="tab-badge">{counts[t.key] || 0}</span>
           </button>
         ))}
@@ -541,11 +539,11 @@ export default function Hotspot() {
         <div className="card-header">
           <div className="card-title">
             {activeTabObj.icon}
-            {activeTabObj.label}
+            <span>{activeTabObj.label}</span>
             <Badge variant="primary">{filtered.length}</Badge>
           </div>
 
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <div className="flex items-center gap-2.5 flex-wrap">
             {tab === 'bindings' && !isVisitor && (
               <button className="btn btn-primary btn-sm" onClick={() => setShowAddBindingModal(true)}>
                 + Tambah IP Binding
@@ -577,18 +575,18 @@ export default function Hotspot() {
         footer={
           <>
             <button className="btn btn-secondary" onClick={() => setConfirmKick(null)} disabled={kicking}>Batal</button>
-            <button className="btn btn-danger" onClick={kickSession} disabled={kicking} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <button className="btn btn-danger" onClick={kickSession} disabled={kicking}>
               {kicking && <div className="loader-ring" style={{ width: 14, height: 14, borderWidth: 2 }} />}
-              {kicking ? 'Memproses...' : 'Putuskan Sesi'}
+              <span>{kicking ? 'Memproses...' : 'Putuskan Sesi'}</span>
             </button>
           </>
         }
       >
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
-          Yakin ingin memutuskan sesi aktif untuk user <strong style={{ color: 'var(--text)' }}>"{confirmKick?.user}"</strong>?
+        <p className="text-sm text-slate-300">
+          Yakin ingin memutuskan sesi aktif untuk user <strong className="text-slate-100">"{confirmKick?.user}"</strong>?
         </p>
-        <p style={{ color: 'var(--danger)', fontSize: '0.8rem', marginTop: 8 }}>
-          ⚠ Perangkat akan didepak dan harus masuk (login) kembali melalui captive portal untuk mengakses internet.
+        <p className="text-xs text-rose-400 mt-2">
+          ⚠️ Perangkat akan didepak dan harus masuk (login) kembali melalui captive portal untuk mengakses internet.
         </p>
       </Modal>
 
@@ -600,16 +598,16 @@ export default function Hotspot() {
         footer={
           <>
             <button className="btn btn-secondary" onClick={() => setShowAddBindingModal(false)} disabled={addingBinding}>Batal</button>
-            <button className="btn btn-primary" onClick={handleAddBindingSubmit} disabled={addingBinding} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <button className="btn btn-primary" onClick={handleAddBindingSubmit} disabled={addingBinding}>
               {addingBinding && <div className="loader-ring" style={{ width: 14, height: 14, borderWidth: 2 }} />}
-              {addingBinding ? 'Menyimpan...' : 'Simpan Binding'}
+              <span>{addingBinding ? 'Menyimpan...' : 'Simpan Binding'}</span>
             </button>
           </>
         }
       >
-        <form onSubmit={handleAddBindingSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div>
-            <label className="label">MAC Address</label>
+        <form onSubmit={handleAddBindingSubmit} className="space-y-3">
+          <div className="form-group">
+            <label className="form-label">MAC Address</label>
             <input
               type="text"
               className="input mono"
@@ -617,12 +615,12 @@ export default function Hotspot() {
               value={newBinding.macAddress}
               onChange={e => setNewBinding({ ...newBinding, macAddress: e.target.value })}
             />
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Boleh dikosongkan jika hanya mem-binding IP.</span>
+            <div className="form-hint">Boleh dikosongkan jika hanya mem-binding IP.</div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <div>
-              <label className="label">Address (IP)</label>
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">Address (IP)</label>
               <input
                 type="text"
                 className="input mono"
@@ -631,8 +629,8 @@ export default function Hotspot() {
                 onChange={e => setNewBinding({ ...newBinding, address: e.target.value })}
               />
             </div>
-            <div>
-              <label className="label">To Address</label>
+            <div className="form-group">
+              <label className="form-label">To Address</label>
               <input
                 type="text"
                 className="input mono"
@@ -643,11 +641,11 @@ export default function Hotspot() {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <div>
-              <label className="label">Server</label>
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">Server</label>
               <select
-                className="select"
+                className="select w-full"
                 value={newBinding.server}
                 onChange={e => setNewBinding({ ...newBinding, server: e.target.value })}
               >
@@ -655,10 +653,10 @@ export default function Hotspot() {
                 <option value="dhcp-hotspot">dhcp-hotspot</option>
               </select>
             </div>
-            <div>
-              <label className="label">Type</label>
+            <div className="form-group">
+              <label className="form-label">Type</label>
               <select
-                className="select"
+                className="select w-full"
                 value={newBinding.type}
                 onChange={e => setNewBinding({ ...newBinding, type: e.target.value })}
               >
@@ -669,8 +667,8 @@ export default function Hotspot() {
             </div>
           </div>
 
-          <div>
-            <label className="label">Komentar</label>
+          <div className="form-group">
+            <label className="form-label">Komentar</label>
             <input
               type="text"
               className="input"
@@ -690,16 +688,16 @@ export default function Hotspot() {
         footer={
           <>
             <button className="btn btn-secondary" onClick={() => setShowEditBindingModal(false)} disabled={editingBinding}>Batal</button>
-            <button className="btn btn-primary" onClick={handleEditBindingSubmit} disabled={editingBinding} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <button className="btn btn-primary" onClick={handleEditBindingSubmit} disabled={editingBinding}>
               {editingBinding && <div className="loader-ring" style={{ width: 14, height: 14, borderWidth: 2 }} />}
-              {editingBinding ? 'Menyimpan...' : 'Simpan Perubahan'}
+              <span>{editingBinding ? 'Menyimpan...' : 'Simpan Perubahan'}</span>
             </button>
           </>
         }
       >
-        <form onSubmit={handleEditBindingSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div>
-            <label className="label">MAC Address</label>
+        <form onSubmit={handleEditBindingSubmit} className="space-y-3">
+          <div className="form-group">
+            <label className="form-label">MAC Address</label>
             <input
               type="text"
               className="input mono"
@@ -707,12 +705,12 @@ export default function Hotspot() {
               value={editBindingData.macAddress}
               onChange={e => setEditBindingData({ ...editBindingData, macAddress: e.target.value })}
             />
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Boleh dikosongkan jika hanya mem-binding IP.</span>
+            <div className="form-hint">Boleh dikosongkan jika hanya mem-binding IP.</div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <div>
-              <label className="label">Address (IP)</label>
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">Address (IP)</label>
               <input
                 type="text"
                 className="input mono"
@@ -721,8 +719,8 @@ export default function Hotspot() {
                 onChange={e => setEditBindingData({ ...editBindingData, address: e.target.value })}
               />
             </div>
-            <div>
-              <label className="label">To Address</label>
+            <div className="form-group">
+              <label className="form-label">To Address</label>
               <input
                 type="text"
                 className="input mono"
@@ -733,11 +731,11 @@ export default function Hotspot() {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <div>
-              <label className="label">Server</label>
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">Server</label>
               <select
-                className="select"
+                className="select w-full"
                 value={editBindingData.server}
                 onChange={e => setEditBindingData({ ...editBindingData, server: e.target.value })}
               >
@@ -745,10 +743,10 @@ export default function Hotspot() {
                 <option value="dhcp-hotspot">dhcp-hotspot</option>
               </select>
             </div>
-            <div>
-              <label className="label">Type</label>
+            <div className="form-group">
+              <label className="form-label">Type</label>
               <select
-                className="select"
+                className="select w-full"
                 value={editBindingData.type}
                 onChange={e => setEditBindingData({ ...editBindingData, type: e.target.value })}
               >
@@ -759,8 +757,8 @@ export default function Hotspot() {
             </div>
           </div>
 
-          <div>
-            <label className="label">Komentar</label>
+          <div className="form-group">
+            <label className="form-label">Komentar</label>
             <input
               type="text"
               className="input"
@@ -780,15 +778,15 @@ export default function Hotspot() {
         footer={
           <>
             <button className="btn btn-secondary" onClick={() => setConfirmDeleteBinding(null)} disabled={deletingBinding}>Batal</button>
-            <button className="btn btn-danger" onClick={handleDeleteBinding} disabled={deletingBinding} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <button className="btn btn-danger" onClick={handleDeleteBinding} disabled={deletingBinding}>
               {deletingBinding && <div className="loader-ring" style={{ width: 14, height: 14, borderWidth: 2 }} />}
-              {deletingBinding ? 'Menghapus...' : 'Hapus Binding'}
+              <span>{deletingBinding ? 'Menghapus...' : 'Hapus Binding'}</span>
             </button>
           </>
         }
       >
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
-          Yakin ingin menghapus IP Binding untuk MAC <strong className="mono" style={{ color: 'var(--text)' }}>"{confirmDeleteBinding?.mac_address || confirmDeleteBinding?.address}"</strong>?
+        <p className="text-sm text-slate-300">
+          Yakin ingin menghapus IP Binding untuk MAC <strong className="mono text-slate-100">"{confirmDeleteBinding?.mac_address || confirmDeleteBinding?.address}"</strong>?
         </p>
       </Modal>
     </>

@@ -39,38 +39,53 @@ export default function Login() {
   }
 
   return (
-    <div style={styles.page}>
-      <div style={styles.bg} />
-      <div style={styles.orb1} />
-      <div style={styles.orb2} />
+    <div className="relative min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4 overflow-hidden select-none">
+      {/* Ambient background glow orbs */}
+      <div className="fixed -top-32 -left-32 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="fixed -bottom-32 -right-32 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
 
-      <div style={styles.card}>
-        <div style={styles.iconWrap}>
-          <SipasLogo size={64} />
+      {/* Login Card */}
+      <div className="relative z-10 w-full max-w-md bg-slate-900/80 border border-slate-800/90 backdrop-blur-xl rounded-2xl p-8 sm:p-10 shadow-2xl text-center animate-scaleIn">
+        {/* Brand Logo */}
+        <div className="flex items-center justify-center mb-4">
+          <div className="p-3 bg-blue-500/10 rounded-2xl border border-blue-500/20 shadow-inner">
+            <SipasLogo size={56} />
+          </div>
         </div>
-        <div style={styles.badge}>SIPAS ADMIN PANEL</div>
-        <h1 style={styles.title}>SIPAS <span style={{ color: 'var(--primary-light)' }}>Portal</span></h1>
-        <p style={styles.sub}>Sistem Integrasi Portal & Autentikasi Satu-Pintu</p>
 
-        <form onSubmit={handleSubmit} style={{ marginTop: 24 }}>
+        {/* Badge */}
+        <div className="inline-block bg-amber-500/15 border border-amber-500/30 text-amber-400 text-[11px] font-bold px-3 py-0.5 rounded-full tracking-wider uppercase mb-2">
+          SIPAS ADMIN PANEL
+        </div>
+
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-100 tracking-tight">
+          SIPAS <span className="text-blue-400">Portal</span>
+        </h1>
+        <p className="text-xs text-slate-400 mt-1">
+          Sistem Integrasi Portal & Autentikasi Satu-Pintu
+        </p>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="mt-6 text-left space-y-4">
           {error && (
-            <div style={styles.alert}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+            <div className="flex items-center gap-2.5 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs animate-fadeIn">
+              <svg className="shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
                 <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
               </svg>
-              {error}
+              <span>{error}</span>
             </div>
           )}
 
-          <div className="form-group">
-            <label className="form-label">Username</label>
-            <div style={{ position: 'relative' }}>
-              <svg style={styles.inputIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
-              </svg>
+          <div>
+            <label className="block text-xs font-semibold text-slate-300 mb-1.5">Username</label>
+            <div className="relative">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none flex items-center justify-center">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                  <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+                </svg>
+              </span>
               <input
-                className="input"
-                style={{ paddingLeft: 36 }}
+                className="w-full bg-slate-950/60 border border-slate-700/80 rounded-lg pl-10 pr-3.5 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-hidden focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                 type="text"
                 placeholder="admin"
                 autoCapitalize="none"
@@ -81,15 +96,16 @@ export default function Login() {
             </div>
           </div>
 
-          <div className="form-group">
-            <label className="form-label">Password</label>
-            <div style={{ position: 'relative' }}>
-              <svg style={styles.inputIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-              </svg>
+          <div>
+            <label className="block text-xs font-semibold text-slate-300 mb-1.5">Password</label>
+            <div className="relative">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none flex items-center justify-center">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                  <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+              </span>
               <input
-                className="input"
-                style={{ paddingLeft: 36, paddingRight: 40 }}
+                className="w-full bg-slate-950/60 border border-slate-700/80 rounded-lg pl-10 pr-10 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-hidden focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                 type={showPwd ? 'text' : 'password'}
                 placeholder="••••••••"
                 value={form.password}
@@ -99,104 +115,44 @@ export default function Login() {
               <button
                 type="button"
                 onClick={() => setShowPwd(v => !v)}
-                style={styles.eyeBtn}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors cursor-pointer flex items-center justify-center"
               >
-                {showPwd
-                  ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                  : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                }
+                {showPwd ? (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                    <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/>
+                    <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/>
+                    <line x1="1" y1="1" x2="23" y2="23"/>
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                )}
               </button>
             </div>
           </div>
 
           <button
             type="submit"
-            className="btn btn-primary"
-            style={{ width: '100%', padding: '11px', marginTop: 8, fontSize: '0.9rem' }}
             disabled={loading}
+            className="w-full mt-2 py-2.5 px-4 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white text-sm font-semibold rounded-lg shadow-lg shadow-blue-600/20 hover:shadow-blue-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
-            {loading ? <><div className="loader-ring" style={{ width: 16, height: 16, borderWidth: 2 }} /> Masuk...</> : 'Masuk ke Dashboard'}
+            {loading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <span>Masuk...</span>
+              </>
+            ) : (
+              'Masuk ke Dashboard'
+            )}
           </button>
         </form>
 
-        <div style={styles.footer}>
-          ← Kembali ke <a href="/" style={{ color: 'var(--primary-light)' }}>Captive Portal</a>
+        <div className="mt-6 text-xs text-slate-500">
+          ← Kembali ke <a href="/" className="text-blue-400 hover:text-blue-300 underline font-medium">Captive Portal</a>
         </div>
       </div>
     </div>
   );
 }
-
-const styles = {
-  page: {
-    minHeight: '100vh',
-    background: 'var(--bg-body)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  bg: {
-    position: 'fixed', inset: 0, zIndex: 0,
-    background: 'var(--bg-body)',
-  },
-  orb1: { position: 'fixed', top: '-15%', left: '-10%', width: 500, height: 500, background: 'rgba(37,99,235,0.04)', borderRadius: '50%', filter: 'blur(80px)', zIndex: 0 },
-  orb2: { position: 'fixed', bottom: '-20%', right: '-10%', width: 600, height: 600, background: 'rgba(2,132,199,0.03)', borderRadius: '50%', filter: 'blur(100px)', zIndex: 0 },
-  card: {
-    background: 'var(--bg-card)',
-    border: '1px solid var(--border)',
-    borderRadius: 'var(--radius-lg)',
-    padding: '36px 32px',
-    width: '100%',
-    maxWidth: 420,
-    position: 'relative',
-    zIndex: 1,
-    textAlign: 'center',
-  },
-  iconWrap: {
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    margin: '0 auto 16px',
-  },
-  badge: {
-    display: 'inline-block',
-    background: 'rgba(245,158,11,0.12)',
-    border: '1px solid rgba(245,158,11,0.25)',
-    color: '#fbbf24',
-    fontSize: '0.65rem',
-    fontWeight: 700,
-    padding: '3px 10px',
-    borderRadius: 99,
-    letterSpacing: '0.08em',
-    marginBottom: 10,
-  },
-  title: { fontSize: '1.5rem', fontWeight: 800, marginBottom: 4 },
-  sub: { fontSize: '0.83rem', color: 'var(--text-muted)' },
-  alert: {
-    background: 'rgba(239,68,68,0.1)',
-    border: '1px solid rgba(239,68,68,0.2)',
-    color: '#f87171',
-    borderRadius: 'var(--radius-sm)',
-    padding: '10px 14px',
-    fontSize: '0.8rem',
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 16,
-    textAlign: 'left',
-  },
-  inputIcon: {
-    position: 'absolute',
-    left: 10, top: '50%', transform: 'translateY(-50%)',
-    color: 'var(--text-muted)',
-    pointerEvents: 'none',
-  },
-  eyeBtn: {
-    position: 'absolute',
-    right: 10, top: '50%', transform: 'translateY(-50%)',
-    color: 'var(--text-muted)',
-    display: 'flex', alignItems: 'center',
-  },
-  footer: { marginTop: 24, fontSize: '0.78rem', color: 'var(--text-muted)' },
-};

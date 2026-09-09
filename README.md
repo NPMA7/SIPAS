@@ -49,9 +49,9 @@ Untuk memblokir situs-situs CDN modern seperti YouTube atau domain kustom (NPMA)
 
 Untuk memulai deploy dan menggunakan sistem ini, silakan baca dokumentasi detail berikut:
 
-1. 💻 **[Panduan Instalasi & Konfigurasi (SETUP.md)](./SETUP.md)**
-2. 🔒 **[Panduan Setup VPS & VPN L2TP/IPsec (VPNSETUP.md)](./VPNSETUP.md)**
-3. 📖 **[Panduan Penggunaan Fitur Web Admin (TUTORIAL.md)](./TUTORIAL.md)**
-4. 🤝 **[Panduan Kolaborasi Tim Dev & Network (COLLABORATION.md)](./COLLABORATION.md)**
-5. 📂 **[Panduan Struktur Folder & File (STRUCTURE.md)](./STRUCTURE.md)**
-6. 🔄 **[Panduan Alur Logika Jaringan & Aplikasi (LOGIC_FLOW.md)](./LOGIC_FLOW.md)**
+1. 💻 **[Panduan Instalasi & Konfigurasi (SETUP.md)](./docs/SETUP.md)**
+2. 🔒 **[Panduan Setup VPS & VPN L2TP/IPsec (VPNSETUP.md)](./docs/VPNSETUP.md)**
+3. 📖 **[Panduan Penggunaan Fitur Web Admin (TUTORIAL.md)](./docs/TUTORIAL.md)**
+4. 🤝 **[Panduan Kolaborasi Tim Dev & Network (COLLABORATION.md)](./docs/COLLABORATION.md)**
+5. 📂 **[Panduan Struktur Folder & File (STRUCTURE.md)](./docs/STRUCTURE.md)**
+6. 🔄 **[Panduan Alur Logika Jaringan & Aplikasi (LOGIC_FLOW.md)](./docs/LOGIC_FLOW.md)**

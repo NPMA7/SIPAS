@@ -132,7 +132,7 @@ export default function PortalLogin() {
         setAlert({ type: 'error', msg: data.message || 'Login gagal. Periksa username dan password.' });
         setLoading(false);
       }
-    } catch (err) {
+    } catch {
       setStatus('failed');
       setAlert({ type: 'error', msg: 'Tidak dapat terhubung ke server portal.' });
       setLoading(false);
@@ -146,23 +146,20 @@ export default function PortalLogin() {
   const primaryColor = settings.primary_color || '#2563eb';
 
   return (
-    <div style={{
-      ...styles.page,
-      background: isImageBg ? '#060911' : (settings.bg_color || 'var(--bg-body)'),
-    }}>
+    <div
+      className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden"
+      style={{
+        backgroundColor: isImageBg ? '#060911' : (settings.bg_color || '#0b0f19'),
+      }}
+    >
       {/* Background Image Container */}
       {isImageBg && (
         <div
+          className="fixed inset-0 bg-cover bg-center bg-no-repeat z-0"
           style={{
-            position: 'fixed',
-            inset: 0,
             backgroundImage: `url(${settings.bg_image})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
             filter: settings.bg_blur > 0 ? `blur(${settings.bg_blur}px)` : 'none',
             transform: settings.bg_blur > 0 ? 'scale(1.05)' : 'none',
-            zIndex: 0,
           }}
         />
       )}
@@ -170,99 +167,109 @@ export default function PortalLogin() {
       {/* Background Overlay */}
       {isImageBg && (
         <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: '#000000',
-            opacity: overlayOpacity,
-            zIndex: 0,
-          }}
+          className="fixed inset-0 bg-black z-0"
+          style={{ opacity: overlayOpacity }}
         />
       )}
 
-      {/* Decorative ambient lights if color mode */}
+      {/* Ambient Orbs */}
       {!isImageBg && (
         <>
-          <div style={styles.orb1} />
-          <div style={styles.orb2} />
+          <div className="fixed -top-32 -left-32 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="fixed -bottom-32 -right-32 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
         </>
       )}
 
-      <div style={styles.wrapper}>
-        <div style={styles.header}>
-          <div style={styles.logo}>
+      <div className="relative z-10 w-full max-w-md animate-scaleIn">
+        {/* Header */}
+        <div className="text-center mb-5">
+          <div className="flex items-center justify-center mb-3">
             {settings.logo_type === 'custom' && settings.logo_custom ? (
               <img
                 src={settings.logo_custom}
                 alt="Portal Logo"
-                style={{ maxHeight: 72, maxWidth: 180, objectFit: 'contain', marginBottom: 6 }}
+                className="max-h-18 max-w-44 object-contain mb-1.5"
               />
             ) : (
-              <SipasLogo size={64} />
+              <div className="p-2.5 bg-blue-500/10 rounded-2xl border border-blue-500/20 shadow-inner">
+                <SipasLogo size={56} />
+              </div>
             )}
           </div>
-          <h1 style={styles.title}>
+          <h1 className="text-2xl font-extrabold text-slate-100 tracking-tight">
             {settings.portal_title || 'Portal SIPAS'}
           </h1>
-          <p style={styles.subTitle}>
+          <p className="text-xs text-slate-400 mt-1">
             {settings.portal_subtitle || 'Sistem Integrasi Portal & Autentikasi Satu-Pintu'}
           </p>
         </div>
 
-        <div style={{
-          ...styles.card,
-          backgroundColor: hexToRgba(settings.card_bg_color || '#111827', cardOpacity),
-          backdropFilter: cardOpacity < 1 ? 'blur(16px)' : 'none',
-        }}>
-          {/* Network Info */}
-          <div style={styles.netInfo}>
-            <div style={styles.netItem}>
-              <div style={styles.netLabel}>IP ANDA</div>
-              <div style={styles.netValue}>{params.ip || 'Deteksi...'}</div>
+        {/* Login Card */}
+        <div
+          className="border border-slate-700/80 rounded-2xl p-6 sm:p-7 shadow-2xl"
+          style={{
+            backgroundColor: hexToRgba(settings.card_bg_color || '#111827', cardOpacity),
+            backdropFilter: cardOpacity < 1 ? 'blur(16px)' : 'none',
+          }}
+        >
+          {/* Network Info Pills */}
+          <div className="flex items-center justify-between p-2.5 bg-slate-950/40 border border-slate-800 rounded-xl mb-5 text-center">
+            <div className="flex-1 min-w-0">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">IP ANDA</div>
+              <div className="text-xs font-mono font-semibold text-slate-200 truncate mt-0.5">{params.ip || 'Deteksi...'}</div>
             </div>
-            <div style={styles.netDivider} />
-            <div style={styles.netItem}>
-              <div style={styles.netLabel}>MAC</div>
-              <div style={styles.netValue}>{params.mac || 'N/A'}</div>
+            <div className="w-px h-6 bg-slate-800 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">MAC</div>
+              <div className="text-xs font-mono font-semibold text-slate-200 truncate mt-0.5">{params.mac || 'N/A'}</div>
             </div>
-            <div style={styles.netDivider} />
-            <div style={styles.netItem}>
-              <div style={styles.netLabel}>STATUS</div>
-              <div style={styles.netValue}>
-                <span style={{
-                  ...styles.statusDot,
-                  backgroundColor: status === 'connected' ? 'var(--success)' : status === 'failed' ? 'var(--danger)' : 'var(--warning)',
-                  animation: status === 'authenticating' ? 'blink 1.5s ease-in-out infinite' : 'none'
-                }} />
-                {status === 'waiting' && 'Menunggu'}
-                {status === 'authenticating' && 'Verifikasi...'}
-                {status === 'connected' && 'Terhubung'}
-                {status === 'failed' && 'Gagal'}
+            <div className="w-px h-6 bg-slate-800 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">STATUS</div>
+              <div className="text-xs font-semibold text-slate-200 flex items-center justify-center gap-1.5 mt-0.5">
+                <span
+                  className={`w-2 h-2 rounded-full shrink-0 ${
+                    status === 'connected'
+                      ? 'bg-emerald-500'
+                      : status === 'failed'
+                      ? 'bg-rose-500'
+                      : 'bg-amber-500 animate-pulse'
+                  }`}
+                />
+                <span className="truncate">
+                  {status === 'waiting' && 'Menunggu'}
+                  {status === 'authenticating' && 'Verifikasi...'}
+                  {status === 'connected' && 'Terhubung'}
+                  {status === 'failed' && 'Gagal'}
+                </span>
               </div>
             </div>
           </div>
 
           {alert && (
-            <div style={{
-              ...styles.alert,
-              background: alert.type === 'error' ? 'rgba(239,68,68,0.1)' : 'rgba(16,185,129,0.1)',
-              borderColor: alert.type === 'error' ? 'rgba(239,68,68,0.3)' : 'rgba(16,185,129,0.3)',
-              color: alert.type === 'error' ? '#fca5a5' : '#6ee7b7',
-            }}>
-              {alert.msg}
+            <div
+              className={`p-3 rounded-lg border text-xs mb-4 flex items-center gap-2 animate-fadeIn ${
+                alert.type === 'error'
+                  ? 'bg-rose-500/10 border-rose-500/30 text-rose-300'
+                  : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+              }`}
+            >
+              <span className="shrink-0 font-bold">{alert.type === 'error' ? '⚠️' : '✓'}</span>
+              <span>{alert.msg}</span>
             </div>
           )}
 
-          <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label className="form-label">Username</label>
-              <div style={{ position: 'relative' }}>
-                <svg style={styles.inputIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-                </svg>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Username</label>
+              <div className="relative">
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none flex items-center justify-center">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                  </svg>
+                </span>
                 <input
-                  className="input"
-                  style={{ paddingLeft: 38 }}
+                  className="w-full bg-slate-950/60 border border-slate-700/80 rounded-lg pl-10 pr-3.5 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-hidden focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                   type="text"
                   placeholder="Masukkan username"
                   value={form.username}
@@ -273,15 +280,16 @@ export default function PortalLogin() {
               </div>
             </div>
 
-            <div className="form-group">
-              <label className="form-label">Password</label>
-              <div style={{ position: 'relative' }}>
-                <svg style={styles.inputIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-                  <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                </svg>
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">Password</label>
+              <div className="relative">
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none flex items-center justify-center">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                    <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                </span>
                 <input
-                  className="input"
-                  style={{ paddingLeft: 38, paddingRight: 40 }}
+                  className="w-full bg-slate-950/60 border border-slate-700/80 rounded-lg pl-10 pr-10 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-hidden focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                   type={showPwd ? 'text' : 'password'}
                   placeholder="Masukkan password"
                   value={form.password}
@@ -291,102 +299,50 @@ export default function PortalLogin() {
                 <button
                   type="button"
                   onClick={() => setShowPwd(v => !v)}
-                  style={styles.eyeBtn}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors cursor-pointer flex items-center justify-center"
                 >
-                  {showPwd
-                    ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                    : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                  }
+                  {showPwd ? (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                      <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/>
+                      <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/>
+                      <line x1="1" y1="1" x2="23" y2="23"/>
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  )}
                 </button>
               </div>
             </div>
 
             <button
               type="submit"
-              className="btn"
-              style={{
-                width: '100%',
-                padding: '12px',
-                marginTop: 10,
-                fontSize: '0.9rem',
-                backgroundColor: primaryColor,
-                borderColor: primaryColor,
-                color: '#ffffff',
-                fontWeight: 600,
-              }}
               disabled={loading}
+              className="w-full mt-3 py-2.5 px-4 text-white text-sm font-bold rounded-lg shadow-lg hover:brightness-110 active:brightness-95 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              style={{
+                backgroundColor: primaryColor,
+                boxShadow: `0 4px 15px ${hexToRgba(primaryColor, 0.35)}`,
+              }}
             >
-              {loading ? <><div className="loader-ring" style={{ width: 16, height: 16, borderWidth: 2 }} /> Menyambungkan...</> : 'Masuk ke Internet'}
+              {loading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Menyambungkan...</span>
+                </>
+              ) : (
+                'Masuk ke Internet'
+              )}
             </button>
           </form>
         </div>
 
-        <div style={styles.footer}>
+        {/* Footer */}
+        <div className="text-center mt-5 text-xs text-slate-400">
           <p>{settings.footer_text || 'Butuh bantuan? Hubungi administrator jaringan'}</p>
         </div>
       </div>
     </div>
   );
 }
-
-const styles = {
-  page: {
-    minHeight: '100vh',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  orb1: { position: 'fixed', top: '-15%', left: '-10%', width: 500, height: 500, background: 'rgba(37,99,235,0.04)', borderRadius: '50%', filter: 'blur(80px)', zIndex: 0 },
-  orb2: { position: 'fixed', bottom: '-20%', right: '-10%', width: 600, height: 600, background: 'rgba(2,132,199,0.03)', borderRadius: '50%', filter: 'blur(100px)', zIndex: 0 },
-  wrapper: { width: '100%', maxWidth: 430, position: 'relative', zIndex: 1 },
-  header: { textAlign: 'center', marginBottom: 20 },
-  logo: {
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    margin: '0 auto 12px',
-  },
-  title: { fontSize: '1.4rem', fontWeight: 800, marginBottom: 4, color: 'var(--text-main)' },
-  subTitle: { fontSize: '0.8rem', color: 'var(--text-secondary)' },
-  card: {
-    border: '1px solid var(--border)',
-    borderRadius: 'var(--radius-lg)',
-    padding: '24px 20px',
-    boxShadow: 'var(--shadow-card)',
-  },
-  netInfo: {
-    display: 'flex',
-    gap: 8,
-    padding: 12,
-    background: 'rgba(255, 255, 255, 0.02)',
-    border: '1px solid var(--border)',
-    borderRadius: 'var(--radius-sm)',
-    marginBottom: 20,
-  },
-  netItem: { flex: 1, textAlign: 'center' },
-  netLabel: { fontSize: '0.62rem', color: 'var(--text-secondary)', fontWeight: 600, letterSpacing: 0.5, marginBottom: 2 },
-  netValue: { fontSize: '0.78rem', color: 'var(--text)', fontWeight: 600, fontFamily: 'monospace' },
-  netDivider: { width: 1, background: 'var(--border)', alignSelf: 'stretch' },
-  statusDot: { display: 'inline-block', width: 6, height: 6, borderRadius: '50%', marginRight: 5, verticalAlign: 'middle' },
-  alert: {
-    border: '1px solid',
-    borderRadius: 'var(--radius-sm)',
-    padding: '10px 14px',
-    fontSize: '0.8rem',
-    marginBottom: 16,
-  },
-  inputIcon: {
-    position: 'absolute',
-    left: 12, top: '50%', transform: 'translateY(-50%)',
-    color: 'var(--text-muted)',
-    pointerEvents: 'none',
-  },
-  eyeBtn: {
-    position: 'absolute',
-    right: 12, top: '50%', transform: 'translateY(-50%)',
-    color: 'var(--text-muted)',
-    display: 'flex', alignItems: 'center',
-  },
-  footer: { textAlign: 'center', marginTop: 20, fontSize: '0.75rem', color: 'var(--text-secondary)' },
-};

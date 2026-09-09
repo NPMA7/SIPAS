@@ -8,22 +8,22 @@ const ROLE_CONFIG = {
   superadmin: {
     label: 'Superadmin',
     variant: 'primary',
-    badgeStyle: { background: 'rgba(37, 99, 235, 0.18)', color: '#60a5fa', border: '1px solid rgba(59, 130, 246, 0.4)' },
-    avatarBg: '#1d4ed8',
+    badgeClass: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
+    avatarBg: 'bg-blue-700',
     desc: 'Akses penuh ke seluruh sistem & manajemen pengelola web',
   },
   operator: {
     label: 'Operator SIPAS',
     variant: 'info',
-    badgeStyle: { background: 'rgba(2, 132, 199, 0.18)', color: '#38bdf8', border: '1px solid rgba(2, 132, 199, 0.35)' },
-    avatarBg: '#0284c7',
+    badgeClass: 'bg-sky-500/15 text-sky-400 border-sky-500/30',
+    avatarBg: 'bg-sky-600',
     desc: 'Mengelola router, pengguna SIPAS, antrean bandwidth, dan situs',
   },
   visitor: {
     label: 'Visitor',
     variant: 'neutral',
-    badgeStyle: { background: 'rgba(100, 116, 139, 0.18)', color: '#94a3b8', border: '1px solid rgba(100, 116, 139, 0.35)' },
-    avatarBg: '#475569',
+    badgeClass: 'bg-slate-700/40 text-slate-400 border-slate-600/40',
+    avatarBg: 'bg-slate-700',
     desc: 'Akses Read-Only (hanya melihat) & data sensitif disamarkan',
   },
 };
@@ -233,9 +233,9 @@ export default function AdminUsers() {
   };
 
   return (
-    <div className="page-container">
-      {/* Stat Cards - Responsive Grid */}
-      <div className="stats-grid" style={{ marginBottom: 20 }}>
+    <div className="space-y-6">
+      {/* Stat Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
         <StatCard
           icon={
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="22" height="22">
@@ -294,7 +294,7 @@ export default function AdminUsers() {
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
               <path d="M7 11V7a5 5 0 0 1 10 0v4" />
             </svg>
-            Daftar Admin Pengelola Web
+            <span>Daftar Admin Pengelola Web</span>
             <Badge variant="primary">{filteredAdmins.length}</Badge>
           </div>
 
@@ -316,7 +316,7 @@ export default function AdminUsers() {
 
             {/* Role Filter */}
             <select
-              className="select select-sm"
+              className="select min-w-36"
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
             >
@@ -333,7 +333,7 @@ export default function AdminUsers() {
                   <line x1="12" y1="5" x2="12" y2="19" />
                   <line x1="5" y1="12" x2="19" y2="12" />
                 </svg>
-                Tambah Pengelola
+                <span>Tambah Pengelola</span>
               </button>
             )}
           </div>
@@ -355,7 +355,7 @@ export default function AdminUsers() {
                   <th>Role Hak Akses</th>
                   <th>Status Akses</th>
                   <th>Dibuat</th>
-                  <th style={{ textAlign: 'right' }}>Aksi</th>
+                  <th className="text-right">Aksi</th>
                 </tr>
               </thead>
               <tbody>
@@ -365,50 +365,28 @@ export default function AdminUsers() {
                   return (
                     <tr key={a.id}>
                       <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <div
-                            style={{
-                              width: 34,
-                              height: 34,
-                              borderRadius: '50%',
-                              background: roleCfg.avatarBg,
-                              color: '#fff',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              fontWeight: 700,
-                              fontSize: '0.85rem',
-                              boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
-                            }}
-                          >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-8 h-8 rounded-full ${roleCfg.avatarBg} text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-sm`}>
                             {initial}
                           </div>
                           <div>
-                            <div style={{ fontWeight: 600, color: 'var(--text-main)' }}>
+                            <div className="font-semibold text-slate-100">
                               {a.full_name || a.username}
                             </div>
                             {a.full_name && a.full_name !== a.username && (
-                              <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>@{a.username}</div>
+                              <div className="text-[11px] text-slate-400">@{a.username}</div>
                             )}
                           </div>
                         </div>
                       </td>
-                      <td className="mono" style={{ fontWeight: 600 }}>
+                      <td className="mono font-semibold text-slate-200">
                         @{a.username}
                       </td>
-                      <td style={{ fontSize: '0.85rem', color: a.email ? 'var(--text-main)' : 'var(--text-muted)' }}>
+                      <td className="text-xs text-slate-300">
                         {a.email || '—'}
                       </td>
                       <td>
-                        <span
-                          className="badge"
-                          style={{
-                            ...roleCfg.badgeStyle,
-                            padding: '4px 10px',
-                            fontWeight: 600,
-                            letterSpacing: '0.3px',
-                          }}
-                        >
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${roleCfg.badgeClass}`}>
                           {roleCfg.label}
                         </span>
                       </td>
@@ -417,14 +395,14 @@ export default function AdminUsers() {
                           {a.is_active ? 'Aktif' : 'Nonaktif'}
                         </Badge>
                       </td>
-                      <td style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                      <td className="text-xs text-slate-400">
                         {a.created_at ? new Date(a.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
                       </td>
-                      <td style={{ textAlign: 'right' }}>
-                        <div style={{ display: 'inline-flex', gap: 6 }}>
+                      <td className="text-right">
+                        <div className="inline-flex items-center gap-1.5 justify-end">
                           {isSuperAdmin && (
                             <button
-                              className="btn btn-ghost btn-icon-sm"
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors cursor-pointer"
                               title="Edit Pengelola"
                               onClick={() => openEdit(a)}
                             >
@@ -438,7 +416,7 @@ export default function AdminUsers() {
                           {a.role !== 'superadmin' ? (
                             isSuperAdmin && (
                               <button
-                                className="btn btn-danger btn-icon-sm"
+                                className="p-1.5 rounded-lg text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-colors cursor-pointer"
                                 title="Hapus Pengelola"
                                 onClick={() => openDelete(a)}
                               >
@@ -453,16 +431,8 @@ export default function AdminUsers() {
                             )
                           ) : (
                             <span
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                width: 28,
-                                height: 28,
-                                color: 'var(--text-muted)',
-                                opacity: 0.5,
-                              }}
-                              title="Superadmin diproteksi (Hanya dapat dihapus langsung lewat Database)"
+                              className="inline-flex items-center justify-center w-7 h-7 text-slate-600 cursor-not-allowed"
+                              title="Superadmin diproteksi"
                             >
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
                                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
@@ -483,9 +453,9 @@ export default function AdminUsers() {
 
       {/* MODAL TAMBAH PENGELOLA (Khusus Superadmin) */}
       <Modal open={showAddModal} title="Tambah Pengelola Web Baru" onClose={() => setShowAddModal(false)}>
-        <form onSubmit={handleCreate}>
+        <form onSubmit={handleCreate} className="space-y-4">
           <div className="form-group">
-            <label className="form-label">Username <span style={{ color: 'var(--color-danger)' }}>*</span></label>
+            <label className="form-label">Username <span className="text-rose-400">*</span></label>
             <input
               type="text"
               className="input"
@@ -520,7 +490,7 @@ export default function AdminUsers() {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Password <span style={{ color: 'var(--color-danger)' }}>*</span></label>
+            <label className="form-label">Password <span className="text-rose-400">*</span></label>
             <input
               type="password"
               className="input"
@@ -535,7 +505,7 @@ export default function AdminUsers() {
           <div className="form-group">
             <label className="form-label">Role Hak Akses</label>
             <select
-              className="select"
+              className="select w-full"
               value={form.role}
               onChange={(e) => setForm({ ...form, role: e.target.value })}
             >
@@ -543,23 +513,23 @@ export default function AdminUsers() {
               <option value="operator">Operator SIPAS (Kelola SIPAS, Router, & User)</option>
               <option value="visitor">Visitor (Read-Only & Data Sensitif Disamarkan)</option>
             </select>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
+            <div className="text-xs text-slate-400 mt-1">
               {ROLE_CONFIG[form.role]?.desc}
             </div>
           </div>
 
-          <div className="form-group">
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+          <div className="form-group pt-1">
+            <label className="form-check">
               <input
                 type="checkbox"
                 checked={form.is_active}
                 onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
               />
-              <span style={{ fontSize: '0.88rem' }}>Status Akun Aktif (Bisa Login ke Web Admin)</span>
+              <span>Status Akun Aktif (Bisa Login ke Web Admin)</span>
             </label>
           </div>
 
-          <div className="modal-actions">
+          <div className="form-actions">
             <button type="button" className="btn btn-secondary" onClick={() => setShowAddModal(false)}>
               Batal
             </button>
@@ -572,10 +542,10 @@ export default function AdminUsers() {
 
       {/* MODAL EDIT PENGELOLA (Khusus Superadmin) */}
       <Modal open={showEditModal} title={`Edit Pengelola: @${selectedAdmin?.username || ''}`} onClose={() => setShowEditModal(false)}>
-        <form onSubmit={handleUpdate}>
+        <form onSubmit={handleUpdate} className="space-y-4">
           <div className="form-group">
             <label className="form-label">Username</label>
-            <input type="text" className="input" value={form.username} disabled style={{ opacity: 0.7 }} />
+            <input type="text" className="input opacity-70" value={form.username} disabled />
           </div>
 
           <div className="form-group">
@@ -603,7 +573,7 @@ export default function AdminUsers() {
           <div className="form-group">
             <label className="form-label">Role Hak Akses</label>
             <select
-              className="select"
+              className="select w-full"
               value={form.role}
               onChange={(e) => setForm({ ...form, role: e.target.value })}
             >
@@ -611,7 +581,7 @@ export default function AdminUsers() {
               <option value="operator">Operator SIPAS (Kelola SIPAS, Router, & User)</option>
               <option value="visitor">Visitor (Read-Only & Data Sensitif Disamarkan)</option>
             </select>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4 }}>
+            <div className="text-xs text-slate-400 mt-1">
               {ROLE_CONFIG[form.role]?.desc}
             </div>
           </div>
@@ -619,7 +589,7 @@ export default function AdminUsers() {
           <div className="form-group">
             <label className="form-label">
               Reset Password Baru{' '}
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 400 }}>
+              <span className="text-[11px] text-slate-400 font-normal">
                 (Kosongkan jika tidak ingin mengubah password)
               </span>
             </label>
@@ -632,18 +602,18 @@ export default function AdminUsers() {
             />
           </div>
 
-          <div className="form-group">
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+          <div className="form-group pt-1">
+            <label className="form-check">
               <input
                 type="checkbox"
                 checked={form.is_active}
                 onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
               />
-              <span style={{ fontSize: '0.88rem' }}>Status Akun Aktif (Bisa Login ke Web Admin)</span>
+              <span>Status Akun Aktif (Bisa Login ke Web Admin)</span>
             </label>
           </div>
 
-          <div className="modal-actions">
+          <div className="form-actions">
             <button type="button" className="btn btn-secondary" onClick={() => setShowEditModal(false)}>
               Batal
             </button>
@@ -656,25 +626,15 @@ export default function AdminUsers() {
 
       {/* MODAL KONFIRMASI HAPUS (Khusus Superadmin) */}
       <Modal open={showDeleteModal} title="Konfirmasi Hapus Pengelola" onClose={() => setShowDeleteModal(false)}>
-        <div style={{ padding: '8px 0' }}>
-          <p style={{ marginBottom: 12 }}>
-            Apakah Anda yakin ingin menghapus akun pengelola <strong>@{selectedAdmin?.username}</strong> ({selectedAdmin?.full_name || 'Pengelola'})?
+        <div className="space-y-3">
+          <p className="text-sm text-slate-300">
+            Apakah Anda yakin ingin menghapus akun pengelola <strong className="text-slate-100">@{selectedAdmin?.username}</strong> ({selectedAdmin?.full_name || 'Pengelola'})?
           </p>
-          <div
-            style={{
-              background: 'rgba(239, 68, 68, 0.1)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              borderRadius: 8,
-              padding: '10px 14px',
-              fontSize: '0.82rem',
-              color: '#f87171',
-              marginBottom: 16,
-            }}
-          >
+          <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-lg text-xs text-rose-300">
             ⚠️ Akun ini tidak akan bisa login lagi ke Dashboard Admin SIPAS setelah dihapus.
           </div>
         </div>
-        <div className="modal-actions">
+        <div className="form-actions">
           <button className="btn btn-secondary" onClick={() => setShowDeleteModal(false)}>
             Batal
           </button>

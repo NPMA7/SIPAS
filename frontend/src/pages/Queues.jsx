@@ -4,14 +4,6 @@ import { ToastContext } from '../hooks/ToastContext';
 import { Loader, EmptyState, Badge } from '../components/ui/index';
 import Modal from '../components/ui/Modal';
 
-function formatBytes(b) {
-  const n = parseInt(b) || 0;
-  if (n >= 1073741824) return (n / 1073741824).toFixed(2) + ' GB';
-  if (n >= 1048576) return (n / 1048576).toFixed(1) + ' MB';
-  if (n >= 1024) return (n / 1024).toFixed(0) + ' KB';
-  return n + ' B';
-}
-
 function formatRate(val) {
   if (!val || val === '0' || val === '0/0') return '0 bps';
   if (typeof val === 'string' && (val.includes('k') || val.includes('M') || val.includes('G') || val.includes('bps'))) {
@@ -30,15 +22,6 @@ function formatPairRate(pairStr) {
   return {
     ul: formatRate(parts[0]),
     dl: formatRate(parts[1] || parts[0]),
-  };
-}
-
-function formatPairBytes(pairStr) {
-  if (!pairStr || pairStr === '0/0') return { ul: '0 B', dl: '0 B' };
-  const parts = pairStr.split('/');
-  return {
-    ul: formatBytes(parts[0]),
-    dl: formatBytes(parts[1] || parts[0]),
   };
 }
 
@@ -138,13 +121,12 @@ export default function Queues() {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
               <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
             </svg>
-            Simple Queues
+            <span>Simple Queues</span>
             <Badge variant="primary">{filtered.length}</Badge>
           </div>
           <div className="card-actions">
             <select
-              className="select"
-              style={{ width: 'auto', minWidth: 180 }}
+              className="select min-w-44"
               value={routerId}
               onChange={e => {
                 setRouterId(e.target.value);
@@ -175,7 +157,7 @@ export default function Queues() {
                   <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/>
                 </svg>
               )}
-              Refresh
+              <span>Refresh</span>
             </button>
           </div>
         </div>
@@ -205,20 +187,17 @@ export default function Queues() {
                     displayName = `hotspot-${nipPart.substring(0, 4)}****${nipPart.substring(nipPart.length - 3)}`;
                   }
                   return (
-                    <tr key={i} style={{ opacity: q.disabled ? 0.6 : 1 }}>
-                      <td style={{ fontWeight: 600 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span style={{
-                            width: 8, height: 8, borderRadius: '50%',
-                            background: q.disabled ? 'var(--text-muted)' : '#10b981'
-                          }} />
-                          {displayName}
+                    <tr key={i} className={q.disabled ? 'opacity-60' : ''}>
+                      <td className="font-semibold text-slate-100">
+                        <div className="flex items-center gap-2">
+                          <span className={`w-2 h-2 rounded-full shrink-0 ${q.disabled ? 'bg-slate-500' : 'bg-emerald-500'}`} />
+                          <span>{displayName}</span>
                         </div>
                       </td>
-                      <td className="mono">{q.target || '—'}</td>
+                      <td className="mono font-semibold text-slate-300">{q.target || '—'}</td>
                       <td>
-                        <span style={{ color: '#38bdf8', fontWeight: 600, marginRight: 6 }}>↑ {limits.ul}</span>
-                        <span style={{ color: '#10b981', fontWeight: 600 }}>↓ {limits.dl}</span>
+                        <span className="text-sky-400 font-semibold mr-2">↑ {limits.ul}</span>
+                        <span className="text-emerald-400 font-semibold">↓ {limits.dl}</span>
                       </td>
                       <td>
                         <Badge variant={q.disabled ? 'neutral' : 'success'}>
@@ -227,7 +206,7 @@ export default function Queues() {
                       </td>
                       {!isVisitor && (
                         <td>
-                          <div style={{ display: 'flex', gap: 6 }}>
+                          <div className="flex items-center gap-1.5">
                             <button
                               className={`btn btn-xs ${q.disabled ? 'btn-success' : 'btn-warning'}`}
                               onClick={() => handleQueueAction(q.id, q.disabled ? 'enable' : 'disable')}
@@ -266,16 +245,15 @@ export default function Queues() {
               className="btn btn-danger"
               onClick={() => handleQueueAction(confirmDelete?.id, 'remove')}
               disabled={actionLoading}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
             >
               {actionLoading && <div className="loader-ring" style={{ width: 14, height: 14, borderWidth: 2 }} />}
-              {actionLoading ? 'Menghapus...' : 'Ya, Hapus'}
+              <span>{actionLoading ? 'Menghapus...' : 'Ya, Hapus'}</span>
             </button>
           </>
         }
       >
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
-          Apakah Anda yakin ingin menghapus Simple Queue <strong style={{ color: 'var(--text)' }}>{confirmDelete?.name}</strong> ({confirmDelete?.target}) dari router?
+        <p className="text-sm text-slate-300">
+          Apakah Anda yakin ingin menghapus Simple Queue <strong className="text-slate-100">{confirmDelete?.name}</strong> ({confirmDelete?.target}) dari router?
         </p>
       </Modal>
     </>

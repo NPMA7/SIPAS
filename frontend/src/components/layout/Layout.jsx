@@ -91,12 +91,14 @@ export default function Layout() {
 
   return (
     <ToastContext.Provider value={contextValue}>
-      <div className="app-layout">
-        {/* Mobile overlay */}
-        <div
-          className={`sidebar-overlay ${mobileOpen ? 'active' : ''}`}
-          onClick={closeMobile}
-        />
+      <div className="flex min-h-screen bg-slate-950 text-slate-100 overflow-x-hidden">
+        {/* Mobile overlay backdrop */}
+        {mobileOpen && (
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs z-40 lg:hidden transition-opacity duration-200"
+            onClick={closeMobile}
+          />
+        )}
 
         <Sidebar
           collapsed={collapsed}
@@ -106,24 +108,32 @@ export default function Layout() {
           badges={badges}
         />
 
-        <main className={`main-content ${collapsed ? 'sidebar-collapsed' : ''}`}>
-          {/* Top Header */}
-          <header className="top-header">
-            <button className="btn btn-ghost btn-icon btn-toggle-sidebar" onClick={toggleSidebar} aria-label="Toggle Sidebar">
+        <main className={`flex-1 flex flex-col min-w-0 transition-all duration-200 ${collapsed ? 'lg:ml-16' : 'lg:ml-60'} ml-0`}>
+          {/* Top Sticky Header */}
+          <header className="sticky top-0 z-30 h-15 bg-slate-900/80 backdrop-blur-md border-b border-slate-800/80 px-4 sm:px-6 flex items-center gap-3">
+            <button
+              className="p-2 -ml-2 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800/60 transition-colors focus:outline-hidden cursor-pointer"
+              onClick={toggleSidebar}
+              aria-label="Toggle Sidebar"
+            >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
                 <line x1="3" y1="12" x2="21" y2="12"/>
                 <line x1="3" y1="6" x2="21" y2="6"/>
                 <line x1="3" y1="18" x2="21" y2="18"/>
               </svg>
             </button>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', paddingRight: 16 }}>
-              <div className="header-title">{pageTitle}</div>
-              {headerAction}
+            <div className="flex items-center justify-between flex-1 min-w-0">
+              <div className="text-base sm:text-lg font-bold text-slate-100 tracking-tight truncate">
+                {pageTitle}
+              </div>
+              <div className="flex items-center gap-2">
+                {headerAction}
+              </div>
             </div>
           </header>
 
-          {/* Page content */}
-          <div className="page-content">
+          {/* Page Content Body */}
+          <div className="flex-1 p-4 sm:p-6 max-w-7xl w-full mx-auto">
             <Outlet />
           </div>
         </main>

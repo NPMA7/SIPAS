@@ -20,7 +20,7 @@ function generateL7Regex(domainsStr) {
     .map(d => {
       const clean = d.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '');
       const parts = clean.split('.');
-      return parts[0]; // cth: detik.com -> detik
+      return parts[0];
     })
     .filter(Boolean);
 
@@ -181,7 +181,7 @@ export default function BlockedSites() {
             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
             <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
           </svg>
-          Daftar Situs Diblokir
+          <span>Daftar Situs Diblokir</span>
           <Badge variant="primary">{filteredSites.length}</Badge>
         </div>
         <div className="card-actions">
@@ -201,66 +201,71 @@ export default function BlockedSites() {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
                 <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
               </svg>
-              Tambah Situs
+              <span>Tambah Situs</span>
             </button>
           )}
         </div>
       </div>
 
       {loading ? (
-        <Loader />
+        <div className="p-6"><Loader /></div>
       ) : filteredSites.length === 0 ? (
-        <EmptyState icon="🔒" text="Belum ada situs yang didaftarkan. Klik 'Tambah Situs'." />
+        <div className="p-6"><EmptyState icon="🔒" text="Belum ada situs yang didaftarkan. Klik 'Tambah Situs'." /></div>
       ) : (
-        <div style={{ display: 'grid', gap: 12, padding: 16 }}>
+        <div className="p-4 space-y-3">
           {filteredSites.map(site => (
-            <div key={site.id} className="user-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1 }}>
-                <div className="user-card-avatar" style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444' }}>
+            <div
+              key={site.id}
+              className="bg-slate-900/60 border border-slate-800 hover:border-slate-700/80 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all"
+            >
+              <div className="flex items-start gap-3.5 flex-1 min-w-0">
+                <div className="w-10 h-10 rounded-xl bg-rose-500/15 text-rose-400 border border-rose-500/20 flex items-center justify-center shrink-0 text-base">
                   🔒
                 </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 600, fontSize: 15, display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span>{site.name}</span>
-                    <span style={{ fontSize: 13, color: '#38bdf8', fontWeight: 500 }}>({site.key})</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-bold text-sm text-slate-100">{site.name}</span>
+                    <span className="text-xs font-mono font-medium text-sky-400">({site.key})</span>
                   </div>
-                  <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
                     {site.domains.split(',').map(d => (
-                      <span key={d.trim()} style={{ background: 'var(--bg-tertiary, #1e293b)', padding: '2px 8px', borderRadius: 4, fontSize: 11 }}>
+                      <span key={d.trim()} className="bg-slate-800/80 text-slate-300 border border-slate-700/50 px-2 py-0.5 rounded text-[11px] font-mono">
                         {d.trim()}
                       </span>
                     ))}
                   </div>
 
-                  <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                    <span style={{ color: '#f87171', fontWeight: 600, fontSize: 11 }}>🔒 Diblokir untuk ({site.blocked_user_ids?.length || 0} User):</span>
+                  <div className="flex items-center gap-1.5 flex-wrap mt-2.5 text-xs text-slate-400">
+                    <span className="text-rose-400 font-semibold text-[11px]">
+                      🔒 Diblokir untuk ({site.blocked_user_ids?.length || 0} User):
+                    </span>
                     {site.blocked_usernames && site.blocked_usernames.length > 0 ? (
                       site.blocked_usernames.slice(0, 5).map((uname, idx) => (
-                        <Badge key={idx} variant="danger" style={{ fontSize: 10, padding: '2px 6px' }}>{uname}</Badge>
+                        <Badge key={idx} variant="danger" className="text-[10px] py-0">{uname}</Badge>
                       ))
                     ) : (
-                      <span style={{ fontStyle: 'italic', color: 'var(--text-muted)', fontSize: 11 }}>Tidak ada user</span>
+                      <span className="italic text-slate-500 text-[11px]">Tidak ada user</span>
                     )}
                     {site.blocked_usernames && site.blocked_usernames.length > 5 && (
-                      <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>+{site.blocked_usernames.length - 5} lainnya</span>
+                      <span className="text-[11px] text-slate-500 font-medium">+{site.blocked_usernames.length - 5} lainnya</span>
                     )}
                   </div>
                 </div>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginLeft: 16 }}>
+              <div className="flex items-center gap-3 shrink-0 self-end sm:self-center">
                 <Badge variant={site.is_active ? 'success' : 'neutral'}>
                   {site.is_active ? 'Aktif' : 'Nonaktif'}
                 </Badge>
                 {!isVisitor && (
-                  <div className="user-card-actions">
-                    <button className="btn btn-ghost btn-icon-sm" title="Edit situs" onClick={() => openEdit(site)}>
+                  <div className="flex items-center gap-1">
+                    <button className="p-1.5 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors cursor-pointer" title="Edit situs" onClick={() => openEdit(site)}>
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                       </svg>
                     </button>
-                    <button className="btn btn-danger btn-icon-sm" title="Hapus situs" onClick={() => setConfirmDel(site)}>
+                    <button className="p-1.5 rounded-lg text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-colors cursor-pointer" title="Hapus situs" onClick={() => setConfirmDel(site)}>
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15">
                         <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
                         <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
@@ -284,12 +289,12 @@ export default function BlockedSites() {
             <button className="btn btn-secondary" onClick={() => setModal(false)}>Batal</button>
             <button className="btn btn-primary" onClick={submitForm} disabled={saving}>
               {saving ? <div className="loader-ring" style={{ width: 14, height: 14, borderWidth: 2 }} /> : null}
-              {editSite ? 'Update' : 'Simpan'}
+              <span>{editSite ? 'Update' : 'Simpan'}</span>
             </button>
           </>
         }
       >
-        <form onSubmit={submitForm}>
+        <form onSubmit={submitForm} className="space-y-4">
           <div className="form-row">
             <div className="form-group">
               <label className="form-label">Key ID (Tanpa spasi) *</label>
@@ -338,29 +343,27 @@ export default function BlockedSites() {
             <div className="form-hint">Jika dikosongkan, regex akan dibuat otomatis dari daftar domain</div>
           </div>
 
-          {/* User Selection Section (Desain Skalabel untuk 1000+ User) */}
-          <div className="form-group" style={{ marginTop: 16 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, flexWrap: 'wrap', gap: 8 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <label className="form-label" style={{ margin: 0, fontWeight: 600 }}>🔒 Pilih User yang Diblokir Situs Ini</label>
+          {/* User Selection Section */}
+          <div className="form-group pt-2">
+            <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <label className="form-label m-0 font-semibold">🔒 Pilih User yang Diblokir Situs Ini</label>
                 <Badge variant={(form.user_ids || []).length > 0 ? 'danger' : 'neutral'}>
                   {(form.user_ids || []).length} / {users.length} User
                 </Badge>
               </div>
-              <div style={{ display: 'flex', gap: 6 }}>
+              <div className="flex gap-1.5">
                 <button
                   type="button"
-                  className="btn btn-ghost btn-xs"
+                  className="btn btn-ghost btn-xs text-sky-400"
                   onClick={() => setForm(f => ({ ...f, user_ids: users.map(u => u.id) }))}
-                  style={{ fontSize: 11, color: '#38bdf8' }}
                 >
                   Pilih Semua ({users.length})
                 </button>
                 <button
                   type="button"
-                  className="btn btn-ghost btn-xs"
+                  className="btn btn-ghost btn-xs text-slate-400"
                   onClick={() => setForm(f => ({ ...f, user_ids: [] }))}
-                  style={{ color: 'var(--text-muted)', fontSize: 11 }}
                 >
                   Batalkan Semua
                 </button>
@@ -368,23 +371,21 @@ export default function BlockedSites() {
             </div>
 
             {/* Filter Mode Tabs & Search Bar */}
-            <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-              <div className="search-wrapper" style={{ flex: 1 }}>
-                <svg className="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13">
+            <div className="flex gap-2 mb-2">
+              <div className="relative flex-1">
+                <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13">
                   <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
                 </svg>
                 <input
                   type="text"
-                  className="search-input"
-                  style={{ fontSize: '0.8rem', padding: '6px 12px 6px 30px' }}
+                  className="input pl-8 py-1.5 text-xs"
                   placeholder="Cari nama / username..."
                   value={userSearch}
                   onChange={e => setUserSearch(e.target.value)}
                 />
               </div>
               <select
-                className="input"
-                style={{ width: 'auto', fontSize: '0.8rem', padding: '6px 10px' }}
+                className="select text-xs py-1.5"
                 value={userFilterTab}
                 onChange={e => setUserFilterTab(e.target.value)}
               >
@@ -396,63 +397,35 @@ export default function BlockedSites() {
 
             {/* Selected Chips Preview */}
             {(form.user_ids || []).length > 0 && (
-              <div style={{
-                display: 'flex',
-                gap: 6,
-                flexWrap: 'wrap',
-                padding: '6px 10px',
-                background: 'rgba(239, 68, 68, 0.08)',
-                borderRadius: 6,
-                border: '1px solid rgba(239, 68, 68, 0.2)',
-                marginBottom: 8,
-                maxHeight: 75,
-                overflowY: 'auto'
-              }}>
-                <span style={{ fontSize: 11, color: '#f87171', fontWeight: 600, alignSelf: 'center' }}>Terpilih:</span>
+              <div className="flex gap-1.5 flex-wrap p-2 bg-rose-500/10 border border-rose-500/20 rounded-lg mb-2 max-h-20 overflow-y-auto">
+                <span className="text-[11px] text-rose-400 font-bold self-center">Terpilih:</span>
                 {users.filter(u => (form.user_ids || []).includes(u.id)).slice(0, 10).map(u => (
                   <span
                     key={u.id}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 4,
-                      background: '#ef4444',
-                      color: '#fff',
-                      fontSize: 10,
-                      fontWeight: 500,
-                      padding: '2px 8px',
-                      borderRadius: 12
-                    }}
+                    className="inline-flex items-center gap-1 bg-rose-500 text-white text-[10px] font-medium px-2 py-0.5 rounded-full"
                   >
                     {u.username}
-                    <span
-                      style={{ cursor: 'pointer', fontWeight: 700, marginLeft: 2 }}
+                    <button
+                      type="button"
+                      className="cursor-pointer font-bold ml-1 hover:text-slate-200"
                       onClick={() => setForm(f => ({ ...f, user_ids: (f.user_ids || []).filter(id => id !== u.id) }))}
                     >
                       ×
-                    </span>
+                    </button>
                   </span>
                 ))}
                 {(form.user_ids || []).length > 10 && (
-                  <span style={{ fontSize: 10, color: 'var(--text-muted)', alignSelf: 'center' }}>
+                  <span className="text-[10px] text-slate-400 self-center">
                     +{(form.user_ids || []).length - 10} lainnya
                   </span>
                 )}
               </div>
             )}
 
-            {/* High Performance Scrollable User List */}
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              maxHeight: 210,
-              overflowY: 'auto',
-              background: 'var(--bg-tertiary, #0f172a)',
-              borderRadius: 6,
-              border: '1px solid var(--border)'
-            }}>
+            {/* Scrollable User List */}
+            <div className="flex flex-col max-h-52 overflow-y-auto bg-slate-950/60 rounded-lg border border-slate-800 divide-y divide-slate-800/80">
               {displayUsers.length === 0 ? (
-                <div style={{ padding: 16, textAlign: 'center', fontSize: 12, color: 'var(--text-muted)' }}>
+                <div className="p-4 text-center text-xs text-slate-500">
                   Tidak ada user yang sesuai filter.
                 </div>
               ) : (
@@ -469,34 +442,27 @@ export default function BlockedSites() {
                             : [...(f.user_ids || []), u.id]
                         }));
                       }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '8px 12px',
-                        borderBottom: '1px solid var(--border)',
-                        background: isChecked ? 'rgba(239, 68, 68, 0.08)' : 'transparent',
-                        cursor: 'pointer',
-                        transition: 'background 0.15s ease'
-                      }}
+                      className={`flex items-center justify-between p-2.5 px-3 cursor-pointer transition-colors ${
+                        isChecked ? 'bg-rose-500/10' : 'hover:bg-slate-900/80'
+                      }`}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div className="flex items-center gap-2.5 min-w-0">
                         <input
                           type="checkbox"
                           checked={isChecked}
                           onChange={() => {}}
-                          style={{ cursor: 'pointer' }}
+                          className="rounded accent-rose-500 cursor-pointer"
                         />
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                          <span style={{ fontSize: 13, fontWeight: isChecked ? 600 : 500, color: isChecked ? '#f87171' : 'var(--text-main)' }}>
+                        <div className="flex flex-col min-w-0">
+                          <span className={`text-xs font-medium truncate ${isChecked ? 'text-rose-300 font-semibold' : 'text-slate-200'}`}>
                             {u.full_name || u.username}
                           </span>
-                          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                          <span className="text-[10px] text-slate-500 truncate">
                             @{u.username} {u.jabatan ? `• ${u.jabatan}` : ''}
                           </span>
                         </div>
                       </div>
-                      <Badge variant={isChecked ? 'danger' : 'neutral'} style={{ fontSize: 10 }}>
+                      <Badge variant={isChecked ? 'danger' : 'neutral'} className="text-[10px] py-0">
                         {isChecked ? 'Diblokir' : 'Diizinkan'}
                       </Badge>
                     </div>
@@ -504,20 +470,17 @@ export default function BlockedSites() {
                 })
               )}
             </div>
-            <div className="form-hint" style={{ marginTop: 6 }}>
-              Centang user untuk memblokir situs ini. Mendukung ribuan user dengan fitur pencarian &amp; filter cepat.
-            </div>
           </div>
 
           {editSite && (
-            <div className="form-group" style={{ marginTop: 12 }}>
+            <div className="form-group pt-1">
               <label className="form-check">
                 <input
                   type="checkbox"
                   checked={form.is_active}
                   onChange={e => setForm(f => ({ ...f, is_active: e.target.checked }))}
                 />
-                Aturan Blokir Aktif
+                <span>Aturan Blokir Aktif</span>
               </label>
             </div>
           )}
@@ -532,14 +495,16 @@ export default function BlockedSites() {
         footer={
           <>
             <button className="btn btn-secondary" onClick={() => setConfirmDel(null)} disabled={deleting}>Batal</button>
-            <button className="btn btn-danger" onClick={deleteSite} disabled={deleting} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <button className="btn btn-danger" onClick={deleteSite} disabled={deleting}>
               {deleting && <div className="loader-ring" style={{ width: 14, height: 14, borderWidth: 2 }} />}
-              {deleting ? 'Menghapus...' : 'Ya, Hapus'}
+              <span>{deleting ? 'Menghapus...' : 'Ya, Hapus'}</span>
             </button>
           </>
         }
       >
-        <p>Apakah Anda yakin ingin menghapus situs <strong>{confirmDel?.name}</strong> (<code>{confirmDel?.key}</code>) dari daftar blokir?</p>
+        <p className="text-sm text-slate-300">
+          Apakah Anda yakin ingin menghapus situs <strong className="text-slate-100">{confirmDel?.name}</strong> (<code>{confirmDel?.key}</code>) dari daftar blokir?
+        </p>
       </Modal>
     </div>
   );

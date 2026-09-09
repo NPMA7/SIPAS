@@ -26,53 +26,66 @@ function RouterCard({ router, onEdit, onDelete, onTest, isVisitor }) {
   }
 
   return (
-    <div className="router-card">
-      <div className="router-card-header">
-        <div className="router-card-name">{router.name}</div>
-        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-          {router.router_type === 'external' ? (
-            <Badge variant="warning">Eksternal</Badge>
-          ) : (
-            <Badge variant="info">Internal</Badge>
+    <div className="bg-slate-900/80 border border-slate-800 hover:border-blue-500/40 rounded-xl p-5 transition-all duration-200 hover:shadow-lg hover:shadow-blue-500/5 flex flex-col justify-between">
+      <div>
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <div className="font-bold text-slate-100 text-base truncate">{router.name}</div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            {router.router_type === 'external' ? (
+              <Badge variant="warning">Eksternal</Badge>
+            ) : (
+              <Badge variant="info">Internal</Badge>
+            )}
+            <Badge variant={router.is_active ? 'success' : 'neutral'}>
+              {router.is_active ? 'Aktif' : 'Nonaktif'}
+            </Badge>
+          </div>
+        </div>
+
+        <div className="space-y-1.5 text-xs text-slate-400">
+          <div className="flex items-center gap-2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13" className="text-slate-500 shrink-0">
+              <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>
+            </svg>
+            <span className="mono font-semibold text-slate-200">{router.ip_address}{isVisitor ? '' : `:${router.api_port || 8728}`}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13" className="text-slate-500 shrink-0">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+            </svg>
+            <span>{router.router_type === 'external' ? 'Vendor Portal (No API)' : (isVisitor ? (router.api_username || 'a****n') : router.api_username)}</span>
+          </div>
+          {router.location && (
+            <div className="flex items-center gap-2">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13" className="text-slate-500 shrink-0">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+              </svg>
+              <span>{router.location}</span>
+            </div>
           )}
-          <Badge variant={router.is_active ? 'success' : 'neutral'}>
-            {router.is_active ? 'Aktif' : 'Nonaktif'}
-          </Badge>
+          <div className="flex items-center gap-2 text-slate-500 text-[11px]">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13" className="shrink-0">
+              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+            </svg>
+            <span>Last seen: {lastSeen}</span>
+          </div>
         </div>
       </div>
-      <div className="router-card-detail">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
-        <span className="mono">{router.ip_address}{isVisitor ? '' : `:${router.api_port || 8728}`}</span>
-      </div>
-      <div className="router-card-detail">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        <span>{router.router_type === 'external' ? 'Vendor Portal (No API)' : (isVisitor ? (router.api_username || 'a****n') : router.api_username)}</span>
-      </div>
-      {router.location && (
-        <div className="router-card-detail">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-          <span>{router.location}</span>
-        </div>
-      )}
-      <div className="router-card-detail" style={{ color: 'var(--text-muted)' }}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        <span>Last seen: {lastSeen}</span>
-      </div>
+
       {!isVisitor && (
-        <div className="router-card-actions">
-          <button className="btn btn-secondary btn-sm" onClick={handleTest} disabled={testing}>
+        <div className="flex items-center gap-2 mt-4 pt-3 border-t border-slate-800/80">
+          <button className="btn btn-secondary btn-xs flex-1" onClick={handleTest} disabled={testing}>
             {testing ? <div className="loader-ring" style={{ width: 12, height: 12, borderWidth: 2 }} /> : (
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
             )}
-            Test
+            <span>Test</span>
           </button>
-          <button className="btn btn-ghost btn-sm" onClick={() => onEdit(router)}>
+          <button className="btn btn-ghost btn-xs flex-1" onClick={() => onEdit(router)}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            Edit
+            <span>Edit</span>
           </button>
-          <button className="btn btn-danger btn-sm" onClick={() => onDelete(router)}>
+          <button className="btn btn-danger btn-xs" onClick={() => onDelete(router)} title="Hapus router">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
-            Hapus
           </button>
         </div>
       )}
@@ -188,7 +201,7 @@ export default function Routers() {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
               <rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 12h.01M10 12h.01M14 12h.01"/>
             </svg>
-            Daftar Router
+            <span>Daftar Router</span>
             <Badge variant="primary">{routers.length}</Badge>
           </div>
           {!isVisitor && (
@@ -196,18 +209,18 @@ export default function Routers() {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
                 <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
               </svg>
-              Tambah Router
+              <span>Tambah Router</span>
             </button>
           )}
         </div>
 
         {loading ? (
-          <div className="card-body"><Loader /></div>
+          <div className="p-6"><Loader /></div>
         ) : routers.length === 0 ? (
-          <div className="card-body"><EmptyState icon="🖥️" text="Belum ada router. Klik 'Tambah Router'." /></div>
+          <div className="p-6"><EmptyState icon="🖥️" text="Belum ada router. Klik 'Tambah Router'." /></div>
         ) : (
-          <div className="card-body">
-            <div className="routers-grid">
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {routers.map(r => (
                 <RouterCard
                   key={r.id}
@@ -233,16 +246,16 @@ export default function Routers() {
             <button className="btn btn-secondary" onClick={() => setModal(false)}>Batal</button>
             <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
               {saving ? <div className="loader-ring" style={{ width: 14, height: 14, borderWidth: 2 }} /> : null}
-              Simpan
+              <span>Simpan</span>
             </button>
           </>
         }
       >
-        <form onSubmit={handleSave}>
-          <div className="form-group" style={{ marginBottom: 16 }}>
+        <form onSubmit={handleSave} className="space-y-4">
+          <div className="form-group">
             <label className="form-label">Tipe Pengelolaan Router *</label>
             <select
-              className="select"
+              className="select w-full"
               value={form.router_type}
               onChange={e => setForm(f => ({ ...f, router_type: e.target.value }))}
             >
@@ -250,11 +263,11 @@ export default function Routers() {
               <option value="external">Eksternal (Portal Auth Only)</option>
             </select>
             {form.router_type === 'external' ? (
-              <div className="form-hint" style={{ color: 'var(--warning)', marginTop: 4 }}>
+              <div className="form-hint text-amber-400">
                 ℹ Router Eksternal hanya meminjam portal ini untuk verifikasi login SSO/Lokal. Bandwidth, bloking, dan penanganan koneksi diatur penuh oleh Vendor.
               </div>
             ) : (
-              <div className="form-hint" style={{ color: 'var(--text-muted)', marginTop: 4 }}>
+              <div className="form-hint text-slate-400">
                 ℹ Admin mengelola penuh limit bandwidth, pemblokiran situs, dan akun hotspot via Mikrotik API.
               </div>
             )}
@@ -301,15 +314,15 @@ export default function Routers() {
         footer={
           <>
             <button className="btn btn-secondary" onClick={() => setConfirmDel(null)} disabled={deleting}>Batal</button>
-            <button className="btn btn-danger" onClick={deleteRouter} disabled={deleting} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <button className="btn btn-danger" onClick={deleteRouter} disabled={deleting}>
               {deleting && <div className="loader-ring" style={{ width: 14, height: 14, borderWidth: 2 }} />}
-              {deleting ? 'Menghapus...' : 'Hapus'}
+              <span>{deleting ? 'Menghapus...' : 'Hapus'}</span>
             </button>
           </>
         }
       >
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
-          Yakin ingin menghapus router <strong style={{ color: 'var(--text)' }}>"{confirmDel?.name}"</strong>?
+        <p className="text-sm text-slate-300">
+          Yakin ingin menghapus router <strong className="text-slate-100">"{confirmDel?.name}"</strong>?
         </p>
       </Modal>
     </>
