@@ -25,6 +25,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: sipas_hotspot_backend
+    restart: unless-stopped
     env_file:
       - .env
     environment:

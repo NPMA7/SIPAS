@@ -11,6 +11,7 @@ import BlockedSites from './pages/BlockedSites';
 import AdminUsers from './pages/AdminUsers';
 import PortalCustomizer from './pages/PortalCustomizer';
 import PortalLogin from './pages/Portal/Login';
+import ApiDocs from './pages/ApiDocs';
 import './index.css';
 
 export default function App() {
@@ -35,7 +36,11 @@ export default function App() {
           <Route path="portal-customizer" element={<Navigate to="/manage/admin/portal-settings" replace />} />
           <Route path="manage-users" element={<AdminUsers />} />
           <Route path="admins" element={<Navigate to="/manage/admin/manage-users" replace />} />
+          <Route path="api" element={<ApiDocs />} />
         </Route>
+
+        {/* /manage/api direct alias */}
+        <Route path="/manage/api" element={<Navigate to="/manage/admin/api" replace />} />
 
         {/* Legacy /admin redirects */}
         <Route path="/admin/login" element={<Navigate to="/manage/admin/login" replace />} />

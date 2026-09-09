@@ -21,6 +21,8 @@ const TITLE_MAP = {
   '/manage/admin/portal-customizer': 'Kustomisasi Portal',
   '/manage/admin/admins': 'Pengelola Web',
   '/manage/admin/manage-users': 'Pengelola Web',
+  '/manage/admin/api': 'Dokumentasi API',
+  '/manage/api': 'Dokumentasi API',
   '/admin': 'Dashboard',
   '/admin/user-hotspot': 'Pengguna Hotspot',
   '/admin/blocked-sites': 'Situs Diblokir',

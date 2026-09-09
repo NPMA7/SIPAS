@@ -3,6 +3,8 @@ const router = express.Router();
 const multer = require("multer");
 const upload = multer();
 
+const { adminAuth, requireSuperAdmin } = require("../middleware/adminAuth");
+
 /**
  * Daftar Akun Dummy SSO untuk Keperluan Pengujian
  */
@@ -35,15 +37,14 @@ const DUMMY_SSO_USERS = [
 
 /**
  * GET /api/sso-mock/users
- * Mendapatkan daftar user dummy yang tersedia untuk testing
+ * Mendapatkan daftar user dummy yang tersedia untuk testing (Hanya Superadmin)
  */
-router.get("/users", (req, res) => {
+router.get("/users", adminAuth, requireSuperAdmin, (req, res) => {
   res.json({
     status: true,
     message: "Daftar user dummy SSO",
     users: DUMMY_SSO_USERS.map((u) => ({
       username: u.username,
-      password: u.password,
       nama: u.nama,
       nip: u.nip,
       jabatan: u.jabatan,
