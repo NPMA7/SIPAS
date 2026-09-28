@@ -45,10 +45,19 @@ export function Loader({ text = 'Memuat...' }) {
   );
 }
 
-export function EmptyState({ icon = '📭', text = 'Tidak ada data.' }) {
+export function EmptyState({ icon, text = 'Tidak ada data.' }) {
+  const defaultIcon = (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="28" height="28" className="text-slate-500">
+      <path d="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z" />
+      <path d="M16 2H8a2 2 0 0 0-2 2v3h12V4a2 2 0 0 0-2-2z" />
+    </svg>
+  );
+
   return (
-    <div className="text-center py-12 px-4">
-      <div className="text-4xl mb-3">{icon}</div>
+    <div className="text-center py-12 px-4 flex flex-col items-center justify-center">
+      <div className="w-14 h-14 rounded-2xl bg-slate-800/60 border border-slate-700/50 flex items-center justify-center mb-3 text-slate-400">
+        {icon || defaultIcon}
+      </div>
       <div className="text-sm font-medium text-slate-400">{text}</div>
     </div>
   );

@@ -210,7 +210,7 @@ export default function BlockedSites() {
       {loading ? (
         <div className="p-6"><Loader /></div>
       ) : filteredSites.length === 0 ? (
-        <div className="p-6"><EmptyState icon="🔒" text="Belum ada situs yang didaftarkan. Klik 'Tambah Situs'." /></div>
+        <div className="p-6"><EmptyState text="Belum ada situs yang didaftarkan. Klik 'Tambah Situs'." /></div>
       ) : (
         <div className="p-4 space-y-3">
           {filteredSites.map(site => (
@@ -219,8 +219,11 @@ export default function BlockedSites() {
               className="bg-slate-900/60 border border-slate-800 hover:border-slate-700/80 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all"
             >
               <div className="flex items-start gap-3.5 flex-1 min-w-0">
-                <div className="w-10 h-10 rounded-xl bg-rose-500/15 text-rose-400 border border-rose-500/20 flex items-center justify-center shrink-0 text-base">
-                  🔒
+                <div className="w-10 h-10 rounded-xl bg-rose-500/15 text-rose-400 border border-rose-500/20 flex items-center justify-center shrink-0">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
@@ -236,8 +239,12 @@ export default function BlockedSites() {
                   </div>
 
                   <div className="flex items-center gap-1.5 flex-wrap mt-2.5 text-xs text-slate-400">
-                    <span className="text-rose-400 font-semibold text-[11px]">
-                      🔒 Diblokir untuk ({site.blocked_user_ids?.length || 0} User):
+                    <span className="text-rose-400 font-semibold text-[11px] flex items-center gap-1">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="11" height="11">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                      </svg>
+                      Diblokir untuk ({site.blocked_user_ids?.length || 0} User):
                     </span>
                     {site.blocked_usernames && site.blocked_usernames.length > 0 ? (
                       site.blocked_usernames.slice(0, 5).map((uname, idx) => (
@@ -348,7 +355,13 @@ export default function BlockedSites() {
           <div className="form-group pt-2">
             <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
               <div className="flex items-center gap-2">
-                <label className="form-label m-0 font-semibold">🔒 Pilih User yang Diblokir Situs Ini</label>
+                <label className="form-label m-0 font-semibold flex items-center gap-1.5">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13" className="text-rose-400">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                  Pilih User yang Diblokir Situs Ini
+                </label>
                 <Badge variant={(form.user_ids || []).length > 0 ? 'danger' : 'neutral'}>
                   {(form.user_ids || []).length} / {users.length} User
                 </Badge>

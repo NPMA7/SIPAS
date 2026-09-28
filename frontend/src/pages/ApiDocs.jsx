@@ -169,11 +169,17 @@ export default function ApiDocs() {
         {error && (
           <div className="p-4 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 text-sm">
             <div className="font-bold flex items-center gap-2 mb-1">
-              <span>⚠️ Akses Ditolak / Gagal Memuat</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16" className="text-rose-400">
+                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+              <span>Akses Ditolak / Gagal Memuat</span>
             </div>
             <div>{error}</div>
           </div>
         )}
+        
 
         <div
           ref={swaggerRef}

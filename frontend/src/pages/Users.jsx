@@ -283,7 +283,11 @@ export default function Users() {
 
         {isVisitor && (
           <div className="m-4 p-3 rounded-lg bg-blue-500/10 border border-blue-500/25 text-blue-300 text-xs flex items-center gap-2">
-            <span>ℹ️</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14" className="shrink-0 text-blue-400">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="16" x2="12" y2="12"/>
+              <line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
             <span><strong>Mode Visitor (Read-Only)</strong></span>
           </div>
         )}
@@ -291,7 +295,7 @@ export default function Users() {
         {loading ? (
           <Loader />
         ) : users.length === 0 ? (
-          <EmptyState icon="👤" text="Belum ada user. Klik 'Tambah User'." />
+          <EmptyState text="Belum ada user. Klik 'Tambah User'." />
         ) : (
           <div className="divide-y divide-slate-800/60">
             {users.map(u => (
@@ -344,7 +348,10 @@ export default function Users() {
         <form onSubmit={submitForm} className="space-y-4">
           {editUser?.auth_provider === 'sso' && (
             <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs flex items-center gap-2">
-              <span>🔒</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14" className="shrink-0 text-blue-400">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
               <strong>User SSO (Sinkronisasi Otomatis)</strong>
             </div>
           )}
@@ -478,8 +485,13 @@ export default function Users() {
         <p className="text-sm text-slate-300">
           Yakin ingin menghapus user <strong className="text-slate-100">"{confirmDel?.username}"</strong>?
         </p>
-        <p className="text-xs text-rose-400 mt-2">
-          ⚠️ Ini akan memutuskan koneksi aktif, menghapus queue bandwidth, dan user dari router.
+        <p className="text-xs text-rose-400 mt-2 flex items-center gap-1.5">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14" className="shrink-0">
+            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          <span>Ini akan memutuskan koneksi aktif, menghapus queue bandwidth, dan user dari router.</span>
         </p>
       </Modal>
     </>

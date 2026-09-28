@@ -344,7 +344,7 @@ export default function AdminUsers() {
           {loading ? (
             <Loader />
           ) : filteredAdmins.length === 0 ? (
-            <EmptyState icon="👤" text="Tidak ada data pengelola ditemukan." />
+            <EmptyState text="Tidak ada data pengelola ditemukan." />
           ) : (
             <table className="data-table">
               <thead>
@@ -630,8 +630,13 @@ export default function AdminUsers() {
           <p className="text-sm text-slate-300">
             Apakah Anda yakin ingin menghapus akun pengelola <strong className="text-slate-100">@{selectedAdmin?.username}</strong> ({selectedAdmin?.full_name || 'Pengelola'})?
           </p>
-          <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-lg text-xs text-rose-300">
-            ⚠️ Akun ini tidak akan bisa login lagi ke Dashboard Admin SIPAS setelah dihapus.
+          <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-lg text-xs text-rose-300 flex items-center gap-2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14" className="shrink-0 text-rose-400">
+              <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            <span>Akun ini tidak akan bisa login lagi ke Dashboard Admin SIPAS setelah dihapus.</span>
           </div>
         </div>
         <div className="form-actions">

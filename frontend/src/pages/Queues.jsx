@@ -166,7 +166,7 @@ export default function Queues() {
           {loading && queues.length === 0 ? (
             <Loader />
           ) : filtered.length === 0 ? (
-            <EmptyState icon="📊" text="Tidak ada Simple Queue ditemukan." />
+            <EmptyState text="Tidak ada Simple Queue ditemukan." />
           ) : (
             <table className="data-table">
               <thead>

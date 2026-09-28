@@ -367,28 +367,28 @@ const getSystemInfo = async (routerConfig) => {
  */
 const getSystemResources = async (routerConfig) => {
   return withConnection(routerConfig, async (conn) => {
-    const [res] = await conn.write("/system/resource/print");
+    const [res] = (await conn.write("/system/resource/print")) || [];
 
     const toMB = (bytes) =>
       bytes ? (parseInt(bytes) / 1024 / 1024).toFixed(1) : "0";
     const toPercent = (used, total) =>
-      total ? ((parseInt(used) / parseInt(total)) * 100).toFixed(1) : "0";
+      total && parseInt(total) > 0 ? ((parseInt(used) / parseInt(total)) * 100).toFixed(1) : "0";
 
-    const totalMem = parseInt(res["total-memory"] || 0);
-    const freeMem = parseInt(res["free-memory"] || 0);
+    const totalMem = parseInt(res?.["total-memory"] || 0);
+    const freeMem = parseInt(res?.["free-memory"] || 0);
     const usedMem = totalMem - freeMem;
 
-    const totalHdd = parseInt(res["total-hdd-space"] || 0);
-    const freeHdd = parseInt(res["free-hdd-space"] || 0);
+    const totalHdd = parseInt(res?.["total-hdd-space"] || 0);
+    const freeHdd = parseInt(res?.["free-hdd-space"] || 0);
     const usedHdd = totalHdd - freeHdd;
 
     return {
-      cpu_load: res["cpu-load"] || "0",
-      cpu_count: res["cpu-count"] || "1",
-      cpu_frequency: res["cpu-frequency"] || "N/A",
-      uptime: res["uptime"] || "N/A",
-      platform: res["platform"] || "N/A",
-      architecture: res["architecture-name"] || "N/A",
+      cpu_load: res?.["cpu-load"] || "0",
+      cpu_count: res?.["cpu-count"] || "1",
+      cpu_frequency: res?.["cpu-frequency"] || "N/A",
+      uptime: res?.["uptime"] || "N/A",
+      platform: res?.["platform"] || "N/A",
+      architecture: res?.["architecture-name"] || "N/A",
       // Memory
       total_memory_mb: toMB(totalMem),
       free_memory_mb: toMB(freeMem),
@@ -408,7 +408,7 @@ const getSystemResources = async (routerConfig) => {
  */
 const getSystemClock = async (routerConfig) => {
   return withConnection(routerConfig, async (conn) => {
-    const [clock] = await conn.write("/system/clock/print");
+    const [clock] = (await conn.write("/system/clock/print")) || [];
     return {
       date: clock?.["date"] || "N/A",
       time: clock?.["time"] || "N/A",
@@ -422,20 +422,20 @@ const getSystemClock = async (routerConfig) => {
  */
 const getDashboardData = async (routerConfig) => {
   return withConnection(routerConfig, async (conn) => {
-    const [res] = await conn.write("/system/resource/print");
-    const [identity] = await conn.write("/system/identity/print");
-    const [routerboard] = await conn.write("/system/routerboard/print");
-    const [clock] = await conn.write("/system/clock/print");
+    const [res] = (await conn.write("/system/resource/print")) || [];
+    const [identity] = (await conn.write("/system/identity/print")) || [];
+    const [routerboard] = (await conn.write("/system/routerboard/print")) || [];
+    const [clock] = (await conn.write("/system/clock/print")) || [];
 
     const toMB = (bytes) =>
       bytes ? (parseInt(bytes) / 1024 / 1024).toFixed(1) : "0";
     const toPercent = (used, total) =>
-      total ? ((parseInt(used) / parseInt(total)) * 100).toFixed(1) : "0";
+      total && parseInt(total) > 0 ? ((parseInt(used) / parseInt(total)) * 100).toFixed(1) : "0";
 
-    const totalMem = parseInt(res["total-memory"] || 0);
-    const freeMem = parseInt(res["free-memory"] || 0);
-    const totalHdd = parseInt(res["total-hdd-space"] || 0);
-    const freeHdd = parseInt(res["free-hdd-space"] || 0);
+    const totalMem = parseInt(res?.["total-memory"] || 0);
+    const freeMem = parseInt(res?.["free-memory"] || 0);
+    const totalHdd = parseInt(res?.["total-hdd-space"] || 0);
+    const freeHdd = parseInt(res?.["free-hdd-space"] || 0);
 
     return {
       identity: identity?.["name"] || "MikroTik",
@@ -1034,42 +1034,47 @@ const setupPortalUser = async (
       }
     }
 
-    // 3. Setup blokir situs (HANYA dijalankan jika user memiliki daftar situs diblokir)
+    // 3. Setup blokir situs secara dinamis (HANYA pasang rule jika user diblokir & aktif)
     const blockedSites = (websiteBlock || "")
       .split(",")
       .map((s) => s.trim().toLowerCase())
       .filter(Boolean);
 
-    if (ip && blockedSites.length > 0) {
-      const blockConfigs = await getBlockConfigs();
-      const allAddressLists = await conn.write("/ip/firewall/address-list/print");
-      const allFilters = await conn.write("/ip/firewall/filter/print");
+    const blockConfigs = await getBlockConfigs();
+    const allAddressLists = await conn.write("/ip/firewall/address-list/print");
+    const allFilters = await conn.write("/ip/firewall/filter/print");
+    const allL7s = await conn.write("/ip/firewall/layer7-protocol/print");
 
-
-      // Bersihkan filter rule lama yang pakai doh-servers
-      for (const rule of allFilters) {
-        if (rule["dst-address-list"] === "doh-servers") {
-          try { await conn.write("/ip/firewall/filter/remove", [`=.id=${rule[".id"]}`]); } catch (_) {}
-        }
+    // Bersihkan filter rule lama yang pakai doh-servers
+    for (const rule of allFilters || []) {
+      if (rule["dst-address-list"] === "doh-servers") {
+        try { await conn.write("/ip/firewall/filter/remove", [`=.id=${rule[".id"]}`]); } catch (_) {}
       }
+    }
 
-      for (const [siteKey, cfg] of Object.entries(blockConfigs)) {
-        // A. Pastikan domain-domain terdaftar di dst-address-list Mikrotik untuk dynamic resolving
+    if (ip && blockedSites.length > 0) {
+      for (const siteKey of blockedSites) {
+        const cfg = blockConfigs[siteKey];
+        if (!cfg) continue;
+
+        // A. Pastikan domain-domain terdaftar di dst-address-list Mikrotik
         for (const domain of cfg.domains) {
-          const domainExists = allAddressLists.some(
+          const domainExists = (allAddressLists || []).some(
             (entry) => entry.list === cfg.domainList && entry.address === domain,
           );
           if (!domainExists) {
-            await conn.write("/ip/firewall/address-list/add", [
-              `=list=${cfg.domainList}`,
-              `=address=${domain}`,
-              `=comment=Target domain for ${siteKey} block`,
-            ]);
+            try {
+              await conn.write("/ip/firewall/address-list/add", [
+                `=list=${cfg.domainList}`,
+                `=address=${domain}`,
+                `=comment=Target domain for ${siteKey} block`,
+              ]);
+            } catch (_) {}
           }
         }
 
-        // B. Pastikan rule firewall filter drop berbasis IP (mencegah established connections lolos)
-        const ipFilterExists = allFilters.some(
+        // B. Pastikan rule firewall filter drop berbasis IP
+        const ipFilterExists = (allFilters || []).some(
           (rule) =>
             rule.chain === "forward" &&
             rule["src-address-list"] === cfg.userList &&
@@ -1089,9 +1094,9 @@ const setupPortalUser = async (
           try { await conn.write("/ip/firewall/filter/add", args); } catch (_) {}
         }
 
-        // B.2. Pastikan filter rule TLS-Host (SNI) ada untuk setiap domain (Blokir HTTPS instan di RouterOS v7)
+        // B.2. Pastikan filter rule TLS-Host (SNI) ada
         for (const domain of cfg.domains) {
-          const tlsFilterExists = allFilters.some(
+          const tlsFilterExists = (allFilters || []).some(
             (rule) =>
               rule.chain === "forward" &&
               rule["src-address-list"] === cfg.userList &&
@@ -1115,24 +1120,18 @@ const setupPortalUser = async (
         }
 
         // C. Pastikan L7 Protocol terdaftar
-        try {
-          const allL7s = await conn.write("/ip/firewall/layer7-protocol/print");
-          const existingL7 = (allL7s || []).find((entry) => entry.name === cfg.l7Name);
-          if (!existingL7) {
+        const existingL7 = (allL7s || []).find((entry) => entry.name === cfg.l7Name);
+        if (!existingL7) {
+          try {
             await conn.write("/ip/firewall/layer7-protocol/add", [
               `=name=${cfg.l7Name}`,
               `=regexp=${cfg.regexp}`,
             ]);
-          } else if (existingL7.regexp !== cfg.regexp) {
-            await conn.write("/ip/firewall/layer7-protocol/set", [
-              `=.id=${existingL7[".id"]}`,
-              `=regexp=${cfg.regexp}`,
-            ]);
-          }
-        } catch (_) {}
+          } catch (_) {}
+        }
 
         // D. Pastikan filter rule L7 ada
-        const filterExists = allFilters.some(
+        const filterExists = (allFilters || []).some(
           (rule) =>
             rule.chain === "forward" &&
             rule["src-address-list"] === cfg.userList &&
@@ -1152,8 +1151,8 @@ const setupPortalUser = async (
           try { await conn.write("/ip/firewall/filter/add", args); } catch (_) {}
         }
 
-        // E. Pastikan filter rule drop QUIC/UDP 443 ada (bypass L7 untuk QUIC)
-        const quicFilterExists = allFilters.some(
+        // E. Pastikan filter rule drop QUIC/UDP 443 ada
+        const quicFilterExists = (allFilters || []).some(
           (rule) =>
             rule.chain === "forward" &&
             rule["src-address-list"] === cfg.userList &&
@@ -1175,99 +1174,34 @@ const setupPortalUser = async (
           try { await conn.write("/ip/firewall/filter/add", args); } catch (_) {}
         }
 
-        // F. Masukkan/hapus IP user ke address-list sesuai status blokir
-        const isBlocked = blockedSites.includes(siteKey);
-        const targetComment = `Block ${siteKey} for ${username}`;
-        
-        // Cari semua entri address list milik user ini
-        const existingUserBlock = allAddressLists.filter(
-          (entry) =>
-            (entry.list === cfg.userList || entry.list === BLOCK_ADDRESS_LIST || entry.list === 'hotspot-blocked-users') &&
-            ((entry.comment && (entry.comment.includes(username) || entry.comment.includes(targetComment))) || (ip && entry.address === ip)),
+        // F. Masukkan IP aktif user ini ke address-list
+        const ipExists = (allAddressLists || []).some(
+          (entry) => entry.list === cfg.userList && entry.address === ip
         );
-
-        if (isBlocked) {
-          // 1. Ambil semua IP sesi aktif milik user ini dari Mikrotik (untuk multi-device s/d 4 device)
-          let userActiveIps = [ip].filter(Boolean);
+        if (!ipExists) {
           try {
-            const activeSessions = await conn.write("/ip/hotspot/active/print", [
-              `?user=${username}`
+            await conn.write("/ip/firewall/address-list/add", [
+              `=list=${cfg.userList}`,
+              `=address=${ip}`,
+              `=comment=Block ${siteKey} for ${username}`,
             ]);
-            if (activeSessions && Array.isArray(activeSessions)) {
-              activeSessions.forEach((s) => {
-                if (s.address && !userActiveIps.includes(s.address)) {
-                  userActiveIps.push(s.address);
-                }
-              });
-            }
+            await clearConnectionsForIp(conn, ip);
           } catch (_) {}
+        }
+      }
+    }
 
-          // 2. Pastikan SEMUA IP aktif milik user ini terdaftar di address-list
-          for (const activeIp of userActiveIps) {
-            const ipExists = allAddressLists.some(
-              (entry) => entry.list === cfg.userList && entry.address === activeIp
-            );
-            if (!ipExists) {
-              try {
-                await conn.write("/ip/firewall/address-list/add", [
-                  `=list=${cfg.userList}`,
-                  `=address=${activeIp}`,
-                  `=comment=${targetComment}`,
-                ]);
-              } catch (_) {}
-              await clearConnectionsForIp(conn, activeIp);
-            }
-          }
-
-          // 3. Bersihkan IP yang sudah tidak lagi aktif di Hotspot untuk user ini
-          for (const entry of existingUserBlock) {
-            if (!userActiveIps.includes(entry.address)) {
-              try {
-                await conn.write("/ip/firewall/address-list/remove", [`=.id=${entry[".id"]}`]);
-                await clearConnectionsForIp(conn, entry.address);
-              } catch (_) {}
-            }
-          }
-        } else {
-          // Hapus semua IP (lama maupun baru) milik user ini dari address-list
-          let hasRemoved = false;
-          for (const entry of existingUserBlock) {
-            try {
-              await conn.write("/ip/firewall/address-list/remove", [`=.id=${entry[".id"]}`]);
-              await clearConnectionsForIp(conn, entry.address);
-              hasRemoved = true;
-            } catch (_) {}
-          }
-
-          // Cek apakah masih ada user lain yang diblokir di userList ini
-          // Kita ambil data address-list terbaru untuk akurasi data
-          const freshAddressLists = await conn.write("/ip/firewall/address-list/print");
-          const remainingBlockedUsers = freshAddressLists.filter(
-            (entry) => entry.list === cfg.userList,
-          );
-
-          // Jika tidak ada user lain yang diblokir, hapus juga filter rules, L7, dan target domain list
-          if (remainingBlockedUsers.length === 0) {
-            // Hapus filter rules yang menggunakan userList ini (termasuk drop IP, drop L7, dan drop QUIC)
-            const freshFilters = await conn.write("/ip/firewall/filter/print");
-            for (const rule of freshFilters) {
-              if (rule["src-address-list"] === cfg.userList) {
-                try { await conn.write("/ip/firewall/filter/remove", [`=.id=${rule[".id"]}`]); } catch (_) {}
-              }
-            }
-            // Hapus L7 Protocol definition
-            const freshL7s = await conn.write("/ip/firewall/layer7-protocol/print");
-            const l7Entry = freshL7s.find((entry) => entry.name === cfg.l7Name);
-            if (l7Entry) {
-              try { await conn.write("/ip/firewall/layer7-protocol/remove", [`=.id=${l7Entry[".id"]}`]); } catch (_) {}
-            }
-            // Hapus domain list untuk situs ini dari address-list
-            for (const entry of freshAddressLists) {
-              if (entry.list === cfg.domainList) {
-                try { await conn.write("/ip/firewall/address-list/remove", [`=.id=${entry[".id"]}`]); } catch (_) {}
-              }
-            }
-          }
+    // Bersihkan IP user ini dari address-list situs yang TIDAK diblokir untuk user ini
+    for (const [siteKey, cfg] of Object.entries(blockConfigs)) {
+      if (!blockedSites.includes(siteKey)) {
+        const userEntries = (allAddressLists || []).filter(
+          (entry) => entry.list === cfg.userList && (entry.address === ip || (entry.comment && entry.comment.includes(username)))
+        );
+        for (const entry of userEntries) {
+          try {
+            await conn.write("/ip/firewall/address-list/remove", [`=.id=${entry[".id"]}`]);
+            if (entry.address) await clearConnectionsForIp(conn, entry.address);
+          } catch (_) {}
         }
       }
     }
@@ -2014,6 +1948,224 @@ const reconcileRouterState = async (routerConfig) => {
             try {
               await conn.write("/queue/simple/remove", [`=.id=${q[".id"]}`]);
             } catch (_) {}
+          }
+        }
+      }
+
+      // D. Rekonsiliasi Aturan Pemblokiran Situs (HANYA pasang rules jika ADA user aktif yang diblokir untuk situs tersebut)
+      const blockConfigs = await getBlockConfigs();
+      const allFilters = await conn.write("/ip/firewall/filter/print");
+      const allL7s = await conn.write("/ip/firewall/layer7-protocol/print");
+      const freshAddressLists = await conn.write("/ip/firewall/address-list/print");
+
+      // Kumpulkan set of siteKeys yang diblokir untuk user-user yang saat ini BENAR-BENAR SEDANG ONLINE
+      const activeBlockedSiteIps = new Map(); // siteKey -> Set of active IPs
+      for (const [username, ips] of activeUsersMap.entries()) {
+        const u = dbUsers.find(
+          (user) =>
+            user.username?.toLowerCase() === username.toLowerCase() ||
+            user.nip?.toLowerCase() === username.toLowerCase()
+        );
+        if (u && u.website_block) {
+          const userBlocks = u.website_block
+            .split(",")
+            .map((s) => s.trim().toLowerCase())
+            .filter(Boolean);
+          for (const sKey of userBlocks) {
+            if (!activeBlockedSiteIps.has(sKey)) {
+              activeBlockedSiteIps.set(sKey, new Set());
+            }
+            ips.forEach((ipAddr) => activeBlockedSiteIps.get(sKey).add(ipAddr));
+          }
+        }
+      }
+
+      // Periksa semua blocked sites di sistem
+      for (const [siteKey, cfg] of Object.entries(blockConfigs)) {
+        const activeIpsForSite = activeBlockedSiteIps.get(siteKey);
+
+        if (activeIpsForSite && activeIpsForSite.size > 0) {
+          // ── KASUS 1: ADA USER AKTIF YANG DIBLOKIR -> PASTIKAN ATURAN TERPASANG ──
+          
+          // 1. Pastikan domain-domain terdaftar di dst-address-list
+          for (const domain of cfg.domains) {
+            const domainExists = (freshAddressLists || []).some(
+              (entry) => entry.list === cfg.domainList && entry.address === domain,
+            );
+            if (!domainExists) {
+              try {
+                await conn.write("/ip/firewall/address-list/add", [
+                  `=list=${cfg.domainList}`,
+                  `=address=${domain}`,
+                  `=comment=Target domain for ${siteKey} block`,
+                ]);
+              } catch (_) {}
+            }
+          }
+
+          // 2. Pastikan filter rule IP list drop ada
+          const ipFilterExists = (allFilters || []).some(
+            (rule) =>
+              rule.chain === "forward" &&
+              rule["src-address-list"] === cfg.userList &&
+              rule["dst-address-list"] === cfg.domainList,
+          );
+          if (!ipFilterExists) {
+            const args = [
+              `=chain=forward`,
+              `=src-address-list=${cfg.userList}`,
+              `=dst-address-list=${cfg.domainList}`,
+              `=action=drop`,
+              `=comment=Block ${siteKey} established connections via IP list`,
+            ];
+            if (allFilters && allFilters.length > 0 && allFilters[0][".id"]) {
+              args.push(`=place-before=${allFilters[0][".id"]}`);
+            }
+            try { await conn.write("/ip/firewall/filter/add", args); } catch (_) {}
+          }
+
+          // 3. Pastikan filter rule TLS-Host ada
+          for (const domain of cfg.domains) {
+            const tlsFilterExists = (allFilters || []).some(
+              (rule) =>
+                rule.chain === "forward" &&
+                rule["src-address-list"] === cfg.userList &&
+                rule["tls-host"] === `*${domain}*`,
+            );
+            if (!tlsFilterExists) {
+              const args = [
+                `=chain=forward`,
+                `=src-address-list=${cfg.userList}`,
+                `=protocol=tcp`,
+                `=dst-port=443`,
+                `=tls-host=*${domain}*`,
+                `=action=drop`,
+                `=comment=Block ${siteKey} TLS ${domain}`,
+              ];
+              if (allFilters && allFilters.length > 0 && allFilters[0][".id"]) {
+                args.push(`=place-before=${allFilters[0][".id"]}`);
+              }
+              try { await conn.write("/ip/firewall/filter/add", args); } catch (_) {}
+            }
+          }
+
+          // 4. Pastikan Layer7 Protocol terdaftar
+          const existingL7 = (allL7s || []).find((entry) => entry.name === cfg.l7Name);
+          if (!existingL7) {
+            try {
+              await conn.write("/ip/firewall/layer7-protocol/add", [
+                `=name=${cfg.l7Name}`,
+                `=regexp=${cfg.regexp}`,
+              ]);
+            } catch (_) {}
+          }
+
+          // 5. Pastikan filter rule L7 ada
+          const filterExists = (allFilters || []).some(
+            (rule) =>
+              rule.chain === "forward" &&
+              rule["src-address-list"] === cfg.userList &&
+              rule["layer7-protocol"] === cfg.l7Name,
+          );
+          if (!filterExists) {
+            const args = [
+              `=chain=forward`,
+              `=src-address-list=${cfg.userList}`,
+              `=layer7-protocol=${cfg.l7Name}`,
+              `=action=drop`,
+              `=comment=Block ${siteKey} via L7`,
+            ];
+            if (allFilters && allFilters.length > 0 && allFilters[0][".id"]) {
+              args.push(`=place-before=${allFilters[0][".id"]}`);
+            }
+            try { await conn.write("/ip/firewall/filter/add", args); } catch (_) {}
+          }
+
+          // 6. Pastikan filter rule drop QUIC/UDP 443 ada
+          const quicFilterExists = (allFilters || []).some(
+            (rule) =>
+              rule.chain === "forward" &&
+              rule["src-address-list"] === cfg.userList &&
+              rule.protocol === "udp" &&
+              rule["dst-port"] === "443",
+          );
+          if (!quicFilterExists) {
+            const args = [
+              `=chain=forward`,
+              `=src-address-list=${cfg.userList}`,
+              `=protocol=udp`,
+              `=dst-port=443`,
+              `=action=drop`,
+              `=comment=Block QUIC UDP 443 for ${siteKey}`,
+            ];
+            if (allFilters && allFilters.length > 0 && allFilters[0][".id"]) {
+              args.push(`=place-before=${allFilters[0][".id"]}`);
+            }
+            try { await conn.write("/ip/firewall/filter/add", args); } catch (_) {}
+          }
+
+          // 7. Daftarkan semua IP aktif user ke userList
+          for (const aIp of activeIpsForSite) {
+            const ipExists = (freshAddressLists || []).some(
+              (entry) => entry.list === cfg.userList && entry.address === aIp
+            );
+            if (!ipExists) {
+              try {
+                await conn.write("/ip/firewall/address-list/add", [
+                  `=list=${cfg.userList}`,
+                  `=address=${aIp}`,
+                  `=comment=Block ${siteKey} active user`,
+                ]);
+                await clearConnectionsForIp(conn, aIp);
+              } catch (_) {}
+            }
+          }
+
+          // 8. Bersihkan IP yang sudah tidak aktif dari userList
+          for (const entry of freshAddressLists || []) {
+            if (entry.list === cfg.userList && !activeIpsForSite.has(entry.address)) {
+              try {
+                await conn.write("/ip/firewall/address-list/remove", [`=.id=${entry[".id"]}`]);
+                await clearConnectionsForIp(conn, entry.address);
+              } catch (_) {}
+            }
+          }
+
+        } else {
+          // ── KASUS 2: TIDAK ADA USER AKTIF YANG DIBLOKIR UNTUK SITUS INI -> BERSIHKAN TOTAL DARI MIKROTIK ──
+          
+          // Hapus semua filter rules terkait situs ini
+          for (const rule of allFilters || []) {
+            if (
+              rule["src-address-list"] === cfg.userList ||
+              (rule.comment && rule.comment.toLowerCase().includes(siteKey.toLowerCase()))
+            ) {
+              try { await conn.write("/ip/firewall/filter/remove", [`=.id=${rule[".id"]}`]); } catch (_) {}
+            }
+          }
+
+          // Hapus Layer-7 Protocol
+          const l7Entry = (allL7s || []).find((entry) => entry.name === cfg.l7Name || entry.name === `${siteKey}-block`);
+          if (l7Entry) {
+            try { await conn.write("/ip/firewall/layer7-protocol/remove", [`=.id=${l7Entry[".id"]}`]); } catch (_) {}
+          }
+
+          // Hapus target domain lists & user lists dari address-list
+          for (const entry of freshAddressLists || []) {
+            if (
+              entry.list === cfg.domainList ||
+              entry.list === cfg.userList ||
+              entry.list === `${siteKey}-blocked` ||
+              entry.list === `hotspot-blocked-${siteKey}` ||
+              (entry.comment && entry.comment.toLowerCase().includes(`${siteKey} block`))
+            ) {
+              try {
+                await conn.write("/ip/firewall/address-list/remove", [`=.id=${entry[".id"]}`]);
+                if (entry.address) {
+                  await clearConnectionsForIp(conn, entry.address);
+                }
+              } catch (_) {}
+            }
           }
         }
       }

@@ -217,7 +217,7 @@ export default function Routers() {
         {loading ? (
           <div className="p-6"><Loader /></div>
         ) : routers.length === 0 ? (
-          <div className="p-6"><EmptyState icon="🖥️" text="Belum ada router. Klik 'Tambah Router'." /></div>
+          <div className="p-6"><EmptyState text="Belum ada router. Klik 'Tambah Router'." /></div>
         ) : (
           <div className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -264,11 +264,11 @@ export default function Routers() {
             </select>
             {form.router_type === 'external' ? (
               <div className="form-hint text-amber-400">
-                ℹ Router Eksternal hanya meminjam portal ini untuk verifikasi login SSO/Lokal. Bandwidth, bloking, dan penanganan koneksi diatur penuh oleh Vendor.
+                Router Eksternal hanya meminjam portal ini untuk verifikasi login SSO/Lokal. Bandwidth, bloking, dan penanganan koneksi diatur penuh oleh Vendor.
               </div>
             ) : (
               <div className="form-hint text-slate-400">
-                ℹ Admin mengelola penuh limit bandwidth, pemblokiran situs, dan akun hotspot via Mikrotik API.
+                Admin mengelola penuh limit bandwidth, pemblokiran situs, dan akun hotspot via Mikrotik API.
               </div>
             )}
           </div>

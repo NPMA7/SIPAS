@@ -109,7 +109,7 @@ export default function DhcpLeases() {
           {loading ? (
             <Loader />
           ) : filtered.length === 0 ? (
-            <EmptyState icon="📋" text="Tidak ada DHCP lease ditemukan." />
+            <EmptyState text="Tidak ada DHCP lease ditemukan." />
           ) : (
             <table className="data-table">
               <thead>
@@ -178,8 +178,13 @@ export default function DhcpLeases() {
         <p className="text-sm text-slate-300">
           Yakin ingin menghapus DHCP lease untuk IP <strong className="text-slate-100">{confirmDel?.address}</strong>?
         </p>
-        <p className="text-xs text-rose-400 mt-2">
-          ⚠️ Perangkat akan terputus dari jaringan dan harus meminta IP baru (reconnect).
+        <p className="text-xs text-rose-400 mt-2 flex items-center gap-1.5">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14" className="shrink-0">
+            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          <span>Perangkat akan terputus dari jaringan dan harus meminta IP baru (reconnect).</span>
         </p>
       </Modal>
     </>

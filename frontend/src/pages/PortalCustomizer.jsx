@@ -788,18 +788,25 @@ export default function PortalCustomizer() {
             {/* 4 Tahap Alur */}
             <div>
               <div className="flex justify-between items-center mb-2">
-                <span className="text-xs font-bold text-slate-100">
-                  🔄 Alur Kerja & Mekanisme Otentikasi Hotspot:
+                <span className="text-xs font-bold text-slate-100 flex items-center gap-1.5">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14" className="text-blue-400">
+                    <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                  </svg>
+                  Alur Kerja & Mekanisme Otentikasi Hotspot:
                 </span>
                 <span className="text-[11px] text-slate-500">
-                  MikroTik RouterOS ➔ SIPAS Engine
+                  MikroTik RouterOS → SIPAS Engine
                 </span>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 <div className="p-2.5 bg-slate-950/40 border border-slate-800 rounded-lg">
                   <div className="flex items-center gap-1.5 mb-1 text-xs font-bold text-slate-200">
-                    <span>📶</span> 1. Intersepsi
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13" className="text-sky-400">
+                      <path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1"/>
+                    </svg>
+                    1. Intersepsi
                   </div>
                   <p className="text-[11px] text-slate-400 leading-relaxed">
                     MikroTik menangkap HTTP request klien baru & redirect ke portal SIPAS dengan IP & MAC.
@@ -808,7 +815,10 @@ export default function PortalCustomizer() {
 
                 <div className="p-2.5 bg-slate-950/40 border border-slate-800 rounded-lg">
                   <div className="flex items-center gap-1.5 mb-1 text-xs font-bold text-slate-200">
-                    <span>🎨</span> 2. UI Dinamis
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13" className="text-purple-400">
+                      <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/>
+                    </svg>
+                    2. UI Dinamis
                   </div>
                   <p className="text-[11px] text-slate-400 leading-relaxed">
                     SIPAS menyajikan antarmuka login responsif sesuai tema kustomisasi & deteksi identitas.
@@ -817,7 +827,10 @@ export default function PortalCustomizer() {
 
                 <div className="p-2.5 bg-slate-950/40 border border-slate-800 rounded-lg">
                   <div className="flex items-center gap-1.5 mb-1 text-xs font-bold text-slate-200">
-                    <span>🛡️</span> 3. Verifikasi
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13" className="text-emerald-400">
+                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                    3. Verifikasi
                   </div>
                   <p className="text-[11px] text-slate-400 leading-relaxed">
                     Backend memvalidasi akun, sisa kuota (FUP), masa aktif, dan batas multi-device.
@@ -826,7 +839,10 @@ export default function PortalCustomizer() {
 
                 <div className="p-2.5 bg-slate-950/40 border border-slate-800 rounded-lg">
                   <div className="flex items-center gap-1.5 mb-1 text-xs font-bold text-slate-200">
-                    <span>🚀</span> 4. Otorisasi
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13" className="text-amber-400">
+                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                    </svg>
+                    4. Otorisasi
                   </div>
                   <p className="text-[11px] text-slate-400 leading-relaxed">
                     MikroTik membuka akses internet & menerapkan limit bandwidth (Simple Queue) otomatis.
@@ -838,25 +854,33 @@ export default function PortalCustomizer() {
             {/* Tips Desain */}
             <div className="border-t border-slate-800/80 pt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-400">
               <div className="flex items-start gap-2">
-                <span>💡</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15" className="text-amber-400 shrink-0 mt-0.5">
+                  <path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/>
+                </svg>
                 <div>
                   <strong className="text-slate-200">Keterbacaan Teks:</strong> Gunakan <em>Overlay Gelap</em> (60%-80%) jika gambar latar Anda terang agar form tetap kontras.
                 </div>
               </div>
               <div className="flex items-start gap-2">
-                <span>📐</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15" className="text-sky-400 shrink-0 mt-0.5">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/>
+                </svg>
                 <div>
                   <strong className="text-slate-200">Rasio & Resolusi:</strong> Disarankan gambar 16:9 (1920x1080) di bawah 2MB untuk performa loading secepat kilat.
                 </div>
               </div>
               <div className="flex items-start gap-2">
-                <span>✨</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15" className="text-purple-400 shrink-0 mt-0.5">
+                  <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
+                </svg>
                 <div>
                   <strong className="text-slate-200">Modern Glassmorphism:</strong> Atur <em>Kepadatan Kartu</em> ke 80%-90% untuk efek kaca transparan yang profesional.
                 </div>
               </div>
               <div className="flex items-start gap-2">
-                <span>🛡️</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15" className="text-emerald-400 shrink-0 mt-0.5">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
                 <div>
                   <strong className="text-slate-200">Format Logo:</strong> Upload logo format PNG transparan atau SVG agar logo berpadu menyatu sempurna.
                 </div>
@@ -896,15 +920,18 @@ export default function PortalCustomizer() {
           <p className="text-xs text-slate-300">
             Tindakan ini akan mengembalikan semua tema visual halaman captive portal ke setelan standar:
           </p>
-          <div className="p-3 bg-slate-950/60 border border-slate-800 rounded-lg space-y-1.5 text-xs text-slate-400">
+          <div className="p-3 bg-slate-950/60 border border-slate-800 rounded-lg space-y-2 text-xs text-slate-400">
             <div className="flex items-center gap-2">
-              <span>🎨</span> <span>Latar belakang & kartu kembali ke tema Deep Navy & Slate.</span>
+              <span className="w-2 h-2 rounded-full bg-sky-400 shrink-0" />
+              <span>Latar belakang & kartu kembali ke tema Deep Navy & Slate.</span>
             </div>
             <div className="flex items-center gap-2">
-              <span>🛡️</span> <span>Logo kembali ke <strong>Logo Default SIPAS</strong>.</span>
+              <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
+              <span>Logo kembali ke <strong className="text-slate-200">Logo Default SIPAS</strong>.</span>
             </div>
             <div className="flex items-center gap-2">
-              <span>🔵</span> <span>Warna tombol kembali ke warna biru primer.</span>
+              <span className="w-2 h-2 rounded-full bg-blue-400 shrink-0" />
+              <span>Warna tombol kembali ke warna biru primer.</span>
             </div>
           </div>
         </div>

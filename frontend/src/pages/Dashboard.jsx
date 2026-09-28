@@ -215,8 +215,13 @@ export default function Dashboard() {
                     </div>
                   </>
                 ) : (
-                  <div className="text-xs text-rose-400 py-3 flex items-center gap-2">
-                    <span>⚠️ Gagal koneksi API Mikrotik (periksa IP / kredensial router).</span>
+                  <div className="text-xs text-rose-400 py-3 flex items-center gap-1.5">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14" className="shrink-0">
+                      <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+                      <line x1="12" y1="9" x2="12" y2="13"/>
+                      <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                    <span>Gagal koneksi API Mikrotik (periksa IP / kredensial router).</span>
                   </div>
                 )}
               </div>
@@ -271,7 +276,7 @@ export default function Dashboard() {
           {loading && sessions.length === 0 ? (
             <Loader />
           ) : sessions.length === 0 ? (
-            <EmptyState icon="📡" text="Tidak ada sesi aktif saat ini." />
+            <EmptyState text="Tidak ada sesi aktif saat ini." />
           ) : (
             <table className="data-table">
               <thead>
