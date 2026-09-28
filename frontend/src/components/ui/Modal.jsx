@@ -1,8 +1,10 @@
+import { createPortal } from 'react-dom';
+
 export default function Modal({ open, onClose, title, children, footer, maxWidth = 'max-w-lg' }) {
   if (!open) return null;
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-fadeIn"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fadeIn"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className={`w-full ${maxWidth} max-h-[90vh] flex flex-col bg-slate-900 border border-slate-700/70 rounded-2xl shadow-2xl overflow-hidden animate-scaleIn`}>
@@ -20,6 +22,8 @@ export default function Modal({ open, onClose, title, children, footer, maxWidth
         <div className="p-6 overflow-y-auto flex-1">{children}</div>
         {footer && <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-800 bg-slate-950/40">{footer}</div>}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
+

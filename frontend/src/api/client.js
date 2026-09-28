@@ -7,6 +7,8 @@ function getToken() {
 export async function apiFetch(path, options = {}) {
   const token = getToken();
   const headers = {
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Pragma': 'no-cache',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(options.headers || {}),
   };
@@ -18,6 +20,7 @@ export async function apiFetch(path, options = {}) {
 
   try {
     const res = await fetch(`${API_BASE}${path}`, {
+      cache: 'no-store',
       ...options,
       headers,
     });

@@ -19,6 +19,7 @@ process.on('unhandledRejection', (reason, promise) => {
 
 // ── Security Middleware ──────────────────────────────────────
 app.disable('x-powered-by');
+app.set('etag', false);
 app.set('trust proxy', 1); // For express-rate-limit behind reverse proxy
 app.use(helmet({ contentSecurityPolicy: false, hsts: false, frameguard: false }));
 app.use(cors({
@@ -26,6 +27,15 @@ app.use(cors({
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// ── Disable Caching on API ───────────────────────────────────
+app.use('/api', (req, res, next) => {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    res.set('Surrogate-Control', 'no-store');
+    next();
+});
 
 // ── General Middleware ───────────────────────────────────────
 app.use(morgan('combined'));

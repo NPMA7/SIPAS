@@ -175,17 +175,18 @@ export default function Hotspot() {
         const isRealRouterUser = u => u && u.name && u.name.trim() !== '' && u.name !== 'default-trial' && u.name !== '—';
         const isRealBinding = b => b && ((b.mac_address && b.mac_address.trim() !== '' && b.mac_address !== '—') || (b.address && b.address.trim() !== '' && b.address !== '—'));
 
+        let filteredList = rawList;
         if (t === 'active') {
-          setData(rawList.filter(isRealUser));
+          filteredList = rawList.filter(isRealUser);
         } else if (t === 'hosts') {
-          setData(rawList.filter(isRealHost));
+          filteredList = rawList.filter(isRealHost);
         } else if (t === 'bindings') {
-          setData(rawList.filter(isRealBinding));
+          filteredList = rawList.filter(isRealBinding);
         } else if (t === 'users') {
-          setData(rawList.filter(isRealRouterUser));
-        } else {
-          setData(rawList);
+          filteredList = rawList.filter(isRealRouterUser);
         }
+        setData(filteredList);
+        setCounts(prev => ({ ...prev, [t]: filteredList.length }));
       } else {
         setData([]);
       }
@@ -197,9 +198,19 @@ export default function Hotspot() {
   useEffect(() => {
     if (routerId) {
       loadTab(tab);
+    }
+  }, [routerId, tab, loadTab]);
+
+  useEffect(() => {
+    if (routerId) {
       loadAllCounts();
     }
-  }, [routerId, tab, loadTab, loadAllCounts]);
+  }, [routerId, loadAllCounts]);
+
+  const handleRefresh = useCallback(() => {
+    loadTab(tab);
+    loadAllCounts();
+  }, [loadTab, tab, loadAllCounts]);
 
   const handleTabClick = (tObj) => {
     navigate(`/manage/admin/hotspot/${tObj.path}`);
@@ -513,7 +524,7 @@ export default function Hotspot() {
         <select className="select min-w-52" value={routerId} onChange={e => setRouterId(e.target.value)}>
           {routers.map(r => <option key={r.id} value={r.id}>{r.name} ({r.ip_address})</option>)}
         </select>
-        <button className="btn btn-secondary btn-sm" onClick={() => loadTab(tab)} disabled={loading}>
+        <button className="btn btn-secondary btn-sm" onClick={handleRefresh} disabled={loading}>
           {loading ? <div className="loader-ring" style={{ width: 13, height: 13, borderWidth: 2 }} /> : (
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>
           )}

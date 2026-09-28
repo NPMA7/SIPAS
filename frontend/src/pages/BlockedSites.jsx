@@ -283,6 +283,7 @@ export default function BlockedSites() {
       <Modal
         open={modal}
         onClose={() => setModal(false)}
+        maxWidth="max-w-2xl"
         title={editSite ? `Edit Situs — ${editSite.name}` : 'Tambah Situs Diblokir Baru'}
         footer={
           <>
