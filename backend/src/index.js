@@ -53,13 +53,13 @@ app.use((err, req, res, next) => {
 // ── Rate Limiting ────────────────────────────────────────────
 const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 menit
-    max: 500,
+    max: 2000,
     message: { success: false, message: 'Terlalu banyak request, coba lagi nanti.' }
 });
 
 const loginLimiter = rateLimit({
     windowMs: 5 * 60 * 1000, // 5 menit
-    max: 20,
+    max: 30,
     message: { success: false, message: 'Terlalu banyak percobaan login.' }
 });
 

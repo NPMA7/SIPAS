@@ -33,6 +33,14 @@ export default function DhcpLeases() {
 
   useEffect(() => { if (routerId) load(); }, [routerId]);
 
+  // Connect to Global Auto-Refresh in Header
+  useEffect(() => {
+    if (routerId) {
+      ctx?.registerAutoRefresh?.(load);
+    }
+    return () => ctx?.registerAutoRefresh?.(null);
+  }, [ctx, routerId]);
+
   async function load() {
     if (!routerId) return;
     setLoading(true);

@@ -129,6 +129,12 @@ export default function Users() {
 
   useEffect(() => { loadUsers(page, search); }, [page, routerFilter, providerFilter]);
 
+  // Connect to Global Auto-Refresh in Header
+  useEffect(() => {
+    ctx?.registerAutoRefresh?.(() => loadUsers(page, search));
+    return () => ctx?.registerAutoRefresh?.(null);
+  }, [ctx, page, search, routerFilter, providerFilter]);
+
   async function loadUsers(p = page, s = search) {
     setLoading(true);
     try {

@@ -535,7 +535,8 @@ export default function PortalCustomizer() {
           <div className="card-body p-4 bg-slate-950/80 overflow-hidden flex flex-col flex-1">
             {/* Preview Window Box */}
             <div
-              className={`relative w-full mx-auto flex-1 min-h-[420px] rounded-xl overflow-hidden flex items-center justify-center p-6 border border-slate-800 shadow-2xl transition-all duration-300 ${
+              data-portal-preview="true"
+              className={`portal-preview-isolated relative w-full mx-auto flex-1 min-h-[420px] rounded-xl overflow-hidden flex items-center justify-center p-6 border border-slate-800 shadow-2xl transition-all duration-300 ${
                 previewMode === 'mobile' ? 'max-w-[340px]' : 'max-w-full'
               }`}
               style={{
@@ -594,43 +595,60 @@ export default function PortalCustomizer() {
                   }}
                 >
                   {/* Simulated Net Info */}
-                  <div className="flex gap-1 p-1.5 bg-slate-950/40 border border-slate-800 rounded-lg mb-3">
+                  <div className="flex gap-1 p-2 bg-slate-950/50 border border-slate-800 rounded-lg mb-3">
                     <div className="flex-1 text-center">
-                      <div className="text-[9px] text-slate-400 font-bold">IP ANDA</div>
+                      <div className="text-[9px] text-slate-400 font-bold uppercase">IP ANDA</div>
                       <div className="text-[10px] font-mono font-semibold text-slate-200">10.10.254.10</div>
                     </div>
                     <div className="w-px bg-slate-800" />
                     <div className="flex-1 text-center">
-                      <div className="text-[9px] text-slate-400 font-bold">MAC</div>
+                      <div className="text-[9px] text-slate-400 font-bold uppercase">MAC</div>
                       <div className="text-[10px] font-mono font-semibold text-slate-200">10:F6:0A:C9:32:E5</div>
                     </div>
                     <div className="w-px bg-slate-800" />
                     <div className="flex-1 text-center">
-                      <div className="text-[9px] text-slate-400 font-bold">STATUS</div>
-                      <div className="text-[10px] text-amber-400 font-semibold">● Menunggu</div>
+                      <div className="text-[9px] text-slate-400 font-bold uppercase">STATUS</div>
+                      <div className="text-[10px] text-amber-400 font-semibold flex items-center justify-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" />
+                        <span>Menunggu</span>
+                      </div>
                     </div>
                   </div>
 
                   {/* Inputs */}
-                  <div className="space-y-2 mb-3 text-left">
+                  <div className="space-y-2.5 mb-3.5 text-left">
                     <div>
                       <label className="block text-[11px] text-slate-300 font-medium mb-1">Username</label>
-                      <input
-                        type="text"
-                        className="input input-sm text-xs bg-slate-950/60"
-                        placeholder="Contoh: user123"
-                        disabled
-                      />
+                      <div className="relative">
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none flex items-center justify-center">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                          </svg>
+                        </span>
+                        <input
+                          type="text"
+                          className="w-full bg-slate-950/60 border border-slate-700/80 rounded-lg pl-8 pr-2.5 py-1.5 text-xs text-slate-100 placeholder-slate-500 pointer-events-none"
+                          placeholder="Masukkan username"
+                          disabled
+                        />
+                      </div>
                     </div>
 
                     <div>
                       <label className="block text-[11px] text-slate-300 font-medium mb-1">Password</label>
-                      <input
-                        type="password"
-                        className="input input-sm text-xs bg-slate-950/60"
-                        value="••••••••"
-                        disabled
-                      />
+                      <div className="relative">
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none flex items-center justify-center">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13">
+                            <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                          </svg>
+                        </span>
+                        <input
+                          type="password"
+                          className="w-full bg-slate-950/60 border border-slate-700/80 rounded-lg pl-8 pr-2.5 py-1.5 text-xs text-slate-100 placeholder-slate-500 pointer-events-none"
+                          value="••••••••"
+                          disabled
+                        />
+                      </div>
                     </div>
                   </div>
 

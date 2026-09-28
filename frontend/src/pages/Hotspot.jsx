@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext, useCallback } from 'react';
+import { useState, useEffect, useContext, useCallback, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { apiFetch } from '../api/client';
 import { ToastContext } from '../hooks/ToastContext';
@@ -65,7 +65,7 @@ export default function Hotspot() {
   const [routers, setRouters] = useState([]);
   const [routerId, setRouterId] = useState('');
   const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [counts, setCounts] = useState({ active: 0, hosts: 0, users: 0, bindings: 0 });
 
@@ -103,6 +103,11 @@ export default function Hotspot() {
   const activeTabObj = TABS.find(t => t.path === currentPathSegment) || TABS[0];
   const tab = activeTabObj.key;
 
+  const activeTabRef = useRef(tab);
+  useEffect(() => {
+    activeTabRef.current = tab;
+  }, [tab]);
+
   useEffect(() => {
     if (!currentPathSegment || !TABS.some(t => t.path === currentPathSegment)) {
       navigate('/manage/admin/hotspot/active-sessions', { replace: true });
@@ -113,60 +118,19 @@ export default function Hotspot() {
     ctx?.setPageTitle?.(`Hotspot Router - ${activeTabObj.label}`);
   }, [ctx, activeTabObj]);
 
-  const loadRouters = useCallback(async () => {
-    try {
-      const d = await apiFetch('/routers');
-      if (d?.success && d.data.length > 0) {
-        setRouters(d.data);
-        setRouterId(prev => prev || d.data[0].id);
-      }
-    } catch (_) {}
-  }, []);
-
-  useEffect(() => {
-    loadRouters();
-  }, [loadRouters]);
-
-  const loadAllCounts = useCallback(async () => {
-    if (!routerId) return;
-    try {
-      const [resActive, resHosts, resUsers, resBindings] = await Promise.all([
-        apiFetch(`/hotspot-router/active?router_id=${routerId}`),
-        apiFetch(`/hotspot-router/hosts?router_id=${routerId}`),
-        apiFetch(`/hotspot-router/users?router_id=${routerId}`),
-        apiFetch(`/hotspot-router/bindings?router_id=${routerId}`)
-      ]);
-      const isRealUser = a => a && a.user && String(a.user).trim() !== '' && String(a.user).trim() !== '—' && String(a.user).trim() !== 'undefined' && String(a.user).trim() !== 'null';
-      const isRealHost = h => h && ((h.mac_address && h.mac_address.trim() !== '' && h.mac_address !== '—') || (h.address && h.address.trim() !== '' && h.address !== '—'));
-      const isRealRouterUser = u => u && u.name && u.name.trim() !== '' && u.name !== 'default-trial' && u.name !== '—';
-      const isRealBinding = b => b && ((b.mac_address && b.mac_address.trim() !== '' && b.mac_address !== '—') || (b.address && b.address.trim() !== '' && b.address !== '—'));
-
-      const validActive = (resActive?.data || []).filter(isRealUser);
-      const validHosts = (resHosts?.data || []).filter(isRealHost);
-      const validUsers = (resUsers?.data || []).filter(isRealRouterUser);
-      const validBindings = (resBindings?.data || []).filter(isRealBinding);
-
-      setCounts({
-        active: validActive.length,
-        hosts: resHosts?.success ? validHosts.length : 0,
-        users: resUsers?.success ? validUsers.length : 0,
-        bindings: resBindings?.success ? validBindings.length : 0,
-      });
-    } catch (err) {
-      console.warn('Failed to load counts:', err.message);
-    }
-  }, [routerId]);
-
-  const loadTab = useCallback(async (t) => {
-    if (!routerId) return;
+  const loadTab = useCallback(async (t, targetRouterId = null) => {
+    const currentRId = targetRouterId || routerId;
+    if (!currentRId) return;
     setLoading(true);
     setSearch('');
     try {
       let res;
-      if (t === 'active') res = await apiFetch(`/hotspot-router/active?router_id=${routerId}`);
-      else if (t === 'hosts') res = await apiFetch(`/hotspot-router/hosts?router_id=${routerId}`);
-      else if (t === 'users') res = await apiFetch(`/hotspot-router/users?router_id=${routerId}`);
-      else if (t === 'bindings') res = await apiFetch(`/hotspot-router/bindings?router_id=${routerId}`);
+      if (t === 'active') res = await apiFetch(`/hotspot-router/active?router_id=${currentRId}`);
+      else if (t === 'hosts') res = await apiFetch(`/hotspot-router/hosts?router_id=${currentRId}`);
+      else if (t === 'users') res = await apiFetch(`/hotspot-router/users?router_id=${currentRId}`);
+      else if (t === 'bindings') res = await apiFetch(`/hotspot-router/bindings?router_id=${currentRId}`);
+
+      if (activeTabRef.current !== t) return;
 
       if (res?.success) {
         const rawList = res.data || [];
@@ -190,27 +154,90 @@ export default function Hotspot() {
       } else {
         setData([]);
       }
+    } catch (_) {
+      if (activeTabRef.current === t) {
+        setData([]);
+      }
     } finally {
-      setLoading(false);
+      if (activeTabRef.current === t) {
+        setLoading(false);
+      }
     }
   }, [routerId]);
 
-  useEffect(() => {
-    if (routerId) {
-      loadTab(tab);
-    }
-  }, [routerId, tab, loadTab]);
+  const loadAllCounts = useCallback(async (targetRouterId = null) => {
+    const currentRId = targetRouterId || routerId;
+    if (!currentRId) return;
+    try {
+      const [resActive, resHosts, resUsers, resBindings] = await Promise.all([
+        apiFetch(`/hotspot-router/active?router_id=${currentRId}`),
+        apiFetch(`/hotspot-router/hosts?router_id=${currentRId}`),
+        apiFetch(`/hotspot-router/users?router_id=${currentRId}`),
+        apiFetch(`/hotspot-router/bindings?router_id=${currentRId}`)
+      ]);
+      const isRealUser = a => a && a.user && String(a.user).trim() !== '' && String(a.user).trim() !== '—' && String(a.user).trim() !== 'undefined' && String(a.user).trim() !== 'null';
+      const isRealHost = h => h && ((h.mac_address && h.mac_address.trim() !== '' && h.mac_address !== '—') || (h.address && h.address.trim() !== '' && h.address !== '—'));
+      const isRealRouterUser = u => u && u.name && u.name.trim() !== '' && u.name !== 'default-trial' && u.name !== '—';
+      const isRealBinding = b => b && ((b.mac_address && b.mac_address.trim() !== '' && b.mac_address !== '—') || (b.address && b.address.trim() !== '' && b.address !== '—'));
 
-  useEffect(() => {
-    if (routerId) {
-      loadAllCounts();
+      const validActive = (resActive?.data || []).filter(isRealUser);
+      const validHosts = (resHosts?.data || []).filter(isRealHost);
+      const validUsers = (resUsers?.data || []).filter(isRealRouterUser);
+      const validBindings = (resBindings?.data || []).filter(isRealBinding);
+
+      setCounts({
+        active: validActive.length,
+        hosts: resHosts?.success ? validHosts.length : 0,
+        users: resUsers?.success ? validUsers.length : 0,
+        bindings: resBindings?.success ? validBindings.length : 0,
+      });
+    } catch (err) {
+      console.warn('Failed to load counts:', err.message);
+    }
+  }, [routerId]);
+
+  const loadRouters = useCallback(async () => {
+    try {
+      const d = await apiFetch('/routers');
+      if (d?.success && d.data.length > 0) {
+        setRouters(d.data);
+        const selectedId = routerId || d.data[0].id;
+        if (!routerId) {
+          setRouterId(selectedId);
+        }
+        loadAllCounts(selectedId);
+      } else {
+        setLoading(false);
+      }
+    } catch (_) {
+      setLoading(false);
     }
   }, [routerId, loadAllCounts]);
 
+  // Initial load of routers
+  useEffect(() => {
+    loadRouters();
+  }, []);
+
+  // When tab or routerId changes, load the tab's data
+  useEffect(() => {
+    if (routerId) {
+      loadTab(tab, routerId);
+    }
+  }, [tab, routerId, loadTab]);
+
   const handleRefresh = useCallback(() => {
-    loadTab(tab);
-    loadAllCounts();
-  }, [loadTab, tab, loadAllCounts]);
+    if (routerId) {
+      loadTab(tab, routerId);
+      loadAllCounts(routerId);
+    }
+  }, [loadTab, tab, routerId, loadAllCounts]);
+
+  // Connect to Global Auto-Refresh in Header
+  useEffect(() => {
+    ctx?.registerAutoRefresh?.(handleRefresh);
+    return () => ctx?.registerAutoRefresh?.(null);
+  }, [ctx, handleRefresh]);
 
   const handleTabClick = (tObj) => {
     navigate(`/manage/admin/hotspot/${tObj.path}`);
@@ -521,7 +548,16 @@ export default function Hotspot() {
     <>
       {/* Router selector */}
       <div className="mb-3.5 flex items-center gap-2.5 flex-wrap">
-        <select className="select min-w-52" value={routerId} onChange={e => setRouterId(e.target.value)}>
+        <select
+          className="select min-w-52"
+          value={routerId}
+          onChange={e => {
+            const newId = e.target.value;
+            setRouterId(newId);
+            loadTab(tab, newId);
+            loadAllCounts(newId);
+          }}
+        >
           {routers.map(r => <option key={r.id} value={r.id}>{r.name} ({r.ip_address})</option>)}
         </select>
         <button className="btn btn-secondary btn-sm" onClick={handleRefresh} disabled={loading}>

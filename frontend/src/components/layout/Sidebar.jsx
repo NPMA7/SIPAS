@@ -158,14 +158,14 @@ export default function Sidebar({ collapsed, mobileOpen, onToggle, onCloseMobile
 
   return (
     <aside
-      className={`fixed top-0 left-0 h-screen z-50 flex flex-col bg-slate-900 border-r border-slate-800 transition-all duration-200 overflow-hidden ${
+      className={`fixed top-0 left-0 h-screen z-50 flex flex-col app-sidebar transition-all duration-200 overflow-hidden ${
         collapsed ? 'w-16' : 'w-60'
       } ${
         mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       }`}
     >
       {/* Brand Header */}
-      <div className="h-15 flex items-center justify-between px-3.5 border-b border-slate-800 shrink-0">
+      <div className="h-15 flex items-center justify-between px-3.5 sidebar-brand-header shrink-0">
         <div className="flex items-center gap-2.5 min-w-0">
           <div className="w-9 h-9 flex items-center justify-center shrink-0" title="SIPAS v1.0.0 by: npma">
             <SipasLogo size={36} />
@@ -173,12 +173,12 @@ export default function Sidebar({ collapsed, mobileOpen, onToggle, onCloseMobile
           {!collapsed && (
             <div className="flex flex-col min-w-0">
               <div className="flex items-center gap-1.5">
-                <span className="font-bold text-sm text-slate-100 tracking-wide">SIPAS</span>
-                <span className="text-[10px] font-semibold bg-blue-500/20 text-blue-400 px-1.5 py-0.2 rounded-full border border-blue-500/30">
+                <span className="font-bold text-sm sidebar-brand-title tracking-wide">SIPAS</span>
+                <span className="text-[10px] font-semibold bg-blue-500/20 text-blue-500 px-1.5 py-0.2 rounded-full border border-blue-500/30">
                   v1.0.0
                 </span>
               </div>
-              <span className="text-[10px] font-medium text-slate-400">
+              <span className="text-[10px] font-medium sidebar-brand-sub">
                 by: npma
               </span>
             </div>
@@ -188,7 +188,7 @@ export default function Sidebar({ collapsed, mobileOpen, onToggle, onCloseMobile
         {mobileOpen && (
           <button
             onClick={onCloseMobile}
-            className="p-1 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 lg:hidden"
+            className="p-1 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 lg:hidden cursor-pointer"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
@@ -208,7 +208,7 @@ export default function Sidebar({ collapsed, mobileOpen, onToggle, onCloseMobile
           return (
             <div key={group.group} className="space-y-1">
               {!collapsed && (
-                <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider sidebar-group-title">
                   {group.group}
                 </div>
               )}
@@ -220,15 +220,15 @@ export default function Sidebar({ collapsed, mobileOpen, onToggle, onCloseMobile
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={onCloseMobile}
-                    className={`group relative flex items-center gap-3 px-2.5 py-2 rounded-lg text-xs font-medium text-slate-300 hover:text-slate-100 hover:bg-slate-800/80 transition-colors ${
+                    className={`group relative flex items-center gap-3 px-2.5 py-2 rounded-lg text-xs font-medium sidebar-nav-link ${
                       collapsed ? 'justify-center' : ''
                     }`}
                     title={collapsed ? item.label : undefined}
                   >
-                    <span className="shrink-0 text-slate-400 group-hover:text-blue-400 transition-colors">{item.icon}</span>
+                    <span className="shrink-0 sidebar-nav-icon">{item.icon}</span>
                     {!collapsed && <span className="truncate">{item.label}</span>}
                     {collapsed && (
-                      <span className="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-slate-200 text-xs rounded-md shadow-lg whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50">
+                      <span className="absolute left-full ml-2 px-2 py-1 sidebar-tooltip text-xs rounded-md shadow-lg whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50">
                         {item.label}
                       </span>
                     )}
@@ -244,15 +244,15 @@ export default function Sidebar({ collapsed, mobileOpen, onToggle, onCloseMobile
                         collapsed ? 'justify-center' : ''
                       } ${
                         isActive
-                          ? 'bg-blue-600/15 text-blue-400 font-semibold border border-blue-500/20'
-                          : 'text-slate-300 hover:text-slate-100 hover:bg-slate-800/80'
+                          ? 'sidebar-nav-active'
+                          : 'sidebar-nav-link'
                       }`
                     }
                     title={collapsed ? item.label : undefined}
                   >
                     {({ isActive }) => (
                       <>
-                        <span className={`shrink-0 transition-colors ${isActive ? 'text-blue-400' : 'text-slate-400 group-hover:text-slate-200'}`}>
+                        <span className={`shrink-0 transition-colors ${isActive ? 'text-blue-500' : 'sidebar-nav-icon'}`}>
                           {item.icon}
                         </span>
                         {!collapsed && (
@@ -264,7 +264,7 @@ export default function Sidebar({ collapsed, mobileOpen, onToggle, onCloseMobile
                           </span>
                         ) : null}
                         {collapsed && (
-                          <span className="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-slate-200 text-xs rounded-md shadow-lg whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50">
+                          <span className="absolute left-full ml-2 px-2 py-1 sidebar-tooltip text-xs rounded-md shadow-lg whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50">
                             {item.label}
                           </span>
                         )}
@@ -279,9 +279,9 @@ export default function Sidebar({ collapsed, mobileOpen, onToggle, onCloseMobile
       </nav>
 
       {/* Footer User & Logout */}
-      <div className="p-3 border-t border-slate-800 shrink-0 bg-slate-900/50 space-y-2">
+      <div className="p-3 sidebar-footer shrink-0 space-y-2">
         <div
-          className={`flex items-center gap-2.5 p-1.5 rounded-lg bg-slate-800/40 border border-slate-700/40 ${
+          className={`flex items-center gap-2.5 p-1.5 rounded-lg sidebar-user-card ${
             collapsed ? 'justify-center' : ''
           }`}
           title={`${admin?.username || 'Admin'} (${admin?.role === 'superadmin' ? 'Superadmin' : admin?.role === 'visitor' ? 'Visitor' : 'Operator SIPAS'})`}
@@ -291,8 +291,8 @@ export default function Sidebar({ collapsed, mobileOpen, onToggle, onCloseMobile
           </div>
           {!collapsed && (
             <div className="min-w-0 flex-1">
-              <div className="text-xs font-semibold text-slate-200 truncate">{admin?.username || 'Admin'}</div>
-              <div className="text-[10px] text-slate-400 truncate">
+              <div className="text-xs font-semibold sidebar-user-name truncate">{admin?.username || 'Admin'}</div>
+              <div className="text-[10px] sidebar-user-role truncate">
                 {admin?.role === 'superadmin' ? 'Super Administrator' : admin?.role === 'visitor' ? 'Visitor (Read-Only)' : 'Operator SIPAS'}
               </div>
             </div>
@@ -301,7 +301,7 @@ export default function Sidebar({ collapsed, mobileOpen, onToggle, onCloseMobile
 
         <button
           onClick={logout}
-          className={`cursor-pointer w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-semibold text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors ${
+          className={`cursor-pointer w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-semibold text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors ${
             collapsed ? 'justify-center' : ''
           }`}
           title="Keluar"

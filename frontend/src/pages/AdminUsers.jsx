@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext, useMemo } from 'react';
+import { useState, useEffect, useContext, useMemo, useCallback } from 'react';
 import { apiFetch, apiPost, apiPut, apiDelete } from '../api/client';
 import { ToastContext } from '../hooks/ToastContext';
 import Modal from '../components/ui/Modal';
@@ -62,7 +62,7 @@ export default function AdminUsers() {
     is_active: true,
   });
 
-  const loadAdmins = async () => {
+  const loadAdmins = useCallback(async () => {
     try {
       setLoading(true);
       const res = await apiFetch('/admin-users');
@@ -76,11 +76,17 @@ export default function AdminUsers() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [addToast]);
 
   useEffect(() => {
     loadAdmins();
-  }, []);
+  }, [loadAdmins]);
+
+  // Connect to Global Auto-Refresh in Header
+  useEffect(() => {
+    ctx?.registerAutoRefresh?.(loadAdmins);
+    return () => ctx?.registerAutoRefresh?.(null);
+  }, [ctx, loadAdmins]);
 
   const filteredAdmins = useMemo(() => {
     return admins.filter((a) => {

@@ -30,42 +30,18 @@ function ResourceBar({ label, value, max, unit = '%', colorClass = 'bg-blue-500'
   return (
     <div className="mb-3">
       <div className="flex items-center justify-between mb-1.5 text-xs">
-        <span className="text-slate-400 font-medium">{label}</span>
-        <span className="font-bold text-slate-200">
+        <span className="stat-card-label font-medium">{label}</span>
+        <span className="font-bold stat-card-value">
           {value}
-          <span className="text-[10px] text-slate-500 font-normal ml-0.5">{unit}</span>
+          <span className="text-[10px] stat-card-label font-normal ml-0.5">{unit}</span>
         </span>
       </div>
-      <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+      <div className="h-1.5 bg-[var(--resource-track-bg)] rounded-full overflow-hidden">
         <div
           className={`h-full ${barColor} rounded-full transition-all duration-500`}
           style={{ width: `${pct}%` }}
         />
       </div>
-    </div>
-  );
-}
-
-function AutoRefreshBadge({ onRefresh }) {
-  const [countdown, setCountdown] = useState(30);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCountdown(c => {
-        if (c <= 1) {
-          onRefresh();
-          return 30;
-        }
-        return c - 1;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [onRefresh]);
-
-  return (
-    <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-800/80 border border-slate-700/60 rounded-full text-xs text-slate-400">
-      <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-      <span>Auto Refresh: <strong className="text-blue-400 font-bold">{countdown}s</strong></span>
     </div>
   );
 }
@@ -76,6 +52,7 @@ export default function Dashboard() {
   const [routerId, setRouterId] = useState('');
   const [summary, setSummary] = useState(null);
   const [allStats, setAllStats] = useState({});
+  const [statsLoading, setStatsLoading] = useState({});
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -92,18 +69,26 @@ export default function Dashboard() {
         setRouters(rRes.data);
         setRouterId(prev => prev || rRes.data[0].id);
 
-        const statsMap = {};
+        rRes.data.forEach(r => {
+          setStatsLoading(prev => ({ ...prev, [r.id]: true }));
+        });
+
         await Promise.all(
           rRes.data.map(async (r) => {
             try {
               const res = await apiFetch(`/dashboard/${r.id}/stats`);
               if (res?.success && res.data) {
-                statsMap[r.id] = res.data;
+                setAllStats(prev => ({ ...prev, [r.id]: res.data }));
+              } else {
+                setAllStats(prev => ({ ...prev, [r.id]: null }));
               }
-            } catch (_) {}
+            } catch (_) {
+              setAllStats(prev => ({ ...prev, [r.id]: null }));
+            } finally {
+              setStatsLoading(prev => ({ ...prev, [r.id]: false }));
+            }
           })
         );
-        setAllStats(statsMap);
       }
       if (sRes?.success) setSummary(sRes.data);
     } catch (_) {}
@@ -121,10 +106,16 @@ export default function Dashboard() {
       setLoading(true);
     }
     try {
-      const sessRes = await apiFetch(`/dashboard/${routerId}/sessions`);
+      const [sessRes, statRes] = await Promise.all([
+        apiFetch(`/dashboard/${routerId}/sessions`),
+        apiFetch(`/dashboard/${routerId}/stats`),
+      ]);
       if (sessRes?.success) {
         const raw = sessRes.data || [];
         setSessions(raw.filter(s => s && s.user && String(s.user).trim() !== '' && String(s.user).trim() !== '—' && String(s.user).trim() !== 'undefined' && String(s.user).trim() !== 'null'));
+      }
+      if (statRes?.success && statRes.data) {
+        setAllStats(prev => ({ ...prev, [routerId]: statRes.data }));
       }
     } finally {
       setLoading(false);
@@ -143,8 +134,10 @@ export default function Dashboard() {
     loadRouterData(true);
   }, [loadRoutersAndSummary, loadRouterData]);
 
+  // Connect to global auto-refresh in header
   useEffect(() => {
-    ctx?.setHeaderAction?.(<AutoRefreshBadge onRefresh={handleAutoRefresh} />);
+    ctx?.registerAutoRefresh?.(handleAutoRefresh);
+    return () => ctx?.registerAutoRefresh?.(null);
   }, [ctx, handleAutoRefresh]);
 
   return (
@@ -181,7 +174,9 @@ export default function Dashboard() {
       <div className={`grid gap-4 ${routers.length === 1 ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2'}`}>
         {routers.map(r => {
           const rStats = allStats[r.id];
+          const isStatsLoading = statsLoading[r.id] && rStats === undefined;
           const isSingle = routers.length === 1;
+
           return (
             <div key={r.id} className="card">
               <div className="card-header">
@@ -195,23 +190,32 @@ export default function Dashboard() {
                   <Badge variant={r.router_type === 'external' ? 'warning' : 'info'}>
                     {r.router_type === 'external' ? 'Eksternal' : 'Internal'}
                   </Badge>
-                  <Badge variant={rStats ? "success" : "danger"}>
-                    {rStats ? "Online" : "Offline / Auth Error"}
-                  </Badge>
+                  {isStatsLoading ? (
+                    <Badge variant="default">Memuat...</Badge>
+                  ) : (
+                    <Badge variant={rStats ? "success" : "danger"}>
+                      {rStats ? "Online" : "Offline / Auth Error"}
+                    </Badge>
+                  )}
                 </div>
               </div>
               <div className="card-body">
-                {rStats ? (
+                {isStatsLoading ? (
+                  <div className="py-4 flex items-center justify-center gap-2 text-xs stat-card-label">
+                    <div className="loader-ring" style={{ width: 16, height: 16, borderWidth: 2 }} />
+                    <span>Mengambil metrik sumber daya MikroTik...</span>
+                  </div>
+                ) : rStats ? (
                   <>
                     <div className={isSingle ? "grid grid-cols-1 md:grid-cols-3 gap-4" : "space-y-1"}>
                       <ResourceBar label="CPU Load" value={parseFloat(rStats.cpu_load) || 0} max={100} unit="%" colorClass="bg-blue-500" />
                       <ResourceBar label={`RAM (Free: ${rStats.free_memory_mb} MB)`} value={parseFloat(rStats.memory_percent) || 0} max={100} unit="%" colorClass="bg-cyan-500" />
                       <ResourceBar label={`HDD (Free: ${rStats.free_hdd_mb} MB)`} value={parseFloat(rStats.hdd_percent) || 0} max={100} unit="%" colorClass="bg-emerald-500" />
                     </div>
-                    <div className="flex items-center gap-4 sm:gap-6 flex-wrap mt-3 pt-3 border-t border-slate-800/80 text-xs text-slate-400">
-                      <span>IP: <strong className="text-slate-200">{r.ip_address}</strong></span>
-                      <span>Uptime: <strong className="text-slate-200">{rStats.uptime || '—'}</strong></span>
-                      <span>Ver: <strong className="text-slate-200">{rStats.version || '—'}</strong></span>
+                    <div className="flex items-center gap-4 sm:gap-6 flex-wrap mt-3 pt-3 border-t border-[var(--border-color)] text-xs stat-card-label">
+                      <span>IP: <strong className="stat-card-value">{r.ip_address}</strong></span>
+                      <span>Uptime: <strong className="stat-card-value">{rStats.uptime || '—'}</strong></span>
+                      <span>Ver: <strong className="stat-card-value">{rStats.version || '—'}</strong></span>
                     </div>
                   </>
                 ) : (

@@ -23,42 +23,42 @@ try {
       return obj;
     };
 
-    // Override processPacket so !empty / !done do NOT emit bogus 'data' events
+    // Override processPacket so !empty does NOT close early and !done emits proper data
     Channel.prototype.processPacket = function (packet) {
-      if (packet && (packet[0] === "!empty" || packet[0] === "!done")) {
-        const reply = packet.shift();
-        const parsed = this.parsePacket(packet);
-        if (parsed.ret !== undefined && !this.streaming) {
+      if (!packet || packet.length === 0) return;
+      const reply = packet.shift();
+
+      // RouterOS v7 sends !empty before !done for empty queries.
+      // Do not close channel yet; wait for !done so channel lifecycle remains intact.
+      if (reply === "!empty") {
+        return;
+      }
+
+      const parsed = this.parsePacket(packet);
+
+      if (reply === "!trap") {
+        this.trapped = true;
+        this.emit("trap", parsed);
+        return;
+      }
+
+      if (reply === "!re" && !this.streaming) {
+        this.emit("data", parsed);
+      }
+
+      if (reply === "!re") {
+        if (this.streaming) this.emit("stream", parsed);
+      } else if (reply === "!done") {
+        if (parsed && parsed.ret !== undefined && !this.streaming) {
           this.emit("data", parsed);
         }
         if (!this.trapped) {
           this.emit("done", this.data);
         }
         this.close();
-        return;
-      }
-      const reply = packet.shift();
-      const parsed = this.parsePacket(packet);
-      if (reply === "!trap") {
-        this.trapped = true;
-        this.emit("trap", parsed);
-        return;
-      }
-      if (reply === "!re" && packet.length > 0 && !this.streaming) {
-        this.emit("data", parsed);
-      }
-      switch (reply) {
-        case "!re":
-          if (this.streaming) this.emit("stream", parsed);
-          break;
-        case "!done":
-          if (!this.trapped) this.emit("done", this.data);
-          this.close();
-          break;
-        default:
-          this.emit("unknown", reply);
-          this.close();
-          break;
+      } else {
+        this.emit("unknown", reply);
+        this.close();
       }
     };
   }
@@ -66,14 +66,15 @@ try {
   console.error("Failed to apply Channel prototype patch:", err.message);
 }
 
-// Programmatic patch for Receiver prototype to handle unregistered tags gracefully (avoiding UNREGISTEREDTAG crash)
+// Programmatic patch for Receiver prototype to handle unregistered tags gracefully (avoiding UNREGISTEREDTAG crash and packet buffer pollution)
 try {
   const { Receiver } = require("node-routeros/dist/connector/Receiver");
   if (Receiver && Receiver.prototype && Receiver.prototype.sendTagData) {
     const originalSendTagData = Receiver.prototype.sendTagData;
     Receiver.prototype.sendTagData = function (currentTag) {
-      if (!this.tags || !this.tags.has(currentTag)) {
-        // Swallow error silently instead of throwing and crashing the process
+      if (!currentTag || !this.tags || !this.tags.has(currentTag)) {
+        // Must clean up packet buffer so subsequent commands don't inherit orphaned packets
+        this.cleanUp();
         return;
       }
       return originalSendTagData.call(this, currentTag);
@@ -422,10 +423,32 @@ const getSystemClock = async (routerConfig) => {
  */
 const getDashboardData = async (routerConfig) => {
   return withConnection(routerConfig, async (conn) => {
-    const [res] = (await conn.write("/system/resource/print")) || [];
-    const [identity] = (await conn.write("/system/identity/print")) || [];
-    const [routerboard] = (await conn.write("/system/routerboard/print")) || [];
-    const [clock] = (await conn.write("/system/clock/print")) || [];
+    // 1. Ambil data resource utama (jangan ditelan error-nya agar withConnection bisa reconnect bila socket mati)
+    const resArr = await conn.write("/system/resource/print");
+    const res = (resArr && resArr.length > 0) ? resArr[0] : null;
+
+    if (!res) {
+      throw new Error("Gagal mengambil respon /system/resource/print dari MikroTik");
+    }
+
+    let identity = null;
+    let routerboard = null;
+    let clock = null;
+
+    try {
+      const idArr = await conn.write("/system/identity/print");
+      if (idArr && idArr.length > 0) identity = idArr[0];
+    } catch (_) {}
+
+    try {
+      const rbArr = await conn.write("/system/routerboard/print");
+      if (rbArr && rbArr.length > 0) routerboard = rbArr[0];
+    } catch (_) {}
+
+    try {
+      const clkArr = await conn.write("/system/clock/print");
+      if (clkArr && clkArr.length > 0) clock = clkArr[0];
+    } catch (_) {}
 
     const toMB = (bytes) =>
       bytes ? (parseInt(bytes) / 1024 / 1024).toFixed(1) : "0";
@@ -439,13 +462,13 @@ const getDashboardData = async (routerConfig) => {
 
     return {
       identity: identity?.["name"] || "MikroTik",
-      board_name: routerboard?.["board-name"] || "N/A",
-      model: routerboard?.["model"] || res?.["board-name"] || "N/A",
+      board_name: routerboard?.["board-name"] || res?.["board-name"] || "N/A",
+      model: routerboard?.["model"] || res?.["board-name"] || res?.["platform"] || "CCR2116-12G-4S+",
       serial: routerboard?.["serial-number"] || "N/A",
       version: res?.["version"] || "N/A",
-      platform: res?.["platform"] || "N/A",
+      platform: res?.["platform"] || "MikroTik",
       architecture: res?.["architecture-name"] || "N/A",
-      cpu_load: res?.["cpu-load"] || "0",
+      cpu_load: res?.["cpu-load"] !== undefined ? String(res["cpu-load"]) : "0",
       uptime: res?.["uptime"] || "N/A",
       total_memory_mb: toMB(totalMem),
       free_memory_mb: toMB(freeMem),

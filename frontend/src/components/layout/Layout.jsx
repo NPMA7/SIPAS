@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Toast from '../ui/Toast';
+import ThemeToggle from '../ui/ThemeToggle';
 import { useToast } from '../../hooks/useToast';
 import { ToastContext } from '../../hooks/ToastContext';
 import { apiFetch } from '../../api/client';
@@ -42,6 +43,9 @@ export default function Layout() {
   const [pageTitle, setPageTitle] = useState('Dashboard');
   const [headerAction, setHeaderAction] = useState(null);
   const [badges, setBadges] = useState({});
+  const [countdown, setCountdown] = useState(30);
+  const [refreshing, setRefreshing] = useState(false);
+  const autoRefreshCallbackRef = useRef(null);
 
   // Auth guard
   useEffect(() => {
@@ -50,7 +54,7 @@ export default function Layout() {
   }, [navigate]);
 
   // Load badge counts
-  useEffect(() => {
+  const loadBadges = useCallback(() => {
     apiFetch('/dashboard/summary').then(data => {
       if (data?.success) {
         setBadges({ users: data.data.total_users });
@@ -58,13 +62,46 @@ export default function Layout() {
     }).catch(() => {});
   }, []);
 
-  // Update page title & reset header action on route change
+  useEffect(() => {
+    loadBadges();
+  }, [loadBadges]);
+
+  // Trigger manual or auto refresh
+  const triggerRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      loadBadges();
+      if (typeof autoRefreshCallbackRef.current === 'function') {
+        await autoRefreshCallbackRef.current();
+      }
+    } catch (_) {
+    } finally {
+      setTimeout(() => setRefreshing(false), 500);
+    }
+  }, [loadBadges]);
+
+  // Global 30s Auto Refresh Interval Timer
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCountdown(c => {
+        if (c <= 1) {
+          triggerRefresh();
+          return 30;
+        }
+        return c - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [triggerRefresh]);
+
+  // Update page title & reset header action and callback on route change
   useEffect(() => {
     const matchedTitle = TITLE_MAP[location.pathname];
     if (matchedTitle) {
       setPageTitle(matchedTitle);
     }
     setHeaderAction(null);
+    autoRefreshCallbackRef.current = null;
   }, [location.pathname]);
 
   const handleSetPageTitle = useCallback((title) => {
@@ -75,11 +112,17 @@ export default function Layout() {
     setHeaderAction(action);
   }, []);
 
+  const registerAutoRefresh = useCallback((fn) => {
+    autoRefreshCallbackRef.current = fn;
+  }, []);
+
   const contextValue = useMemo(() => ({
     addToast,
     setPageTitle: handleSetPageTitle,
     setHeaderAction: handleSetHeaderAction,
-  }), [addToast, handleSetPageTitle, handleSetHeaderAction]);
+    registerAutoRefresh,
+    triggerRefresh,
+  }), [addToast, handleSetPageTitle, handleSetHeaderAction, registerAutoRefresh, triggerRefresh]);
 
   function toggleSidebar() {
     if (window.innerWidth <= 900) {
@@ -93,7 +136,7 @@ export default function Layout() {
 
   return (
     <ToastContext.Provider value={contextValue}>
-      <div className="flex min-h-screen bg-slate-950 text-slate-100 overflow-x-hidden">
+      <div className="flex min-h-screen app-layout-wrapper overflow-x-hidden">
         {/* Mobile overlay backdrop */}
         {mobileOpen && (
           <div
@@ -112,9 +155,9 @@ export default function Layout() {
 
         <main className={`flex-1 flex flex-col min-w-0 transition-all duration-200 ${collapsed ? 'lg:ml-16' : 'lg:ml-60'} ml-0`}>
           {/* Top Sticky Header */}
-          <header className="sticky top-0 z-30 h-15 bg-slate-900/80 backdrop-blur-md border-b border-slate-800/80 px-4 sm:px-6 flex items-center gap-3">
+          <header className="sticky top-0 z-30 h-15 app-header backdrop-blur-md px-4 sm:px-6 flex items-center gap-3">
             <button
-              className="p-2 -ml-2 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800/60 transition-colors focus:outline-hidden cursor-pointer"
+              className="p-2 -ml-2 rounded-lg header-toggle-btn transition-colors focus:outline-hidden cursor-pointer"
               onClick={toggleSidebar}
               aria-label="Toggle Sidebar"
             >
@@ -125,11 +168,28 @@ export default function Layout() {
               </svg>
             </button>
             <div className="flex items-center justify-between flex-1 min-w-0">
-              <div className="text-base sm:text-lg font-bold text-slate-100 tracking-tight truncate">
+              <div className="text-base sm:text-lg font-bold header-title tracking-tight truncate">
                 {pageTitle}
               </div>
               <div className="flex items-center gap-2">
+                {/* Global Auto Refresh Badge */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCountdown(30);
+                    triggerRefresh();
+                  }}
+                  className="inline-flex items-center gap-2 px-3 py-1 bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-blue-500/40 rounded-full text-xs stat-card-label cursor-pointer transition-all active:scale-95 select-none"
+                  title="Klik untuk refresh instan sekarang"
+                >
+                  <span className={`w-2 h-2 rounded-full ${refreshing ? 'bg-amber-400 animate-ping' : 'bg-emerald-500'} shrink-0`} />
+                  <span>
+                    Auto Refresh: <strong className="text-blue-500 font-bold">{countdown}s</strong>
+                  </span>
+                </button>
+
                 {headerAction}
+                <ThemeToggle />
               </div>
             </div>
           </header>

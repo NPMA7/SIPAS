@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext, useCallback } from 'react';
 import { apiFetch, apiPost, apiPut, apiDelete } from '../api/client';
 import { ToastContext } from '../hooks/ToastContext';
 import Modal from '../components/ui/Modal';
@@ -49,12 +49,7 @@ export default function BlockedSites() {
   })();
   const isVisitor = currentAdmin?.role === 'visitor';
 
-  useEffect(() => {
-    ctx?.setPageTitle?.('Daftar Situs Diblokir');
-    loadSites();
-  }, [ctx]);
-
-  async function loadSites() {
+  const loadSites = useCallback(async () => {
     setLoading(true);
     try {
       const res = await apiFetch('/blocked-sites');
@@ -67,7 +62,18 @@ export default function BlockedSites() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [ctx]);
+
+  useEffect(() => {
+    ctx?.setPageTitle?.('Daftar Situs Diblokir');
+    loadSites();
+  }, [ctx, loadSites]);
+
+  // Connect to Global Auto-Refresh in Header
+  useEffect(() => {
+    ctx?.registerAutoRefresh?.(loadSites);
+    return () => ctx?.registerAutoRefresh?.(null);
+  }, [ctx, loadSites]);
 
   function handleDomainsChange(val) {
     const autoRegex = generateL7Regex(val);

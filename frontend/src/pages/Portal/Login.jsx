@@ -147,7 +147,8 @@ export default function PortalLogin() {
 
   return (
     <div
-      className="relative min-h-screen flex items-center justify-center p-4 overflow-hidden"
+      data-portal-preview="true"
+      className="portal-isolated relative min-h-screen flex items-center justify-center p-4 overflow-hidden"
       style={{
         backgroundColor: isImageBg ? '#060911' : (settings.bg_color || '#0b0f19'),
       }}

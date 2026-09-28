@@ -78,10 +78,16 @@ export default function Queues() {
   useEffect(() => {
     if (routerId) {
       loadQueues(routerId, false);
-      const timer = setInterval(() => loadQueues(routerId, true), 10000);
-      return () => clearInterval(timer);
     }
   }, [routerId, loadQueues]);
+
+  // Connect to Global Auto-Refresh in Header
+  useEffect(() => {
+    if (routerId) {
+      ctx?.registerAutoRefresh?.(() => loadQueues(routerId, true));
+    }
+    return () => ctx?.registerAutoRefresh?.(null);
+  }, [ctx, routerId, loadQueues]);
 
   async function handleQueueAction(queueId, action) {
     setActionLoading(true);

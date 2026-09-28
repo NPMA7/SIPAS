@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext, useCallback } from 'react';
 import { apiFetch, apiPost, apiPut, apiDelete } from '../api/client';
 import { ToastContext } from '../hooks/ToastContext';
 import Modal from '../components/ui/Modal';
@@ -110,16 +110,23 @@ export default function Routers() {
   const isVisitor = currentAdmin?.role === 'visitor';
 
   useEffect(() => { ctx?.setPageTitle?.('Manajemen Router'); }, [ctx]);
-  useEffect(() => { loadRouters(); }, []);
 
-  async function loadRouters() {
+  const loadRouters = useCallback(async () => {
     setLoading(true);
     try {
       const d = await apiFetch('/routers');
       if (d?.success) setRouters(d.data || []);
     } catch (_) {}
     setLoading(false);
-  }
+  }, []);
+
+  useEffect(() => { loadRouters(); }, [loadRouters]);
+
+  // Connect to Global Auto-Refresh in Header
+  useEffect(() => {
+    ctx?.registerAutoRefresh?.(loadRouters);
+    return () => ctx?.registerAutoRefresh?.(null);
+  }, [ctx, loadRouters]);
 
   function openAdd() {
     setEditRouter(null);

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SipasLogo from '../components/ui/SipasLogo';
+import ThemeToggle from '../components/ui/ThemeToggle';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -39,13 +40,18 @@ export default function Login() {
   }
 
   return (
-    <div className="relative min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4 overflow-hidden select-none">
+    <div className="relative min-h-screen bg-[var(--bg-app)] text-[var(--text-primary)] flex items-center justify-center p-4 overflow-hidden select-none transition-colors duration-200">
+      {/* Theme Toggle Button Top Right */}
+      <div className="fixed top-4 right-4 z-50">
+        <ThemeToggle />
+      </div>
+
       {/* Ambient background glow orbs */}
       <div className="fixed -top-32 -left-32 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
       <div className="fixed -bottom-32 -right-32 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
 
       {/* Login Card */}
-      <div className="relative z-10 w-full max-w-md bg-slate-900/80 border border-slate-800/90 backdrop-blur-xl rounded-2xl p-8 sm:p-10 shadow-2xl text-center animate-scaleIn">
+      <div className="relative z-10 w-full max-w-md bg-[var(--bg-card)] border border-[var(--border-color)] backdrop-blur-xl rounded-2xl p-8 sm:p-10 shadow-2xl text-center animate-scaleIn">
         {/* Brand Logo */}
         <div className="flex items-center justify-center mb-4">
           <div className="p-3 bg-blue-500/10 rounded-2xl border border-blue-500/20 shadow-inner">
@@ -54,14 +60,14 @@ export default function Login() {
         </div>
 
         {/* Badge */}
-        <div className="inline-block bg-amber-500/15 border border-amber-500/30 text-amber-400 text-[11px] font-bold px-3 py-0.5 rounded-full tracking-wider uppercase mb-2">
+        <div className="inline-block bg-amber-500/15 border border-amber-500/30 text-amber-500 text-[11px] font-bold px-3 py-0.5 rounded-full tracking-wider uppercase mb-2">
           SIPAS ADMIN PANEL
         </div>
 
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-100 tracking-tight">
-          SIPAS <span className="text-blue-400">Portal</span>
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-heading)] tracking-tight">
+          SIPAS <span className="text-blue-500">Portal</span>
         </h1>
-        <p className="text-xs text-slate-400 mt-1">
+        <p className="text-xs text-[var(--text-muted)] mt-1">
           Sistem Integrasi Portal & Autentikasi Satu-Pintu
         </p>
 
@@ -77,15 +83,15 @@ export default function Login() {
           )}
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">Username</label>
+            <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Username</label>
             <div className="relative">
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none flex items-center justify-center">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none flex items-center justify-center">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
                   <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
                 </svg>
               </span>
               <input
-                className="w-full bg-slate-950/60 border border-slate-700/80 rounded-lg pl-10 pr-3.5 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-hidden focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                className="w-full bg-[var(--bg-input)] border border-[var(--input-border)] text-[var(--text-primary)] rounded-lg pl-10 pr-3.5 py-2.5 text-sm placeholder-[var(--input-placeholder)] focus:outline-hidden focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                 type="text"
                 placeholder="admin"
                 autoCapitalize="none"
@@ -97,15 +103,15 @@ export default function Login() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">Password</label>
+            <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">Password</label>
             <div className="relative">
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none flex items-center justify-center">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none flex items-center justify-center">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
                   <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                 </svg>
               </span>
               <input
-                className="w-full bg-slate-950/60 border border-slate-700/80 rounded-lg pl-10 pr-10 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-hidden focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                className="w-full bg-[var(--bg-input)] border border-[var(--input-border)] text-[var(--text-primary)] rounded-lg pl-10 pr-10 py-2.5 text-sm placeholder-[var(--input-placeholder)] focus:outline-hidden focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                 type={showPwd ? 'text' : 'password'}
                 placeholder="••••••••"
                 value={form.password}
@@ -115,7 +121,7 @@ export default function Login() {
               <button
                 type="button"
                 onClick={() => setShowPwd(v => !v)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors cursor-pointer flex items-center justify-center"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors cursor-pointer flex items-center justify-center"
               >
                 {showPwd ? (
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
