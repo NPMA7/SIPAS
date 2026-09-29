@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext, useCallback, useRef } from 'react';
+import { useState, useEffect, useContext, useCallback, useRef, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { apiFetch } from '../api/client';
 import { ToastContext } from '../hooks/ToastContext';
@@ -29,6 +29,12 @@ const TABS = [
     path: 'bindings',
     label: 'IP Binding',
     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+  },
+  {
+    key: 'dhcp',
+    path: 'dhcp-leases',
+    label: 'DHCP Leases',
+    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="15" height="15"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
   },
 ];
 
@@ -66,8 +72,14 @@ export default function Hotspot() {
   const [routerId, setRouterId] = useState('');
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [search, setSearch] = useState('');
-  const [counts, setCounts] = useState({ active: 0, hosts: 0, users: 0, bindings: 0 });
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(15);
+  const [counts, setCounts] = useState({ active: 0, hosts: 0, users: 0, bindings: 0, dhcp: 0 });
+  const [filterStatus, setFilterStatus] = useState('');
+  const [confirmDelLease, setConfirmDelLease] = useState(null);
+  const [deletingLease, setDeletingLease] = useState(false);
 
   // Modals state
   const [confirmKick, setConfirmKick] = useState(null);
@@ -115,20 +127,27 @@ export default function Hotspot() {
   }, [currentPathSegment, navigate]);
 
   useEffect(() => {
-    ctx?.setPageTitle?.(`Hotspot Router - ${activeTabObj.label}`);
+    ctx?.setPageTitle?.(`Pengaturan Hotspot - ${activeTabObj.label}`);
   }, [ctx, activeTabObj]);
 
-  const loadTab = useCallback(async (t, targetRouterId = null) => {
+  const loadTab = useCallback(async (t, targetRouterId = null, isBackground = false) => {
     const currentRId = targetRouterId || routerId;
     if (!currentRId) return;
-    setLoading(true);
-    setSearch('');
+    if (!isBackground) {
+      setLoading(true);
+      setSearch('');
+      setFilterStatus('');
+      setPage(1);
+    } else {
+      setIsRefreshing(true);
+    }
     try {
       let res;
       if (t === 'active') res = await apiFetch(`/hotspot-router/active?router_id=${currentRId}`);
       else if (t === 'hosts') res = await apiFetch(`/hotspot-router/hosts?router_id=${currentRId}`);
       else if (t === 'users') res = await apiFetch(`/hotspot-router/users?router_id=${currentRId}`);
       else if (t === 'bindings') res = await apiFetch(`/hotspot-router/bindings?router_id=${currentRId}`);
+      else if (t === 'dhcp') res = await apiFetch(`/dhcp/leases?router_id=${currentRId}`);
 
       if (activeTabRef.current !== t) return;
 
@@ -138,6 +157,7 @@ export default function Hotspot() {
         const isRealHost = h => h && ((h.mac_address && h.mac_address.trim() !== '' && h.mac_address !== '—') || (h.address && h.address.trim() !== '' && h.address !== '—'));
         const isRealRouterUser = u => u && u.name && u.name.trim() !== '' && u.name !== 'default-trial' && u.name !== '—';
         const isRealBinding = b => b && ((b.mac_address && b.mac_address.trim() !== '' && b.mac_address !== '—') || (b.address && b.address.trim() !== '' && b.address !== '—'));
+        const isRealLease = l => l && l.address && l.mac_address;
 
         let filteredList = rawList;
         if (t === 'active') {
@@ -148,19 +168,22 @@ export default function Hotspot() {
           filteredList = rawList.filter(isRealBinding);
         } else if (t === 'users') {
           filteredList = rawList.filter(isRealRouterUser);
+        } else if (t === 'dhcp') {
+          filteredList = rawList.filter(isRealLease);
         }
         setData(filteredList);
         setCounts(prev => ({ ...prev, [t]: filteredList.length }));
       } else {
-        setData([]);
+        if (!isBackground) setData([]);
       }
     } catch (_) {
-      if (activeTabRef.current === t) {
+      if (activeTabRef.current === t && !isBackground) {
         setData([]);
       }
     } finally {
       if (activeTabRef.current === t) {
-        setLoading(false);
+        if (!isBackground) setLoading(false);
+        setIsRefreshing(false);
       }
     }
   }, [routerId]);
@@ -169,27 +192,31 @@ export default function Hotspot() {
     const currentRId = targetRouterId || routerId;
     if (!currentRId) return;
     try {
-      const [resActive, resHosts, resUsers, resBindings] = await Promise.all([
+      const [resActive, resHosts, resUsers, resBindings, resDhcp] = await Promise.all([
         apiFetch(`/hotspot-router/active?router_id=${currentRId}`),
         apiFetch(`/hotspot-router/hosts?router_id=${currentRId}`),
         apiFetch(`/hotspot-router/users?router_id=${currentRId}`),
-        apiFetch(`/hotspot-router/bindings?router_id=${currentRId}`)
+        apiFetch(`/hotspot-router/bindings?router_id=${currentRId}`),
+        apiFetch(`/dhcp/leases?router_id=${currentRId}`)
       ]);
       const isRealUser = a => a && a.user && String(a.user).trim() !== '' && String(a.user).trim() !== '—' && String(a.user).trim() !== 'undefined' && String(a.user).trim() !== 'null';
       const isRealHost = h => h && ((h.mac_address && h.mac_address.trim() !== '' && h.mac_address !== '—') || (h.address && h.address.trim() !== '' && h.address !== '—'));
       const isRealRouterUser = u => u && u.name && u.name.trim() !== '' && u.name !== 'default-trial' && u.name !== '—';
       const isRealBinding = b => b && ((b.mac_address && b.mac_address.trim() !== '' && b.mac_address !== '—') || (b.address && b.address.trim() !== '' && b.address !== '—'));
+      const isRealLease = l => l && l.address && l.mac_address;
 
       const validActive = (resActive?.data || []).filter(isRealUser);
       const validHosts = (resHosts?.data || []).filter(isRealHost);
       const validUsers = (resUsers?.data || []).filter(isRealRouterUser);
       const validBindings = (resBindings?.data || []).filter(isRealBinding);
+      const validDhcp = (resDhcp?.data || []).filter(isRealLease);
 
       setCounts({
         active: validActive.length,
         hosts: resHosts?.success ? validHosts.length : 0,
         users: resUsers?.success ? validUsers.length : 0,
         bindings: resBindings?.success ? validBindings.length : 0,
+        dhcp: resDhcp?.success ? validDhcp.length : 0,
       });
     } catch (err) {
       console.warn('Failed to load counts:', err.message);
@@ -222,24 +249,32 @@ export default function Hotspot() {
   // When tab or routerId changes, load the tab's data
   useEffect(() => {
     if (routerId) {
-      loadTab(tab, routerId);
+      loadTab(tab, routerId, false);
     }
   }, [tab, routerId, loadTab]);
 
-  const handleRefresh = useCallback(() => {
+  const handleManualRefresh = useCallback(() => {
     if (routerId) {
-      loadTab(tab, routerId);
+      loadTab(tab, routerId, false);
       loadAllCounts(routerId);
     }
   }, [loadTab, tab, routerId, loadAllCounts]);
 
+  const handleAutoRefresh = useCallback(() => {
+    if (routerId) {
+      loadTab(activeTabRef.current, routerId, true);
+      loadAllCounts(routerId);
+    }
+  }, [loadTab, routerId, loadAllCounts]);
+
   // Connect to Global Auto-Refresh in Header
   useEffect(() => {
-    ctx?.registerAutoRefresh?.(handleRefresh);
+    ctx?.registerAutoRefresh?.(handleAutoRefresh);
     return () => ctx?.registerAutoRefresh?.(null);
-  }, [ctx, handleRefresh]);
+  }, [ctx, handleAutoRefresh]);
 
   const handleTabClick = (tObj) => {
+    setPage(1);
     navigate(`/manage/admin/hotspot/${tObj.path}`);
   };
 
@@ -380,12 +415,48 @@ export default function Hotspot() {
     }
   }
 
+  async function deleteLease() {
+    if (!confirmDelLease || deletingLease) return;
+    setDeletingLease(true);
+    try {
+      const { id, address } = confirmDelLease;
+      const res = await apiFetch(`/dhcp/leases/${id}?router_id=${routerId}`, { method: 'DELETE' });
+      if (res?.success) {
+        ctx?.addToast('Berhasil', `Lease ${address} berhasil dihapus & koneksi diputuskan.`, 'success');
+        setConfirmDelLease(null);
+        loadTab('dhcp');
+        loadAllCounts();
+      } else {
+        ctx?.addToast('Gagal', res?.message || 'Gagal menghapus lease.', 'error');
+      }
+    } finally {
+      setDeletingLease(false);
+    }
+  }
+
   const safeData = Array.isArray(data) ? data : [];
-  const filtered = safeData.filter(row => {
-    if (!search) return true;
-    const s = search.toLowerCase();
-    return Object.values(row || {}).some(v => String(v || '').toLowerCase().includes(s));
-  });
+  const filtered = useMemo(() => {
+    return safeData.filter(row => {
+      if (tab === 'dhcp' && filterStatus && row.status !== filterStatus) return false;
+      if (!search) return true;
+      const s = search.toLowerCase();
+      return Object.values(row || {}).some(v => String(v || '').toLowerCase().includes(s));
+    });
+  }, [safeData, tab, filterStatus, search]);
+
+  const totalItems = filtered.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / perPage));
+  const currentPage = Math.min(Math.max(1, page), totalPages);
+  const startIndex = (currentPage - 1) * perPage;
+  const endIndex = Math.min(startIndex + perPage, totalItems);
+  const paginated = useMemo(() => {
+    return filtered.slice(startIndex, endIndex);
+  }, [filtered, startIndex, endIndex]);
+
+  const dhcpStatuses = useMemo(() => {
+    if (tab !== 'dhcp') return [];
+    return [...new Set(safeData.map(l => l.status).filter(Boolean))];
+  }, [tab, safeData]);
 
   function renderTable() {
     if (tab === 'active') {
@@ -397,8 +468,8 @@ export default function Hotspot() {
             {!isVisitor && <th>Aksi</th>}
           </tr></thead>
           <tbody>
-            {filtered.map((s, i) => (
-              <tr key={i}>
+            {paginated.map((s, i) => (
+              <tr key={s.id || s['.id'] || i}>
                 <td>
                   <div className="font-semibold text-slate-100">
                     {s.full_name || s.user || '—'}
@@ -449,8 +520,8 @@ export default function Hotspot() {
             {!isVisitor && <th>Aksi</th>}
           </tr></thead>
           <tbody>
-            {filtered.map((h, i) => (
-              <tr key={i}>
+            {paginated.map((h, i) => (
+              <tr key={h.id || h['.id'] || i}>
                 <td className="mono text-xs text-slate-300">{h.mac_address || h['mac-address'] || '—'}</td>
                 <td className="mono font-semibold text-slate-200">{h.address || '—'}</td>
                 <td className="text-slate-400">{h.server || '—'}</td>
@@ -480,8 +551,8 @@ export default function Hotspot() {
             {!isVisitor && <th>Aksi</th>}
           </tr></thead>
           <tbody>
-            {filtered.map((u, i) => (
-              <tr key={i}>
+            {paginated.map((u, i) => (
+              <tr key={u.id || u['.id'] || i}>
                 <td className="font-semibold text-slate-100">{u.name || '—'}</td>
                 <td className="mono text-xs text-slate-400">
                   {u.password ? '••••••••' : <span className="italic text-slate-500">SSO (Tanpa Pass)</span>}
@@ -501,47 +572,98 @@ export default function Hotspot() {
         </table>
       );
     }
-    // bindings
-    return (
-      <table className="data-table">
-        <thead><tr>
-          <th>MAC Address</th><th>Address (IP)</th><th>To Address</th><th>Server</th><th>Type</th><th>Komentar</th>
-          {!isVisitor && <th>Aksi</th>}
-        </tr></thead>
-        <tbody>
-          {filtered.map((b, i) => {
-            const bType = b.type || 'bypassed';
-            const badgeVariant = bType === 'bypassed' ? 'success' : (bType === 'passthrough' ? 'warning' : 'neutral');
-            return (
-              <tr key={i}>
-                <td className="mono font-semibold text-slate-200">{b.mac_address || '—'}</td>
-                <td className="mono text-slate-300">{b.address || '—'}</td>
-                <td className="mono text-slate-400">{b.to_address || '—'}</td>
-                <td className="text-slate-400">{b.server || 'all'}</td>
+    if (tab === 'bindings') {
+      return (
+        <table className="data-table">
+          <thead><tr>
+            <th>MAC Address</th><th>Address (IP)</th><th>To Address</th><th>Server</th><th>Type</th><th>Komentar</th>
+            {!isVisitor && <th>Aksi</th>}
+          </tr></thead>
+          <tbody>
+            {paginated.map((b, i) => {
+              const bType = b.type || 'bypassed';
+              const badgeVariant = bType === 'bypassed' ? 'success' : (bType === 'passthrough' ? 'warning' : 'neutral');
+              return (
+                <tr key={b.id || b['.id'] || i}>
+                  <td className="mono font-semibold text-slate-200">{b.mac_address || '—'}</td>
+                  <td className="mono text-slate-300">{b.address || '—'}</td>
+                  <td className="mono text-slate-400">{b.to_address || '—'}</td>
+                  <td className="text-slate-400">{b.server || 'all'}</td>
+                  <td>
+                    <Badge variant={badgeVariant}>
+                      {bType}
+                    </Badge>
+                  </td>
+                  <td className="text-xs text-slate-400">{b.comment || '—'}</td>
+                  {!isVisitor && (
+                    <td>
+                      <div className="flex items-center gap-1.5">
+                        <button className="btn btn-secondary btn-xs" onClick={() => openEditBinding(b)}>
+                          Edit
+                        </button>
+                        <button className="btn btn-danger btn-xs" onClick={() => setConfirmDeleteBinding(b)}>
+                          Hapus
+                        </button>
+                      </div>
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      );
+    }
+
+    if (tab === 'dhcp') {
+      return (
+        <table className="data-table">
+          <thead><tr>
+            <th>IP Address</th>
+            <th>MAC Address</th>
+            <th>Hostname</th>
+            <th>Server</th>
+            <th>Status</th>
+            <th>Expires</th>
+            <th>Type</th>
+            {!isVisitor && <th>Aksi</th>}
+          </tr></thead>
+          <tbody>
+            {paginated.map((l, i) => (
+              <tr key={l.id || l['.id'] || i}>
+                <td className="mono font-semibold text-slate-200">{l.address || '—'}</td>
+                <td className="mono text-xs text-slate-400">{l.mac_address || '—'}</td>
+                <td className="text-slate-200">{l.host_name || '—'}</td>
+                <td className="text-slate-400">{l.server || '—'}</td>
                 <td>
-                  <Badge variant={badgeVariant}>
-                    {bType}
+                  <Badge variant={l.status === 'bound' ? 'success' : l.status === 'waiting' ? 'warning' : 'neutral'}>
+                    {l.status || '—'}
                   </Badge>
                 </td>
-                <td className="text-xs text-slate-400">{b.comment || '—'}</td>
+                <td className="text-xs text-slate-400">{l.expires_after || '—'}</td>
+                <td>
+                  <Badge variant={l.dynamic === 'true' || l.dynamic === true ? 'info' : 'neutral'}>
+                    {l.dynamic === 'true' || l.dynamic === true ? 'dynamic' : 'static'}
+                  </Badge>
+                </td>
                 {!isVisitor && (
                   <td>
-                    <div className="flex items-center gap-1.5">
-                      <button className="btn btn-secondary btn-xs" onClick={() => openEditBinding(b)}>
-                        Edit
-                      </button>
-                      <button className="btn btn-danger btn-xs" onClick={() => setConfirmDeleteBinding(b)}>
-                        Hapus
-                      </button>
-                    </div>
+                    <button
+                      className="btn btn-danger btn-xs"
+                      onClick={() => setConfirmDelLease({ id: l.id, address: l.address })}
+                    >
+                      Hapus
+                    </button>
                   </td>
                 )}
               </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    );
+            ))}
+          </tbody>
+        </table>
+      );
+    }
+
+    return null;
   }
 
   return (
@@ -560,11 +682,21 @@ export default function Hotspot() {
         >
           {routers.map(r => <option key={r.id} value={r.id}>{r.name} ({r.ip_address})</option>)}
         </select>
-        <button className="btn btn-secondary btn-sm" onClick={handleRefresh} disabled={loading}>
-          {loading ? <div className="loader-ring" style={{ width: 13, height: 13, borderWidth: 2 }} /> : (
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>
+        <button
+          type="button"
+          className="btn btn-secondary btn-sm"
+          onClick={handleManualRefresh}
+          disabled={loading || isRefreshing}
+        >
+          {loading || isRefreshing ? (
+            <div className="loader-ring" style={{ width: 13, height: 13, borderWidth: 2 }} />
+          ) : (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+              <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/>
+            </svg>
           )}
           <span>Refresh</span>
+          {isRefreshing && <span className="text-[11px] text-sky-400 font-normal ml-0.5">(Sinkronisasi...)</span>}
         </button>
       </div>
 
@@ -587,7 +719,7 @@ export default function Hotspot() {
           <div className="card-title">
             {activeTabObj.icon}
             <span>{activeTabObj.label}</span>
-            <Badge variant="primary">{filtered.length}</Badge>
+            <Badge variant="primary">{totalItems}</Badge>
           </div>
 
           <div className="flex items-center gap-2.5 flex-wrap">
@@ -596,9 +728,30 @@ export default function Hotspot() {
                 + Tambah IP Binding
               </button>
             )}
+            {tab === 'dhcp' && (
+              <select
+                className="select min-w-32"
+                value={filterStatus}
+                onChange={e => {
+                  setFilterStatus(e.target.value);
+                  setPage(1);
+                }}
+              >
+                <option value="">Semua Status</option>
+                {dhcpStatuses.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            )}
             <div className="search-wrapper">
               <svg className="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              <input className="search-input" placeholder="Cari..." value={search} onChange={e => setSearch(e.target.value)} />
+              <input
+                className="search-input"
+                placeholder="Cari..."
+                value={search}
+                onChange={e => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
+              />
             </div>
           </div>
         </div>
@@ -606,12 +759,75 @@ export default function Hotspot() {
         <div className="table-wrapper">
           {loading ? (
             <Loader />
-          ) : filtered.length === 0 ? (
+          ) : totalItems === 0 ? (
             <EmptyState text={`Tidak ada data ${(activeTabObj.label || 'sesi').toLowerCase()}.`} />
           ) : (
             renderTable()
           )}
         </div>
+
+        {/* Pagination bar */}
+        {!loading && totalItems > 0 && (
+          <div className="pagination">
+            <span className="page-info">
+              Menampilkan {startIndex + 1} - {endIndex} dari total {totalItems} data
+            </span>
+            <div className="flex items-center gap-1.5 mr-2 text-xs text-slate-400">
+              <span>Per halaman:</span>
+              <select
+                className="page-select select"
+                value={perPage}
+                onChange={e => {
+                  setPerPage(Number(e.target.value));
+                  setPage(1);
+                }}
+              >
+                <option value={10}>10</option>
+                <option value={15}>15</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
+            {totalPages > 1 && (
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  className="page-btn"
+                  disabled={currentPage <= 1}
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  title="Halaman Sebelumnya"
+                >
+                  ‹
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+                  .map((p, i, arr) => (
+                    <span key={p} className="inline-flex items-center">
+                      {i > 0 && arr[i - 1] !== p - 1 && <span className="page-btn cursor-default">…</span>}
+                      <button
+                        type="button"
+                        className={`page-btn ${p === currentPage ? 'active' : ''}`}
+                        onClick={() => setPage(p)}
+                      >
+                        {p}
+                      </button>
+                    </span>
+                  ))
+                }
+                <button
+                  type="button"
+                  className="page-btn"
+                  disabled={currentPage >= totalPages}
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  title="Halaman Berikutnya"
+                >
+                  ›
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Modal Kick Session */}
@@ -839,6 +1055,34 @@ export default function Hotspot() {
       >
         <p className="text-sm text-slate-300">
           Yakin ingin menghapus IP Binding untuk MAC <strong className="mono text-slate-100">"{confirmDeleteBinding?.mac_address || confirmDeleteBinding?.address}"</strong>?
+        </p>
+      </Modal>
+
+      {/* Delete Lease Confirm Modal */}
+      <Modal
+        open={!!confirmDelLease}
+        onClose={() => !deletingLease && setConfirmDelLease(null)}
+        title="Hapus DHCP Lease"
+        footer={
+          <>
+            <button className="btn btn-secondary" onClick={() => setConfirmDelLease(null)} disabled={deletingLease}>Batal</button>
+            <button className="btn btn-danger" onClick={deleteLease} disabled={deletingLease}>
+              {deletingLease && <div className="loader-ring" style={{ width: 14, height: 14, borderWidth: 2 }} />}
+              <span>{deletingLease ? 'Memproses...' : 'Hapus & Putuskan'}</span>
+            </button>
+          </>
+        }
+      >
+        <p className="text-sm text-slate-300">
+          Yakin ingin menghapus DHCP lease untuk IP <strong className="text-slate-100">{confirmDelLease?.address}</strong>?
+        </p>
+        <p className="text-xs text-rose-400 mt-2 flex items-center gap-1.5">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14" className="shrink-0">
+            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          <span>Perangkat akan terputus dari jaringan dan harus meminta IP baru (reconnect).</span>
         </p>
       </Modal>
     </>

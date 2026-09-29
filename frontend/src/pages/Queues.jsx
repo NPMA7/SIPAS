@@ -40,7 +40,7 @@ export default function Queues() {
   })();
   const isVisitor = currentAdmin?.role === 'visitor';
 
-  useEffect(() => { ctx?.setPageTitle?.('Simple Queues'); }, [ctx]);
+  useEffect(() => { ctx?.setPageTitle?.('Limit Kecepatan'); }, [ctx]);
 
   const loadRouters = useCallback(async () => {
     try {
@@ -66,7 +66,7 @@ export default function Queues() {
         const valid = raw.filter(q => (q.name && q.name.trim() !== '') || (q.target && q.target.trim() !== ''));
         setQueues(valid);
       } else {
-        ctx?.addToast?.('warning', d?.message || 'Gagal memuat Simple Queues');
+        ctx?.addToast?.('warning', d?.message || 'Gagal memuat limit kecepatan');
       }
     } catch (err) {
       ctx?.addToast?.('danger', err.message);
@@ -127,7 +127,7 @@ export default function Queues() {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
               <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
             </svg>
-            <span>Simple Queues</span>
+            <span>Limit Kecepatan</span>
             <Badge variant="primary">{filtered.length}</Badge>
           </div>
           <div className="card-actions">

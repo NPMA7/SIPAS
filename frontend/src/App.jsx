@@ -32,8 +32,8 @@ export default function App() {
           <Route path="routers" element={<Routers />} />
           <Route path="hotspot/*" element={<Hotspot />} />
           <Route path="queues" element={<Queues />} />
-          <Route path="dhcp-leases" element={<DhcpLeases />} />
-          <Route path="dhcp" element={<Navigate to="/manage/admin/dhcp-leases" replace />} />
+          <Route path="dhcp-leases" element={<Navigate to="/manage/admin/hotspot/dhcp-leases" replace />} />
+          <Route path="dhcp" element={<Navigate to="/manage/admin/hotspot/dhcp-leases" replace />} />
           <Route path="portal-settings" element={<PortalCustomizer />} />
           <Route path="portal-customizer" element={<Navigate to="/manage/admin/portal-settings" replace />} />
           <Route path="manage-users" element={<AdminUsers />} />
@@ -52,8 +52,8 @@ export default function App() {
         <Route path="/admin/routers" element={<Navigate to="/manage/admin/routers" replace />} />
         <Route path="/admin/hotspot/*" element={<Navigate to="/manage/admin/hotspot" replace />} />
         <Route path="/admin/queues" element={<Navigate to="/manage/admin/queues" replace />} />
-        <Route path="/admin/dhcp-leases" element={<Navigate to="/manage/admin/dhcp-leases" replace />} />
-        <Route path="/admin/dhcp" element={<Navigate to="/manage/admin/dhcp-leases" replace />} />
+        <Route path="/admin/dhcp-leases" element={<Navigate to="/manage/admin/hotspot/dhcp-leases" replace />} />
+        <Route path="/admin/dhcp" element={<Navigate to="/manage/admin/hotspot/dhcp-leases" replace />} />
         <Route path="/admin/manage-users" element={<Navigate to="/manage/admin/manage-users" replace />} />
         <Route path="/admin/admins" element={<Navigate to="/manage/admin/manage-users" replace />} />
         <Route path="/admin" element={<Navigate to="/manage/admin" replace />} />

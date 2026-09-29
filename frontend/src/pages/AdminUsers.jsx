@@ -29,11 +29,25 @@ const ROLE_CONFIG = {
 };
 
 export default function AdminUsers() {
-  const { addToast } = useContext(ToastContext);
+  const ctx = useContext(ToastContext);
+  const addToast = useCallback((msgOrTitle, typeOrMsg = 'info', maybeType) => {
+    if (maybeType !== undefined) {
+      ctx?.addToast?.(msgOrTitle, typeOrMsg, maybeType);
+    } else {
+      const type = typeOrMsg === 'danger' ? 'error' : typeOrMsg;
+      const title = type === 'error' ? 'Gagal' : (type === 'success' ? 'Berhasil' : (type === 'warning' ? 'Perhatian' : 'Info'));
+      ctx?.addToast?.(title, msgOrTitle, type);
+    }
+  }, [ctx]);
+
   const [admins, setAdmins] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
+
+  useEffect(() => {
+    ctx?.setPageTitle?.('Pengelola Web');
+  }, [ctx]);
 
   // Current logged in admin info
   const currentAdmin = useMemo(() => {

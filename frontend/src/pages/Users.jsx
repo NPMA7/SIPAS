@@ -120,7 +120,7 @@ export default function Users() {
   const [confirmDel, setConfirmDel] = useState(null);
   const searchTimer = useRef(null);
 
-  useEffect(() => { ctx?.setPageTitle?.('Pengguna Hotspot'); }, [ctx]);
+  useEffect(() => { ctx?.setPageTitle?.('Pengguna'); }, [ctx]);
 
   useEffect(() => {
     apiFetch('/routers').then(d => { if (d?.success) setRouters(d.data); });

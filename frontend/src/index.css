@@ -987,6 +987,30 @@ select option,
   color: var(--text-muted);
   margin-right: auto;
 }
+.page-select {
+  height: 2rem !important;
+  min-height: 2rem !important;
+  max-height: 2rem !important;
+  padding: 0 1.75rem 0 0.625rem !important;
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+  line-height: 2rem !important;
+  border-radius: 0.375rem !important;
+  border: 1px solid var(--border-color) !important;
+  background-color: var(--bg-card) !important;
+  background-position: right 7px center !important;
+  background-size: 10px !important;
+  color: var(--text-primary) !important;
+  cursor: pointer !important;
+  box-sizing: border-box !important;
+}
+.page-select:hover {
+  border-color: rgba(59, 130, 246, 0.4) !important;
+}
+.page-select:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+}
 
 /* ─── Router Cards Grid ──────────────────────────────────────── */
 .routers-grid {
