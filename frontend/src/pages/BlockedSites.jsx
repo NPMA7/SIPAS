@@ -101,13 +101,15 @@ export default function BlockedSites() {
   function openAdd() {
     setEditSite(null);
     setUserSearch('');
-    setForm({ ...EMPTY_FORM, user_ids: users.map(u => u.id) });
+    setUserFilterTab('all');
+    setForm({ ...EMPTY_FORM, user_ids: [] });
     setModal(true);
   }
 
   function openEdit(site) {
     setEditSite(site);
     setUserSearch('');
+    setUserFilterTab('all');
     setForm({
       key: site.key || '',
       name: site.name || '',
@@ -362,10 +364,6 @@ export default function BlockedSites() {
             <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
               <div className="flex items-center gap-2">
                 <label className="form-label m-0 font-semibold flex items-center gap-1.5">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13" className="text-rose-400">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                  </svg>
                   Pilih User yang Diblokir Situs Ini
                 </label>
                 <Badge variant={(form.user_ids || []).length > 0 ? 'danger' : 'neutral'}>
