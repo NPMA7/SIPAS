@@ -122,7 +122,7 @@ export default function Hotspot() {
 
   useEffect(() => {
     if (!currentPathSegment || !TABS.some(t => t.path === currentPathSegment)) {
-      navigate('/manage/admin/hotspot/active-sessions', { replace: true });
+      navigate('/hotspot/active-sessions', { replace: true });
     }
   }, [currentPathSegment, navigate]);
 
@@ -275,7 +275,7 @@ export default function Hotspot() {
 
   const handleTabClick = (tObj) => {
     setPage(1);
-    navigate(`/manage/admin/hotspot/${tObj.path}`);
+    navigate(`/hotspot/${tObj.path}`);
   };
 
   async function kickSession() {

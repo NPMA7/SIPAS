@@ -55,7 +55,6 @@ services:
     restart: unless-stopped
     ports:
       - "3000:80"
-      - "3005:81"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./frontend/public:/usr/share/nginx/html:ro

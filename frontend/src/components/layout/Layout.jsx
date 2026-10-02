@@ -8,6 +8,22 @@ import { ToastContext } from '../../hooks/ToastContext';
 import { apiFetch } from '../../api/client';
 
 const TITLE_MAP = {
+  '/dashboard': 'Dashboard',
+  '/users': 'Pengguna',
+  '/user-hotspot': 'Pengguna',
+  '/blocked-sites': 'Situs Diblokir',
+  '/routers': 'Manajemen Router',
+  '/hotspot': 'Pengaturan Hotspot',
+  '/queues': 'Limit Kecepatan',
+  '/dhcp': 'DHCP Leases',
+  '/dhcp-leases': 'DHCP Leases',
+  '/portal-settings': 'Kustomisasi Portal',
+  '/portal-customizer': 'Kustomisasi Portal',
+  '/admins': 'Pengelola Web',
+  '/manage-users': 'Pengelola Web',
+  '/api': 'Dokumentasi API',
+  '/api-docs': 'Dokumentasi API',
+  // Backward compatibility alias:
   '/manage/admin': 'Dashboard',
   '/manage/admin/': 'Dashboard',
   '/manage/admin/users': 'Pengguna',
@@ -19,11 +35,8 @@ const TITLE_MAP = {
   '/manage/admin/dhcp': 'DHCP Leases',
   '/manage/admin/dhcp-leases': 'DHCP Leases',
   '/manage/admin/portal-settings': 'Kustomisasi Portal',
-  '/manage/admin/portal-customizer': 'Kustomisasi Portal',
-  '/manage/admin/admins': 'Pengelola Web',
   '/manage/admin/manage-users': 'Pengelola Web',
   '/manage/admin/api': 'Dokumentasi API',
-  '/manage/api': 'Dokumentasi API',
   '/admin': 'Dashboard',
   '/admin/user-hotspot': 'Pengguna',
   '/admin/blocked-sites': 'Situs Diblokir',
@@ -45,12 +58,37 @@ export default function Layout() {
   const [badges, setBadges] = useState({});
   const [countdown, setCountdown] = useState(30);
   const [refreshing, setRefreshing] = useState(false);
+  const [authChecking, setAuthChecking] = useState(() => !localStorage.getItem('hotspot_token'));
   const autoRefreshCallbackRef = useRef(null);
 
-  // Auth guard
+  // Auth guard with Seamless NOCR Gateway SSO
   useEffect(() => {
     const token = localStorage.getItem('hotspot_token');
-    if (!token) navigate('/manage/admin/login');
+    if (token) {
+      setAuthChecking(false);
+      return;
+    }
+
+    let isMounted = true;
+    fetch('/api/admin/gateway-sso', { credentials: 'include' })
+      .then(res => res.json())
+      .then(data => {
+        if (!isMounted) return;
+        if (data?.success && data?.token) {
+          localStorage.setItem('hotspot_token', data.token);
+          if (data.admin) {
+            localStorage.setItem('hotspot_admin', JSON.stringify(data.admin));
+          }
+          setAuthChecking(false);
+        } else {
+          navigate('/login', { replace: true });
+        }
+      })
+      .catch(() => {
+        if (isMounted) navigate('/login', { replace: true });
+      });
+
+    return () => { isMounted = false; };
   }, [navigate]);
 
   // Load badge counts
@@ -63,8 +101,10 @@ export default function Layout() {
   }, []);
 
   useEffect(() => {
-    loadBadges();
-  }, [loadBadges]);
+    if (!authChecking) {
+      loadBadges();
+    }
+  }, [authChecking, loadBadges]);
 
   // Trigger manual or auto refresh
   const triggerRefresh = useCallback(async () => {
@@ -82,6 +122,7 @@ export default function Layout() {
 
   // Global 30s Auto Refresh Interval Timer
   useEffect(() => {
+    if (authChecking) return;
     const timer = setInterval(() => {
       setCountdown(c => {
         if (c <= 1) {
@@ -92,11 +133,13 @@ export default function Layout() {
       });
     }, 1000);
     return () => clearInterval(timer);
-  }, [triggerRefresh]);
+  }, [authChecking, triggerRefresh]);
 
   // Update page title & reset header action and callback on route change
   useEffect(() => {
-    const matchedTitle = TITLE_MAP[location.pathname];
+    const matchedTitle = TITLE_MAP[location.pathname] || (
+      location.pathname.startsWith('/hotspot') ? 'Pengaturan Hotspot' : 'Dashboard'
+    );
     if (matchedTitle) {
       setPageTitle(matchedTitle);
     }
@@ -133,6 +176,17 @@ export default function Layout() {
   }
 
   function closeMobile() { setMobileOpen(false); }
+
+  if (authChecking) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[var(--bg-app)] text-[var(--text-primary)]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs text-slate-400 font-medium">Memverifikasi Sesi NOCR Gateway...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <ToastContext.Provider value={contextValue}>

@@ -1,0 +1,91 @@
+worker_processes auto;
+error_log /var/log/nginx/error.log warn;
+pid /var/run/nginx.pid;
+
+events {
+    worker_connections 1024;
+}
+
+http {
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+    server_tokens off;
+
+    log_format main '$remote_addr - $remote_user [$time_local] "$request" '
+                    '$status $body_bytes_sent "$http_referer" '
+                    '"$http_user_agent"';
+
+    access_log /var/log/nginx/access.log main;
+    sendfile on;
+    keepalive_timeout 65;
+    client_max_body_size 10M;
+
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml;
+
+    server {
+        listen 80;
+        server_name _;
+        port_in_redirect off;
+
+        # Enforce HTTPS if request comes via HTTP through Cloudflare/Reverse Proxy
+        if ($http_x_forwarded_proto = "http") {
+            return 301 https://$host$request_uri;
+        }
+
+        # Frontend static files
+        root /usr/share/nginx/html;
+        index index.html;
+
+        # Explicit /api and /api/ redirect to root (Captive Portal)
+        location = /api {
+            return 301 https://$host/;
+        }
+
+        location = /api/ {
+            return 301 https://$host/;
+        }
+
+        # Captive portal and Admin router - SPA fallback
+        location / {
+            try_files $uri $uri/ /index.html;
+        }
+
+        # Proxy all /api/ requests to backend
+        location /api/ {
+            # Redirect any direct browser address bar visit or document navigation to Captive Portal
+            if ($http_sec_fetch_dest = "document") {
+                return 301 https://$host/;
+            }
+            if ($http_accept ~* "text/html") {
+                return 301 https://$host/;
+            }
+
+            proxy_pass http://backend:3001;
+            proxy_http_version 1.1;
+            proxy_redirect http:// https://;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection 'upgrade';
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_cache_bypass $http_upgrade;
+            proxy_read_timeout 60s;
+            proxy_connect_timeout 60s;
+        }
+
+        # Health check
+        location /health {
+            proxy_pass http://backend:3001/api/health;
+        }
+
+        # Security headers (OWASP Hardened + Cloudflare Analytics Friendly)
+        add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+        add_header X-Frame-Options "DENY" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+        add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https: blob:; connect-src 'self' https: https://cloudflareinsights.com; frame-ancestors 'none';" always;
+    }
+}

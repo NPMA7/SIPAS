@@ -7,11 +7,40 @@ export default function Login() {
   const navigate = useNavigate();
   const [form, setForm] = useState({ username: '', password: '' });
   const [loading, setLoading] = useState(false);
+  const [checkingSso, setCheckingSso] = useState(true);
   const [error, setError] = useState('');
   const [showPwd, setShowPwd] = useState(false);
 
   useEffect(() => {
-    if (localStorage.getItem('hotspot_token')) navigate('/manage/admin');
+    // 1. Jika token SIPAS sudah ada di localStorage, langsung ke Dashboard
+    if (localStorage.getItem('hotspot_token')) {
+      navigate('/dashboard', { replace: true });
+      return;
+    }
+
+    // 2. Seamless SSO: Cek apakah sesi NOCR Gateway aktif via cookie
+    let isMounted = true;
+    fetch('/api/admin/gateway-sso', { credentials: 'include' })
+      .then(res => res.json())
+      .then(data => {
+        if (!isMounted) return;
+        if (data?.success && data?.token) {
+          localStorage.setItem('hotspot_token', data.token);
+          if (data.admin) {
+            localStorage.setItem('hotspot_admin', JSON.stringify(data.admin));
+          }
+          navigate('/dashboard', { replace: true });
+        } else {
+          setCheckingSso(false);
+        }
+      })
+      .catch(() => {
+        if (isMounted) setCheckingSso(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, [navigate]);
 
   async function handleSubmit(e) {
@@ -28,7 +57,7 @@ export default function Login() {
       if (data.success) {
         localStorage.setItem('hotspot_token', data.token);
         localStorage.setItem('hotspot_admin', JSON.stringify(data.admin));
-        navigate('/manage/admin');
+        navigate('/dashboard', { replace: true });
       } else {
         setError(data.message || 'Login gagal.');
       }
@@ -37,6 +66,26 @@ export default function Login() {
     } finally {
       setLoading(false);
     }
+  }
+
+  // Tampilan loading minimalis saat SSO sedang diperiksa
+  if (checkingSso) {
+    return (
+      <div className="relative min-h-screen bg-[var(--bg-app)] text-[var(--text-primary)] flex items-center justify-center p-4">
+        <div className="relative z-10 w-full max-w-sm bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl p-8 shadow-2xl text-center animate-scaleIn">
+          <div className="flex items-center justify-center mb-4">
+            <div className="p-3 bg-blue-500/10 rounded-2xl border border-blue-500/20 shadow-inner">
+              <SipasLogo size={52} />
+            </div>
+          </div>
+          <h2 className="text-base font-bold text-[var(--text-heading)]">Memverifikasi Sesi NOCR</h2>
+          <p className="text-xs text-[var(--text-muted)] mt-1">Menyambungkan autentikasi terpusat gateway...</p>
+          <div className="mt-5 flex justify-center">
+            <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -156,7 +205,7 @@ export default function Login() {
         </form>
 
         <div className="mt-6 text-xs text-slate-500">
-          ← Kembali ke <a href="/" className="text-blue-400 hover:text-blue-300 underline font-medium">Captive Portal</a>
+          ← Kembali ke <a href="https://sipas.npma.my.id/" className="text-blue-400 hover:text-blue-300 underline font-medium">Captive Portal</a>
         </div>
       </div>
     </div>

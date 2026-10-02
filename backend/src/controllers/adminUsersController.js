@@ -1,6 +1,68 @@
 const bcrypt = require('bcrypt');
 const { query } = require('../config/db');
 
+const NOCR_GATEWAY_URL = process.env.NOCR_GATEWAY_URL || 'https://nocrnetwork.com/api/gateway/internal';
+const NOCR_JWT_SECRET  = process.env.NOCR_JWT_SECRET || '1f108367b30b935a7270dc1f9e90d067efd5094e45f496664714ca2f76b1292b';
+
+/**
+ * Helper: Sinkronisasi user ke NOCR Auth Gateway (Two-Way Sync)
+ */
+async function syncToNocrGateway({ username, password, display_name, role, is_active }) {
+    try {
+        const payload = {
+            username,
+            password,
+            display_name,
+            role,
+            tenant_slug: 'diskominfo',
+            is_active: is_active !== false
+        };
+
+        const res = await fetch(`${NOCR_GATEWAY_URL}/sync-user`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-gateway-key': NOCR_JWT_SECRET,
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+            console.warn('[SyncNOCR] Warning saat sinkronisasi:', data?.message || res.statusText);
+        } else {
+            console.log(`[SyncNOCR] Sukses: User @${username} tersinkronisasi ke NOCR Centralized Gateway.`);
+        }
+        return data;
+    } catch (err) {
+        console.error('[SyncNOCR] Error sinkronisasi ke NOCR Gateway:', err.message);
+        // Tetap lanjut agar tidak mengganggu transaksi lokal jika jaringan gateway timeout
+        return null;
+    }
+}
+
+/**
+ * Helper: Hapus akses tenant user dari NOCR Gateway
+ */
+async function deleteFromNocrGateway(username) {
+    try {
+        const res = await fetch(`${NOCR_GATEWAY_URL}/delete-user`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-gateway-key': NOCR_JWT_SECRET,
+            },
+            body: JSON.stringify({ username, tenant_slug: 'diskominfo' })
+        });
+        const data = await res.json();
+        console.log(`[SyncNOCR] User @${username} dihapus dari hak akses NOCR Gateway.`);
+        return data;
+    } catch (err) {
+        console.error('[SyncNOCR] Error menghapus user di NOCR Gateway:', err.message);
+        return null;
+    }
+}
+
 /**
  * GET /api/admin-users
  * Mengambil daftar seluruh admin pengelola
@@ -57,10 +119,21 @@ const createAdminUser = async (req, res) => {
             RETURNING id, username, full_name, email, role, is_active, created_at
         `, [cleanUsername, password_hash, full_name || null, email || null, assignedRole, is_active]);
 
+        const newAdmin = result.rows[0];
+
+        // Two-Way Sync: Otomatis sinkronkan user ke NOCR Gateway
+        await syncToNocrGateway({
+            username: cleanUsername,
+            password: password,
+            display_name: full_name || cleanUsername,
+            role: assignedRole,
+            is_active: is_active
+        });
+
         res.status(201).json({
             success: true,
-            message: 'Pengelola berhasil ditambahkan.',
-            data: result.rows[0]
+            message: 'Pengelola berhasil ditambahkan dan disinkronkan ke NOCR Gateway.',
+            data: newAdmin
         });
     } catch (err) {
         console.error('[AdminUsersController] createAdminUser error:', err.message);
@@ -111,6 +184,7 @@ const updateAdminUser = async (req, res) => {
             id
         ];
 
+        let hasNewPassword = false;
         if (password && password.trim().length > 0) {
             if (password.length < 8) {
                 return res.status(400).json({ success: false, message: 'Password minimal 8 karakter.' });
@@ -118,16 +192,27 @@ const updateAdminUser = async (req, res) => {
             const password_hash = await bcrypt.hash(password, 12);
             queryText += `, password_hash = $6 WHERE id = $5 RETURNING id, username, full_name, email, role, is_active, updated_at`;
             params.push(password_hash);
+            hasNewPassword = true;
         } else {
             queryText += ` WHERE id = $5 RETURNING id, username, full_name, email, role, is_active, updated_at`;
         }
 
         const result = await query(queryText, params);
+        const updatedAdmin = result.rows[0];
+
+        // Two-Way Sync: Update data / password di NOCR Gateway
+        await syncToNocrGateway({
+            username: targetAdmin.username,
+            password: hasNewPassword ? password : null,
+            display_name: full_name !== undefined ? full_name : targetAdmin.full_name,
+            role: assignedRole,
+            is_active: updatedIsActive
+        });
 
         res.json({
             success: true,
-            message: 'Data admin pengelola berhasil diperbarui.',
-            data: result.rows[0]
+            message: 'Data admin pengelola berhasil diperbarui dan disinkronkan ke NOCR Gateway.',
+            data: updatedAdmin
         });
     } catch (err) {
         console.error('[AdminUsersController] updateAdminUser error:', err.message);
@@ -168,9 +253,12 @@ const deleteAdminUser = async (req, res) => {
 
         await query('DELETE FROM admin_users WHERE id = $1', [id]);
 
+        // Two-Way Sync: Hapus hak akses tenant user dari NOCR Gateway
+        await deleteFromNocrGateway(targetAdmin.username);
+
         res.json({
             success: true,
-            message: `Admin pengelola @${targetAdmin.username} berhasil dihapus.`
+            message: `Admin pengelola @${targetAdmin.username} berhasil dihapus dari SIPAS dan NOCR Gateway.`
         });
     } catch (err) {
         console.error('[AdminUsersController] deleteAdminUser error:', err.message);

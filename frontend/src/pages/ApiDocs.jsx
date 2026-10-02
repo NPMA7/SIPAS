@@ -148,7 +148,7 @@ export default function ApiDocs() {
         <p className="text-xs text-slate-400 mb-6">
           Dokumentasi REST API ini memuat skema internal sistem dan hanya dapat diakses oleh akun dengan hak akses <strong>Super Administrator</strong>.
         </p>
-        <button className="btn btn-primary btn-sm mx-auto" onClick={() => navigate('/manage/admin')}>
+        <button className="btn btn-primary btn-sm mx-auto" onClick={() => navigate('/dashboard')}>
           Kembali ke Dashboard
         </button>
       </div>

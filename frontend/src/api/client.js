@@ -21,11 +21,35 @@ export async function apiFetch(path, options = {}) {
   try {
     const res = await fetch(`${API_BASE}${path}`, {
       cache: 'no-store',
+      credentials: 'include',
       ...options,
       headers,
     });
 
     if (res.status === 401) {
+      // Coba refresh token via SSO Gateway sebelum kick ke login
+      try {
+        const ssoRes = await fetch('/api/admin/gateway-sso', { credentials: 'include' });
+        const ssoData = await ssoRes.json();
+        if (ssoData?.success && ssoData?.token) {
+          localStorage.setItem('hotspot_token', ssoData.token);
+          if (ssoData.admin) {
+            localStorage.setItem('hotspot_admin', JSON.stringify(ssoData.admin));
+          }
+          headers.Authorization = `Bearer ${ssoData.token}`;
+          const retryRes = await fetch(`${API_BASE}${path}`, {
+            cache: 'no-store',
+            credentials: 'include',
+            ...options,
+            headers,
+          });
+          const retryContentType = retryRes.headers.get('content-type') || '';
+          if (retryContentType.includes('application/json')) {
+            return await retryRes.json();
+          }
+        }
+      } catch (_) {}
+
       localStorage.removeItem('hotspot_token');
       window.location.href = '/manage/admin/login';
       return null;

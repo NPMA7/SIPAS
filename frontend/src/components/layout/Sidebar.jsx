@@ -7,7 +7,7 @@ const NAV = [
     group: 'Monitoring',
     items: [
       {
-        to: '/manage/admin',
+        to: '/dashboard',
         end: true,
         label: 'Dashboard',
         icon: (
@@ -23,7 +23,7 @@ const NAV = [
     group: 'Manajemen',
     items: [
       {
-        to: '/manage/admin/user-hotspot',
+        to: '/user-hotspot',
         label: 'Pengguna',
         icon: (
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
@@ -34,7 +34,7 @@ const NAV = [
         ),
       },
       {
-        to: '/manage/admin/blocked-sites',
+        to: '/blocked-sites',
         label: 'Situs Diblokir',
         icon: (
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
@@ -44,7 +44,7 @@ const NAV = [
         ),
       },
       {
-        to: '/manage/admin/hotspot',
+        to: '/hotspot',
         label: 'Pengaturan Hotspot',
         icon: (
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
@@ -56,7 +56,7 @@ const NAV = [
         ),
       },
       {
-        to: '/manage/admin/queues',
+        to: '/queues',
         label: 'Limit Kecepatan',
         icon: (
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
@@ -65,7 +65,7 @@ const NAV = [
         ),
       },
       {
-        to: '/manage/admin/routers',
+        to: '/routers',
         label: 'Manajemen Router',
         icon: (
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
@@ -75,7 +75,7 @@ const NAV = [
         ),
       },
       {
-        to: '/manage/admin/manage-users',
+        to: '/manage-users',
         label: 'Pengelola Web',
         superAdminOnly: true,
         icon: (
@@ -91,7 +91,7 @@ const NAV = [
     group: 'Sistem',
     items: [
       {
-        to: '/manage/admin/portal-settings',
+        to: '/portal-settings',
         label: 'Kustomisasi Portal',
         icon: (
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
@@ -101,7 +101,7 @@ const NAV = [
         ),
       },
       {
-        to: '/manage/admin/api',
+        to: '/api',
         label: 'Dokumentasi API',
         superAdminOnly: true,
         icon: (
@@ -111,7 +111,7 @@ const NAV = [
         ),
       },
       {
-        to: '/',
+        to: 'https://sipas.npma.my.id/',
         label: 'Captive Portal',
         external: true,
         icon: (
@@ -139,7 +139,11 @@ export default function Sidebar({ collapsed, mobileOpen, onToggle, onCloseMobile
   function logout() {
     localStorage.removeItem('hotspot_token');
     localStorage.removeItem('hotspot_admin');
-    navigate('/manage/admin/login');
+    if (window.location.hostname.includes('nocrnetwork.com')) {
+      window.location.href = '/api/auth/logout';
+    } else {
+      navigate('/login');
+    }
   }
 
   const initial = admin?.username?.[0]?.toUpperCase() || 'A';
